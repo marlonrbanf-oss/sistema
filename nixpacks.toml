@@ -1,20 +1,11 @@
 [phases.setup]
-nixPkgs = [
-    "php82",
-    "php82Packages.composer",
-    "php82Extensions.pdo_mysql",
-    "php82Extensions.mysqli",
-    "php82Extensions.mbstring",
-    "php82Extensions.gd",
-    "php82Extensions.curl",
-    "php82Extensions.zip"
-]
+nixPkgs = ["php82", "php82Packages.composer"]
 
 [phases.install]
 cmds = ["composer install --no-dev --optimize-autoloader"]
 
 [phases.build]
-cmds = ["echo 'Build PHP 8.2'"]
+cmds = ["echo 'PHP 8.2 Build OK'"]
 
 [start]
 cmd = "php -S 0.0.0.0:$PORT -t ."
