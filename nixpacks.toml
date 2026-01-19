@@ -1,0 +1,20 @@
+[phases.setup]
+nixPkgs = [
+    "php82",
+    "php82Packages.composer",
+    "php82Extensions.mysqli",
+    "php82Extensions.mbstring",
+    "php82Extensions.openssl"
+]
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader"]
+
+[phases.build]
+cmds = [
+    "echo 'Build phase - PHP application'"
+]
+
+[start]
+cmd = "php -S 0.0.0.0:$PORT -t ."
+priority = 5

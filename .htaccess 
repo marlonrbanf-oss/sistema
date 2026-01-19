@@ -1,0 +1,22 @@
+RewriteEngine On
+
+# Se o arquivo ou diretório não existir, redirecione para index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Forçar HTTPS no Railway (opcional)
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Segurança básica
+<FilesMatch "\.(php|txt|log|sql)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "^(index|conexao|config)\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
