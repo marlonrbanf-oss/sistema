@@ -138,48 +138,91 @@ $licoes_array = [
     <title>Lançar Lição - Nova Arte BJJ</title>
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <style>
+        .radio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 10px;
+        }
+
+        .btn-radio {
+            cursor: pointer;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .btn-radio:hover {
+            background: #f8f9fa;
+        }
+
+        input[type="radio"]:checked+.btn-radio {
+            background-color: #343a40;
+            color: #fff;
+            border-color: #343a40;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <div class="card shadow">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">REGISTRAR LIÇÃO E TÉCNICAS</h5>
+                <h5 class="mb-0">REGISTRAR LIÇÃO DO DIA</h5>
                 <a href="index.php" class="btn btn-outline-light btn-sm">Voltar</a>
             </div>
             <form action="lancar-selos.php" method="POST">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-5 border-right">
-                            <h6 class="font-weight-bold">1. Escolha a Lição do Dia</h6>
-                            <select name="licao_id" id="licao_id" class="form-control mb-3" required>
-                                <option value="">Selecione a lição...</option>
+                        <div class="col-md-6 border-right">
+                            <h6 class="font-weight-bold mb-3">1. Escolha a Lição do Dia</h6>
+                            <div class="radio-grid mb-4">
                                 <?php foreach ($licoes_array as $n => $tecnicas) : ?>
-                                    <option value="<?php echo $n; ?>">Lição <?php echo $n; ?></option>
+                                    <label class="m-0">
+                                        <input type="radio" name="licao_id" value="<?php echo $n; ?>" class="d-none"
+                                            required>
+                                        <div class="btn-radio">L-<?php echo $n; ?></div>
+                                    </label>
                                 <?php endforeach; ?>
-                            </select>
-                            <div id="preview-tecnicas" class="p-3 bg-white border rounded" style="min-height: 150px;">
-                                <small class="text-muted">As técnicas da lição aparecerão aqui para conferência.</small>
+                            </div>
+
+                            <h6 class="font-weight-bold">Técnicas desta aula:</h6>
+                            <div id="preview-tecnicas" class="p-3 bg-white border rounded" style="min-height: 200px;">
+                                <small class="text-muted">Selecione um botão de lição acima para conferir as
+                                    técnicas.</small>
                             </div>
                         </div>
 
-                        <div class="col-md-7">
-                            <h6 class="font-weight-bold">2. Alunos que participaram da aula</h6>
-                            <input type="text" id="busca" class="form-control form-control-sm mb-2" placeholder="Pesquisar aluno por nome...">
-                            <div style="height: 350px; overflow-y: auto;" class="border rounded p-2 bg-white">
-                                <table class="table table-sm table-hover">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold mb-3">2. Quem participou da aula?</h6>
+                            <div class="input-group input-group-sm mb-2">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                </div>
+                                <input type="text" id="busca" class="form-control"
+                                    placeholder="Digite o nome do aluno...">
+                            </div>
+
+                            <div style="height: 400px; overflow-y: auto;" class="border rounded bg-white">
+                                <table class="table table-sm table-hover mb-0">
                                     <tbody id="tabela_alunos">
                                         <?php
-                                        $query = $pdo->query("SELECT id, nome, faixa FROM usuarios WHERE nivel = 'Cliente' ORDER BY nome ASC");
+                                        $query = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Cliente' ORDER BY nome ASC");
                                         $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                         foreach ($res as $aluno) {
-                                            $faixa = !empty($aluno['faixa']) ? $aluno['faixa'] : 'Branca';
                                         ?>
                                             <tr>
-                                                <td width="30"><input type="checkbox" name="alunos[]" value="<?php echo $aluno['id']; ?>"></td>
-                                                <td>
-                                                    <span class="text-dark font-weight-bold"><?php echo $aluno['nome']; ?></span><br>
-                                                    <small class="badge badge-secondary"><?php echo strtoupper($faixa); ?></small>
+                                                <td width="40" class="text-center align-middle">
+                                                    <input type="checkbox" name="alunos[]"
+                                                        value="<?php echo $aluno['id']; ?>"
+                                                        style="width:18px; height:18px;">
+                                                </td>
+                                                <td class="align-middle">
+                                                    <span
+                                                        class="text-dark font-weight-bold"><?php echo $aluno['nome']; ?></span>
                                                 </td>
                                             </tr>
                                         <?php } ?>
@@ -189,9 +232,9 @@ $licoes_array = [
                         </div>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-success btn-lg btn-block shadow">
-                        <i class="fas fa-save mr-2"></i> LANÇAR SELOS (STATUS: EM ESTUDO)
+                <div class="card-footer bg-white">
+                    <button type="submit" class="btn btn-success btn-lg btn-block shadow font-weight-bold">
+                        <i class="fas fa-check-circle mr-2"></i> FINALIZAR LANÇAMENTO (STATUS: EM ESTUDO)
                     </button>
                 </div>
             </form>
@@ -202,19 +245,23 @@ $licoes_array = [
     <script>
         const licoes = <?php echo json_encode($licoes_array); ?>;
 
-        $('#licao_id').change(function() {
+        // Atualizar preview ao clicar no radio
+        $('input[name="licao_id"]').change(function() {
             let id = $(this).val();
             if (id && licoes[id]) {
-                let html = '<p class="mb-1 text-primary"><strong>Técnicas desta aula:</strong></p><ul class="pl-3 mb-0">';
+                let html = '<ul class="list-group list-group-flush">';
                 licoes[id].forEach(item => {
-                    html += `<li><small><strong>${item.t}</strong> <span class="text-muted">(${item.p})</span></small></li>`;
+                    html += `<li class="list-group-item px-0 py-2 border-0">
+                                <i class="fas fa-chevron-right text-success mr-2 small"></i>
+                                <strong>${item.t}</strong> <br>
+                                <small class="text-muted ml-4">Posição: ${item.p}</small>
+                             </li>`;
                 });
                 $('#preview-tecnicas').html(html + '</ul>');
-            } else {
-                $('#preview-tecnicas').html('<small class="text-muted">Selecione uma lição para ver as técnicas...</small>');
             }
         });
 
+        // Filtro de Busca
         $("#busca").on("keyup", function() {
             var v = $(this).val().toLowerCase();
             $("#tabela_alunos tr").filter(function() {

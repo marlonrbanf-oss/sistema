@@ -2,11 +2,18 @@
 @session_start();
 require_once("../conexao.php");
 
+// Validação de acesso
+if (@$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Admin') {
+    echo "<script language='javascript'>window.location='../login.php'; </script>";
+    exit();
+}
+
 $licao_id = isset($_POST['licao_id']) ? $_POST['licao_id'] : null;
 $alunos = isset($_POST['alunos']) ? $_POST['alunos'] : [];
-$id_prof = @$_SESSION['id_usuario'];
+$id_prof = $_SESSION['id_usuario'];
+$nome_prof = $_SESSION['nome_usuario'];
 
-// Mapeamento Completo com as Posições/Categorias para o Banco de Dados
+// Mapeamento das Lições (Mantive sua estrutura completa)
 $licoes_array = [
     1 => [
         ["t" => "Princípio da Alavanca", "p" => "Fundamentos"],
@@ -130,8 +137,15 @@ $licoes_array = [
 
 if (!empty($alunos) && isset($licoes_array[$licao_id])) {
     $tecnicas_da_aula = $licoes_array[$licao_id];
+    $count_novos = 0;
 
     foreach ($alunos as $aluno_id) {
+        // Busca nome do aluno para o Log
+        $query_u = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
+        $query_u->execute([':id' => $aluno_id]);
+        $dados_aluno = $query_u->fetch(PDO::FETCH_ASSOC);
+        $nome_aluno = $dados_aluno['nome'];
+
         foreach ($tecnicas_da_aula as $item) {
             $tec = $item['t'];
             $pos = $item['p'];
@@ -141,17 +155,24 @@ if (!empty($alunos) && isset($licoes_array[$licao_id])) {
             $check->execute([':u' => $aluno_id, ':t' => $tec]);
 
             if ($check->rowCount() == 0) {
-                // Insere com Nível 25% e a Posição correspondente
+                // Insere a nova habilidade
                 $ins = $pdo->prepare("INSERT INTO habilidades (usuario_id, tecnica, posicao, nivel, status) VALUES (:u, :t, :p, '25', 'Em Estudo')");
                 $ins->execute([
                     ':u' => $aluno_id,
                     ':t' => $tec,
                     ':p' => $pos
                 ]);
+                $count_novos++;
             }
         }
+
+        // REGISTRA NO LOG DO SISTEMA
+        $acao = "Lançou Lição $licao_id para o aluno $nome_aluno";
+        $ins_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:user, :acao, NOW())");
+        $ins_log->execute([':user' => $nome_prof, ':acao' => $acao]);
     }
-    echo "<script>alert('Selos de estudo atribuídos com sucesso para a Lição $licao_id!'); window.location='licoes.php';</script>";
+
+    echo "<script>alert('Sucesso! Selos aplicados aos alunos selecionados.'); window.location='licoes.php';</script>";
 } else {
-    echo "<script>alert('Erro: Certifique-se de selecionar a lição e os alunos.'); window.history.back();</script>";
+    echo "<script>alert('Erro: Selecione a lição e ao menos um aluno.'); window.history.back();</script>";
 }
