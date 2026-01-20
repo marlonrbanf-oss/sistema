@@ -8,9 +8,16 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
     exit();
 }
 
-// 2. Recuperação de dados do Aluno
+// 2. Recuperação de dados do Aluno (Usando BindValue para segurança)
+if (!isset($_GET['id'])) {
+    echo "<script>window.location='usuarios.php';</script>";
+    exit();
+}
+
 $id_aluno = $_GET['id'];
-$query = $pdo->query("SELECT nome FROM usuarios WHERE id = '$id_aluno'");
+$query = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
+$query->bindValue(":id", $id_aluno);
+$query->execute();
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
 if (count($res) == 0) {
@@ -48,7 +55,6 @@ $nome_aluno = $res[0]['nome'];
             border-top-right-radius: 15px !important;
         }
 
-        /* Estilização dos Radio Buttons como Cartões Selecionáveis */
         .status-options .custom-control-label {
             width: 100%;
             padding: 10px 15px;
@@ -140,7 +146,7 @@ $nome_aluno = $res[0]['nome'];
         </div>
     </div>
 
-    <script src="../js/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -2,15 +2,22 @@
 @session_start();
 require_once("../conexao.php");
 
+// 1. VALIDAÇÃO DE SEGURANÇA (Garante que só Professor, Balconista ou Admin acessem)
+if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
+    echo "<script language='javascript'>window.location='../login.php'; </script>";
+    exit();
+}
+
 $id_professor = $_SESSION['id_usuario']; // ID do professor logado
 
 // Lógica para Aprovar ou Recusar via GET (simplificado)
-if(isset($_GET['acao']) && isset($_GET['id_pedido'])){
+if (isset($_GET['acao']) && isset($_GET['id_pedido'])) {
     $status = ($_GET['acao'] == 'aprovar') ? 'Aprovado' : 'Recusado';
     $id_p = $_GET['id_pedido'];
-    
+
     $pdo->query("UPDATE pedidos_aulas SET status = '$status' WHERE id = '$id_p'");
     echo "<script>window.location='pedidos-aulas.php'</script>";
+    exit();
 }
 ?>
 
@@ -24,15 +31,15 @@ if(isset($_GET['acao']) && isset($_GET['id_pedido'])){
     <link rel="stylesheet" href="../painel-cliente/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="../painel-cliente/dist/css/adminlte.min.css">
     <style>
-    .btn-voltar {
-        transition: all 0.3s;
-    }
+        .btn-voltar {
+            transition: all 0.3s;
+        }
 
-    .btn-voltar:hover {
-        transform: translateX(-3px);
-        background-color: #343a40 !important;
-        color: #fff !important;
-    }
+        .btn-voltar:hover {
+            transform: translateX(-3px);
+            background-color: #343a40 !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 
@@ -77,31 +84,31 @@ if(isset($_GET['acao']) && isset($_GET['id_pedido'])){
                             $query->execute();
                             $pedidos = $query->fetchAll(PDO::FETCH_ASSOC);
 
-                            if(count($pedidos) > 0){
-                                foreach($pedidos as $pedido){
+                            if (count($pedidos) > 0) {
+                                foreach ($pedidos as $pedido) {
                                     $classe_status = 'badge-warning';
-                                    if($pedido['status'] == 'Aprovado') $classe_status = 'badge-success';
-                                    if($pedido['status'] == 'Recusado') $classe_status = 'badge-danger';
+                                    if ($pedido['status'] == 'Aprovado') $classe_status = 'badge-success';
+                                    if ($pedido['status'] == 'Recusado') $classe_status = 'badge-danger';
                             ?>
-                            <tr>
-                                <td><b><?php echo $pedido['nome_aluno']; ?></b></td>
-                                <td><?php echo date('d/m/Y', strtotime($pedido['data_aula'])); ?></td>
-                                <td><?php echo date('H:i', strtotime($pedido['horario_aula'])); ?></td>
-                                <td><span
-                                        class="badge <?php echo $classe_status; ?>"><?php echo $pedido['status']; ?></span>
-                                </td>
-                                <td class="text-center">
-                                    <?php if($pedido['status'] == 'Pendente'): ?>
-                                    <a href="pedidos-aulas.php?acao=aprovar&id_pedido=<?php echo $pedido['id']; ?>"
-                                        class="btn btn-xs btn-success shadow-sm mr-1">Aprovar</a>
-                                    <a href="pedidos-aulas.php?acao=recusar&id_pedido=<?php echo $pedido['id']; ?>"
-                                        class="btn btn-xs btn-danger shadow-sm">Recusar</a>
-                                    <?php else: ?>
-                                    <span class="text-muted small">Finalizado</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php 
+                                    <tr>
+                                        <td><b><?php echo $pedido['nome_aluno']; ?></b></td>
+                                        <td><?php echo date('d/m/Y', strtotime($pedido['data_aula'])); ?></td>
+                                        <td><?php echo date('H:i', strtotime($pedido['horario_aula'])); ?></td>
+                                        <td><span
+                                                class="badge <?php echo $classe_status; ?>"><?php echo $pedido['status']; ?></span>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php if ($pedido['status'] == 'Pendente'): ?>
+                                                <a href="pedidos-aulas.php?acao=aprovar&id_pedido=<?php echo $pedido['id']; ?>"
+                                                    class="btn btn-xs btn-success shadow-sm mr-1">Aprovar</a>
+                                                <a href="pedidos-aulas.php?acao=recusar&id_pedido=<?php echo $pedido['id']; ?>"
+                                                    class="btn btn-xs btn-danger shadow-sm">Recusar</a>
+                                            <?php else: ?>
+                                                <span class="text-muted small">Finalizado</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                            <?php
                                 }
                             } else {
                                 echo '<tr><td colspan="5" class="text-center p-4">Nenhuma solicitação encontrada.</td></tr>';

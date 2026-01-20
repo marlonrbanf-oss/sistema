@@ -2,10 +2,15 @@
 require_once("../conexao.php");
 @session_start();
 
+// 1. Validação de Segurança (Apenas quem pode ver a chamada)
+if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
+    exit();
+}
+
 $hoje = date('Y-m-d');
 $busca = "%" . @$_POST['txt_busca'] . "%";
 
-// Função para garantir que o CSS entenda a cor vinda do banco (Igual ao usuarios.php)
+// Função para garantir que o CSS entenda a cor vinda do banco
 function tratarCorFaixa($cor)
 {
     $c = mb_strtolower(trim($cor));
@@ -21,7 +26,8 @@ function tratarCorFaixa($cor)
     return $mapa[$c] ?? $c;
 }
 
-// Procura alunos pelo nome ou e-mail (usuario)
+// 2. Procura alunos pelo nome ou e-mail (usuario)
+// Corrigido o erro de sintaxe no ORDER BY
 $query = $pdo->prepare("SELECT u.id, u.nome, u.usuario, u.data_venc, g.cor_faixa, g.graus, g.total_aulas 
                       FROM usuarios u 
                       LEFT JOIN graduacoes g ON u.id = g.usuario_id 
@@ -45,6 +51,7 @@ if (count($res) > 0) {
         $classe_atrasado = $vencido ? "style='border-left: 5px solid #dc3545;'" : "";
         $badge_pendente = $vencido ? "<span class='badge badge-danger'>PENDENTE</span>" : "";
 
+        // Gerando as linhas da tabela
         echo "<tr {$classe_atrasado}>
                 <td>
                     <strong>" . mb_strtoupper($aluno['nome']) . "</strong> {$badge_pendente}<br>
