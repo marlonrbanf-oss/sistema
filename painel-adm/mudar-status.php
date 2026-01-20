@@ -15,6 +15,14 @@ $msg = "";
 $log_acao = "";
 $hoje = date('Y-m-d');
 
+// --- BUSCA O NOME DO ALUNO PARA O LOG ---
+$query_u = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
+$query_u->bindValue(":id", $id);
+$query_u->execute();
+$dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
+$nome_aluno = ($dados_u) ? $dados_u['nome'] : "ID: " . $id;
+
+
 // 1. AÇÃO DE RENOVAR MENSALIDADE (EM DIA)
 if ($acao == 'renovar') {
     $novo_vencimento = date('Y-m-d', strtotime('+30 days'));
@@ -24,7 +32,7 @@ if ($acao == 'renovar') {
     $query->execute();
 
     $msg = "Mensalidade renovada com sucesso para " . date('d/m/Y', strtotime($novo_vencimento)) . "!";
-    $log_acao = "Renovou mensalidade (Em Dia) do aluno ID: $id";
+    $log_acao = "Renovou mensalidade (Em Dia) do aluno: $nome_aluno";
 }
 
 // 2. AÇÃO DE DEFINIR COMO ATRASADO (NOVO)
@@ -37,7 +45,7 @@ if ($acao == 'atrasar') {
     $query->execute();
 
     $msg = "Status do aluno alterado para ATRASADO!";
-    $log_acao = "Definiu mensalidade como atrasada para o aluno ID: $id";
+    $log_acao = "Definiu mensalidade como atrasada para o aluno: $nome_aluno";
 }
 
 // 3. AÇÃO DE INATIVAR ALUNO
@@ -47,7 +55,7 @@ if ($acao == 'inativar') {
     $query->execute();
 
     $msg = "Usuário inativado com sucesso!";
-    $log_acao = "Inativou o cadastro do ID: $id";
+    $log_acao = "Inativou o cadastro do aluno: $nome_aluno";
 }
 
 // 4. AÇÃO DE ATIVAR ALUNO
@@ -57,7 +65,7 @@ if ($acao == 'ativar') {
     $query->execute();
 
     $msg = "Usuário reativado com sucesso!";
-    $log_acao = "Ativou o cadastro do ID: $id";
+    $log_acao = "Ativou o cadastro do aluno: $nome_aluno";
 }
 
 // --- REGISTRO NO LOG DO SISTEMA ---

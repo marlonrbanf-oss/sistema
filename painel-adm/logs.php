@@ -8,6 +8,9 @@ if (@$_SESSION['nivel_usuario'] != 'Admin') {
     exit();
 }
 
+// Captura dados do Admin para o topo
+$nome_usuario_logado = @$_SESSION['nome_usuario'];
+
 // Lógica de Busca
 $busca = @$_GET['busca'];
 ?>
@@ -23,51 +26,98 @@ $busca = @$_GET['busca'];
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
         body {
-            background-color: #f8f9fa;
-            font-size: 0.9rem;
+            background-color: #f4f6f9;
+            font-size: 0.85rem;
+        }
+
+        /* BARRA SUPERIOR IGUAL AO INDEX */
+        .header-top {
+            background: #fff;
+            padding: 12px 25px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            margin-bottom: 25px;
         }
 
         .card-logs {
             border-radius: 15px;
             border: none;
+            overflow: hidden;
         }
 
         .badge-validacao {
             background-color: #e6fffa;
             color: #2c7a7b;
             border: 1px solid #b2f5ea;
-            padding: 5px 10px;
+            padding: 5px 12px;
             border-radius: 20px;
             font-weight: bold;
+            display: inline-block;
+        }
+
+        .badge-presenca {
+            background-color: #fffaf0;
+            color: #b7791f;
+            border: 1px solid #fbd38d;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
         }
 
         .data-hora {
             color: #6c757d;
             font-size: 0.8rem;
         }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="container-fluid mt-4">
-        <div class="row mb-3 align-items-center">
-            <div class="col-md-4">
-                <h3><i class="fas fa-history mr-2 text-secondary"></i> Histórico Geral</h3>
+    <div class="header-top">
+        <div>
+            <h5 class="mb-0 font-weight-bold"><i class="fas fa-history mr-2 text-secondary"></i> Logs do Sistema</h5>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="mr-3">Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></span>
+            <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                style="width: 35px; height: 35px;">
+                <i class="fas fa-shield-alt"></i>
             </div>
-            <div class="col-md-5">
-                <form method="get">
-                    <div class="input-group">
-                        <input type="text" name="busca" class="form-control form-control-sm"
-                            placeholder="Buscar aluno, técnica ou professor..." value="<?php echo $busca ?>">
-                        <div class="input-group-append">
-                            <button class="btn btn-dark btn-sm" type="submit">Buscar</button>
-                        </div>
-                    </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <form method="get" class="d-flex">
+                    <input type="text" name="busca" class="form-control shadow-sm border-0"
+                        placeholder="Pesquisar por nome do aluno ou ação..." value="<?php echo $busca ?>"
+                        style="border-radius: 20px 0 0 20px;">
+                    <button class="btn btn-dark shadow-sm" type="submit"
+                        style="border-radius: 0 20px 20px 0; padding-left: 20px; padding-right: 20px;">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </form>
             </div>
-            <div class="col-md-3 text-right">
-                <a href="index.php" class="btn btn-sm btn-outline-dark"><i class="fas fa-arrow-left"></i> Painel</a>
+            <div class="col-md-6 text-right">
+                <a href="index.php" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm">
+                    <i class="fas fa-chart-line mr-1"></i> Dashboard
+                </a>
+                <a href="usuarios.php" class="btn btn-outline-dark btn-sm rounded-pill px-3 shadow-sm ml-2">
+                    <i class="fas fa-users mr-1"></i> Usuários
+                </a>
             </div>
         </div>
 
@@ -75,50 +125,71 @@ $busca = @$_GET['busca'];
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="bg-light">
+                        <thead>
                             <tr>
-                                <th>Responsável</th>
-                                <th>Ação</th>
+                                <th class="pl-4">Responsável (Staff)</th>
+                                <th>Ação Realizada</th>
                                 <th class="text-center">Data / Hora</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
                             $query_busca = "%" . $busca . "%";
+                            // A query busca na coluna 'acao' onde o nome do aluno foi gravado
                             $query = $pdo->prepare("SELECT * FROM logs WHERE acao LIKE :busca OR usuario LIKE :busca ORDER BY id DESC LIMIT 200");
                             $query->bindValue(":busca", $query_busca);
                             $query->execute();
                             $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
-                            foreach ($res as $log) {
-                                $dataF = date('d/m/Y', strtotime($log['data']));
-                                $horaF = date('H:i', strtotime($log['data']));
+                            if (count($res) > 0) {
+                                foreach ($res as $log) {
+                                    $dataF = date('d/m/Y', strtotime($log['data']));
+                                    $horaF = date('H:i', strtotime($log['data']));
 
-                                // Destaque visual para validação de selos
-                                $is_selo = strpos($log['acao'], 'Validou selo') !== false;
+                                    $acao = $log['acao'];
+
+                                    // Identifica o tipo de log para aplicar o estilo
+                                    $is_selo = strpos($acao, 'Validou selo') !== false;
+                                    $is_presenca = strpos($acao, 'presença') !== false;
                             ?>
-                                <tr>
-                                    <td style="width: 20%">
-                                        <i class="fas fa-user-circle text-muted"></i>
-                                        <strong><?php echo $log['usuario'] ?></strong>
-                                    </td>
-                                    <td>
-                                        <?php if ($is_selo): ?>
-                                            <span class="badge-validacao"><i class="fas fa-medal text-warning"></i>
-                                                <?php echo $log['acao'] ?></span>
-                                        <?php else: ?>
-                                            <?php echo $log['acao'] ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-center data-hora" style="width: 15%">
-                                        <strong><?php echo $dataF ?></strong><br><?php echo $horaF ?>
-                                    </td>
-                                </tr>
-                            <?php } ?>
+                                    <tr>
+                                        <td class="pl-4 align-middle" style="width: 25%">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-user-tie text-muted mr-2"></i>
+                                                <span class="font-weight-bold text-dark"><?php echo $log['usuario'] ?></span>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <?php if ($is_selo): ?>
+                                                <span class="badge-validacao text-uppercase" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-medal text-warning mr-1"></i> <?php echo $acao ?>
+                                                </span>
+                                            <?php elseif ($is_presenca): ?>
+                                                <span class="badge-presenca text-uppercase" style="font-size: 0.7rem;">
+                                                    <i class="fas fa-check-circle text-warning mr-1"></i> <?php echo $acao ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-secondary"><?php echo $acao ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center align-middle data-hora" style="width: 15%">
+                                            <span class="text-dark font-weight-bold"><?php echo $dataF ?></span><br>
+                                            <span class="badge badge-light border"><?php echo $horaF ?></span>
+                                        </td>
+                                    </tr>
+                            <?php
+                                }
+                            } else {
+                                echo "<tr><td colspan='3' class='text-center py-5 text-muted'>Nenhum registro encontrado para '$busca'.</td></tr>";
+                            }
+                            ?>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
+        <div class="text-center mt-3 mb-5">
+            <small class="text-muted">Exibindo os últimos 200 registros de atividade.</small>
         </div>
     </div>
 
