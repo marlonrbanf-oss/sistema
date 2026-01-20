@@ -165,15 +165,21 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             <div class="brand-link text-center border-secondary"><span class="brand-text font-weight-bold">NOVA ARTE
                     BJJ</span></div>
             <div class="sidebar">
-                <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div class="image"><img src="../images/perfil/<?php echo $foto_usuario; ?>"
-                                class="img-circle elevation-2" style="width:35px; height:35px; object-fit:cover;"></div>
-                        <div class="info"><a href="#" class="d-block text-white"><?php echo $nome_usuario; ?></a></div>
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
+                    <div class="image">
+                        <img src="../images/perfil/<?php echo $foto_usuario; ?>" class="img-circle elevation-2"
+                            style="width:35px; height:35px; object-fit:cover;">
                     </div>
-                    <div class="pr-3"><a href="#" data-toggle="modal" data-target="#modalPerfil"
-                            class="text-white-50"><i class="fas fa-edit"></i></a></div>
+                    <div class="info d-flex align-items-center justify-content-between w-100">
+                        <a href="#" class="d-block text-white text-truncate" style="max-width: 140px;">
+                            <?php echo $nome_usuario; ?>
+                        </a>
+                        <a href="#" data-toggle="modal" data-target="#modalPerfil" class="text-white-50 ml-2">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </div>
                 </div>
+
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column">
                         <li class="nav-item"><a href="index.php" class="nav-link active"><i
