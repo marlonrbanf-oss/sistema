@@ -78,64 +78,64 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-    body {
-        background: #f4f6f9;
-        font-size: 0.85rem;
-    }
-
-    .sidebar {
-        min-height: 100vh;
-        background: #1a1a1a;
-        color: white;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .sidebar a {
-        color: #ccc;
-        padding: 12px 20px;
-        display: block;
-        text-decoration: none;
-        border-bottom: 1px solid #2d2d2d;
-        transition: 0.3s;
-    }
-
-    .sidebar a:hover {
-        background: #333;
-        color: white;
-        border-left: 4px solid #007bff;
-    }
-
-    .sidebar-footer {
-        margin-top: auto;
-        background: #111;
-        padding-bottom: 20px;
-    }
-
-    .card {
-        border-radius: 10px;
-        border: none;
-        overflow: hidden;
-    }
-
-    .chart-container {
-        position: relative;
-        margin: auto;
-        height: 230px;
-        width: 100%;
-    }
-
-    .divider {
-        height: 1px;
-        background: #333;
-        margin: 10px 20px;
-    }
-
-    @media (max-width: 768px) {
-        .sidebar {
-            min-height: auto;
+        body {
+            background: #f4f6f9;
+            font-size: 0.85rem;
         }
-    }
+
+        .sidebar {
+            min-height: 100vh;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar a {
+            color: #ccc;
+            padding: 12px 20px;
+            display: block;
+            text-decoration: none;
+            border-bottom: 1px solid #2d2d2d;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover {
+            background: #333;
+            color: white;
+            border-left: 4px solid #007bff;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            background: #111;
+            padding-bottom: 20px;
+        }
+
+        .card {
+            border-radius: 10px;
+            border: none;
+            overflow: hidden;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 230px;
+            width: 100%;
+        }
+
+        .divider {
+            height: 1px;
+            background: #333;
+            margin: 10px 20px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+        }
     </style>
 </head>
 
@@ -253,31 +253,31 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                         <?php
                                         // Busca os últimos 8 logs para preencher melhor o espaço lateral
                                         $logs = $pdo->query("SELECT * FROM logs ORDER BY id DESC LIMIT 8")->fetchAll(PDO::FETCH_ASSOC);
-                                        
-                                        if(count($logs) > 0){
+
+                                        if (count($logs) > 0) {
                                             foreach ($logs as $l) {
                                                 $data_log = date('d/m H:i', strtotime($l['data']));
-                                                
+
                                                 // Lógica visual para destacar validações de selos
                                                 $bg_log = "";
                                                 $icone = "<i class='fas fa-info-circle text-muted mr-1'></i>";
-                                                
+
                                                 if (strpos($l['acao'], 'Validou selo') !== false) {
                                                     $bg_log = "background-color: #f0fff4;"; // Leve tom de verde
                                                     $icone = "<i class='fas fa-medal text-warning mr-1 shadow-sm'></i>";
                                                 }
                                         ?>
-                                        <tr style="<?php echo $bg_log; ?>">
-                                            <td class='p-2 px-3 border-bottom'>
-                                                <small class='text-muted'><?php echo $data_log; ?></small> <br>
-                                                <?php echo $icone; ?> <b><?php echo $l['usuario']; ?></b>:
-                                                <span
-                                                    class="<?php echo ($bg_log != "") ? 'text-success font-weight-bold' : ''; ?>">
-                                                    <?php echo $l['acao']; ?>
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <?php 
+                                                <tr style="<?php echo $bg_log; ?>">
+                                                    <td class='p-2 px-3 border-bottom'>
+                                                        <small class='text-muted'><?php echo $data_log; ?></small> <br>
+                                                        <?php echo $icone; ?> <b><?php echo $l['usuario']; ?></b>:
+                                                        <span
+                                                            class="<?php echo ($bg_log != "") ? 'text-success font-weight-bold' : ''; ?>">
+                                                            <?php echo $l['acao']; ?>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                        <?php
                                             }
                                         } else {
                                             echo "<tr><td class='text-center p-4 text-muted'>Nenhuma atividade registrada.</td></tr>";
@@ -294,53 +294,53 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
     </div>
 
     <script>
-    new Chart(document.getElementById('chartFaixas'), {
-        type: 'pie',
-        data: {
-            labels: <?php echo json_encode($labels_faixas); ?>,
-            datasets: [{
-                data: <?php echo json_encode($valores_faixas); ?>,
-                backgroundColor: <?php echo json_encode($cores_js); ?>,
-                borderColor: '#dee2e6',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12
+        new Chart(document.getElementById('chartFaixas'), {
+            type: 'pie',
+            data: {
+                labels: <?php echo json_encode($labels_faixas); ?>,
+                datasets: [{
+                    data: <?php echo json_encode($valores_faixas); ?>,
+                    backgroundColor: <?php echo json_encode($cores_js); ?>,
+                    borderColor: '#dee2e6',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12
+                        }
                     }
                 }
             }
-        }
-    });
+        });
 
-    new Chart(document.getElementById('chartMensalidade'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Em Dia', 'Atrasado', 'Inativo'],
-            datasets: [{
-                data: [<?php echo $pagos ?>, <?php echo $atrasados ?>, <?php echo $inativos ?>],
-                backgroundColor: ['#28a745', '#dc3545', '#adb5bd'],
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12
+        new Chart(document.getElementById('chartMensalidade'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Em Dia', 'Atrasado', 'Inativo'],
+                datasets: [{
+                    data: [<?php echo $pagos ?>, <?php echo $atrasados ?>, <?php echo $inativos ?>],
+                    backgroundColor: ['#28a745', '#dc3545', '#adb5bd'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12
+                        }
                     }
                 }
             }
-        }
-    });
+        });
     </script>
 </body>
 
