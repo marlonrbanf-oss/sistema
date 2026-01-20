@@ -36,61 +36,61 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
-        body {
-            background: #f8f9fa;
-        }
+    body {
+        background: #f8f9fa;
+    }
 
-        .card-menu {
-            transition: 0.3s;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            height: 100%;
-        }
+    .card-menu {
+        transition: 0.3s;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        height: 100%;
+    }
 
-        .card-menu:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
-        }
+    .card-menu:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    }
 
-        .bg-qr {
-            background: linear-gradient(45deg, #28a745, #1e7e34);
-            color: white;
-        }
+    .bg-qr {
+        background: linear-gradient(45deg, #28a745, #1e7e34);
+        color: white;
+    }
 
-        .bg-gradient-dark {
-            background: linear-gradient(45deg, #1a1a1a, #4d4d4d);
-            color: white;
-        }
+    .bg-gradient-dark {
+        background: linear-gradient(45deg, #1a1a1a, #4d4d4d);
+        color: white;
+    }
 
-        .item-log {
-            border-left: 5px solid #dee2e6;
-            transition: 0.2s;
-        }
+    .item-log {
+        border-left: 5px solid #dee2e6;
+        transition: 0.2s;
+    }
 
-        .item-log-sucesso {
-            border-left: 5px solid #28a745;
-            background-color: #f0fff4;
-        }
+    .item-log-sucesso {
+        border-left: 5px solid #28a745;
+        background-color: #f0fff4;
+    }
 
-        .badge-notif {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            border-radius: 50%;
-            padding: 5px 10px;
-        }
+    .badge-notif {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border-radius: 50%;
+        padding: 5px 10px;
+    }
 
-        .text-purple {
-            color: #6f42c1;
-        }
+    .text-purple {
+        color: #6f42c1;
+    }
     </style>
 </head>
 
 <body>
 
     <nav class="navbar navbar-dark bg-dark shadow-sm">
-        <a class="navbar-brand font-weight-bold" href="#">NOVA ARTE - PROFESSOR</a>
+        <a class="navbar-brand font-weight-bold" style="color: black;" href="#">NOVA ARTE - PROFESSOR</a>
         <div class="text-white small">
             <i class="fas fa-user-circle mr-1"></i> <?php echo $_SESSION['nome_usuario']; ?> |
             <a href="../logout.php" class="text-danger ml-2 font-weight-bold">SAIR</a>
@@ -136,7 +136,7 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
                     <div class="card card-menu shadow-sm p-3 text-center border-top"
                         style="border-top: 5px solid #6f42c1 !important;">
                         <?php if ($total_aulas_pendentes > 0): ?>
-                            <span class="badge badge-danger badge-notif"><?php echo $total_aulas_pendentes ?></span>
+                        <span class="badge badge-danger badge-notif"><?php echo $total_aulas_pendentes ?></span>
                         <?php endif; ?>
                         <i class="fas fa-user-graduate fa-2x mb-2 text-purple"></i>
                         <h6 class="font-weight-bold">Aulas Particulares</h6>
@@ -150,7 +150,7 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
                     <div class="card card-menu shadow-sm p-3 text-center border-top"
                         style="border-top: 5px solid #dc3545 !important;">
                         <?php if ($total_atrasados > 0): ?>
-                            <span class="badge badge-danger badge-notif"><?php echo $total_atrasados ?></span>
+                        <span class="badge badge-danger badge-notif"><?php echo $total_atrasados ?></span>
                         <?php endif; ?>
                         <i class="fas fa-exclamation-triangle fa-2x mb-2 text-danger"></i>
                         <h6 class="font-weight-bold">Atrasados</h6>
@@ -191,22 +191,22 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
                                     if (count($pedidos) > 0) {
                                         foreach ($pedidos as $p) {
                                     ?>
-                                            <tr>
-                                                <td><b><?php echo $p['nome'] ?></b></td>
-                                                <td><?php echo date('d/m/Y', strtotime($p['data_aula'])) ?> às
-                                                    <?php echo date('H:i', strtotime($p['horario_aula'])) ?></td>
-                                                <td>
-                                                    <a href="index.php?acao_aula=aprovar&id_p=<?php echo $p['id'] ?>"
-                                                        class="btn btn-success btn-sm p-1 px-2"><i class="fas fa-check"></i></a>
-                                                    <a href="index.php?acao_aula=recusar&id_p=<?php echo $p['id'] ?>"
-                                                        class="btn btn-danger btn-sm p-1 px-2"><i class="fas fa-times"></i></a>
-                                                </td>
-                                            </tr>
-                                        <?php }
+                                    <tr>
+                                        <td><b><?php echo $p['nome'] ?></b></td>
+                                        <td><?php echo date('d/m/Y', strtotime($p['data_aula'])) ?> às
+                                            <?php echo date('H:i', strtotime($p['horario_aula'])) ?></td>
+                                        <td>
+                                            <a href="index.php?acao_aula=aprovar&id_p=<?php echo $p['id'] ?>"
+                                                class="btn btn-success btn-sm p-1 px-2"><i class="fas fa-check"></i></a>
+                                            <a href="index.php?acao_aula=recusar&id_p=<?php echo $p['id'] ?>"
+                                                class="btn btn-danger btn-sm p-1 px-2"><i class="fas fa-times"></i></a>
+                                        </td>
+                                    </tr>
+                                    <?php }
                                     } else { ?>
-                                        <tr>
-                                            <td colspan="3" class="text-center py-3 text-muted">Nenhum pedido pendente</td>
-                                        </tr>
+                                    <tr>
+                                        <td colspan="3" class="text-center py-3 text-muted">Nenhum pedido pendente</td>
+                                    </tr>
                                     <?php } ?>
                                 </tbody>
                             </table>
@@ -230,13 +230,13 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
                                         $is_validacao = strpos($l['acao'], 'Validou selo') !== false;
                                         $classe = $is_validacao ? "item-log-sucesso" : "item-log";
                                     ?>
-                                        <tr class="<?php echo $classe ?>">
-                                            <td class='px-4 py-2'>
-                                                <?php echo $is_validacao ? "<i class='fas fa-medal text-warning mr-2'></i>" : "<i class='fas fa-check-circle text-success mr-2'></i>"; ?>
-                                                <?php echo $l['acao'] ?>
-                                                <span class='float-right text-muted small mt-1'><?php echo $data_f ?></span>
-                                            </td>
-                                        </tr>
+                                    <tr class="<?php echo $classe ?>">
+                                        <td class='px-4 py-2'>
+                                            <?php echo $is_validacao ? "<i class='fas fa-medal text-warning mr-2'></i>" : "<i class='fas fa-check-circle text-success mr-2'></i>"; ?>
+                                            <?php echo $l['acao'] ?>
+                                            <span class='float-right text-muted small mt-1'><?php echo $data_f ?></span>
+                                        </td>
+                                    </tr>
                                     <?php } ?>
                                 </tbody>
                             </table>
@@ -247,13 +247,13 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
 
             <div class="col-md-4">
                 <?php if ($_SESSION['nivel_usuario'] == 'Admin'): ?>
-                    <div class="card bg-info text-white shadow-sm p-4 text-center mb-4"
-                        style="border-radius: 15px; border:none;">
-                        <i class="fas fa-cog fa-2x mb-2"></i>
-                        <h5>Gestão Completa</h5>
-                        <p class="small">Acesso ao painel administrativo e logs globais.</p>
-                        <a href="../painel-adm/index.php" class="btn btn-light btn-sm font-weight-bold">IR PARA ADM</a>
-                    </div>
+                <div class="card bg-info text-white shadow-sm p-4 text-center mb-4"
+                    style="border-radius: 15px; border:none;">
+                    <i class="fas fa-cog fa-2x mb-2"></i>
+                    <h5>Gestão Completa</h5>
+                    <p class="small">Acesso ao painel administrativo e logs globais.</p>
+                    <a href="../painel-adm/index.php" class="btn btn-light btn-sm font-weight-bold">IR PARA ADM</a>
+                </div>
                 <?php endif; ?>
 
                 <div class="card bg-white shadow-sm p-3 text-center" style="border-radius: 15px;">
