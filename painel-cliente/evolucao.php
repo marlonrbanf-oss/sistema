@@ -31,27 +31,28 @@ $posicoes_oficiais = [
 ];
 
 // Busca todas as habilidades do aluno
-$query = $pdo->prepare("SELECT * FROM habilidades WHERE usuario_id = :id");
+$query = $pdo->prepare("SELECT * FROM habilidades WHERE usuario_id = :id ORDER BY status DESC, tecnica ASC");
 $query->bindValue(":id", $id_usuario);
 $query->execute();
 $habilidades = $query->fetchAll(PDO::FETCH_ASSOC);
 
 $dados_evolucao = [];
 foreach ($posicoes_oficiais as $pos) {
-    $dados_evolucao[$pos] = ['total' => 0, 'dominados' => 0];
+    $dados_evolucao[$pos] = ['total' => 0, 'dominados' => 0, 'tecnicas' => []];
 }
-$dados_evolucao['Outras Posições'] = ['total' => 0, 'dominados' => 0];
+$dados_evolucao['Outras Posições'] = ['total' => 0, 'dominados' => 0, 'tecnicas' => []];
 
-// Processamento dos dados
+// Processamento e Agrupamento
 foreach ($habilidades as $h) {
     $pos_aluno = $h['posicao'];
-    // Se a posição não estiver na lista oficial, vai para "Outras Posições"
     $chave = in_array($pos_aluno, $posicoes_oficiais) ? $pos_aluno : 'Outras Posições';
 
     $dados_evolucao[$chave]['total']++;
     if (mb_strtolower($h['status']) == 'dominado') {
         $dados_evolucao[$chave]['dominados']++;
     }
+    // Armazena a técnica para listar no clique
+    $dados_evolucao[$chave]['tecnicas'][] = $h;
 }
 ?>
 
@@ -64,60 +65,103 @@ foreach ($habilidades as $h) {
     <title>Evolução Técnica - Nova Arte BJJ</title>
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
+    <style>
+        .card-evolucao {
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .card-evolucao:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tecnica-item {
+            border-bottom: 1px solid #eee;
+            padding: 8px 0;
+        }
+
+        .tecnica-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-estudo {
+            color: #17a2b8;
+        }
+
+        .status-dominado {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
+
         <div class="content-wrapper">
             <section class="content-header">
                 <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1>Minha Evolução Técnica</h1>
-                        </div>
-                    </div>
+                    <h1 class="font-weight-bold text-dark">Evolução por Posição</h1>
+                    <p class="text-muted">Clique nos cards para ver os detalhes das técnicas.</p>
                 </div>
             </section>
 
             <section class="content">
                 <div class="container-fluid">
                     <div class="row">
-                        <?php foreach ($dados_evolucao as $posicao => $dados):
-                            if ($dados['total'] == 0) continue; // Não mostra se não tiver nenhum selo na categoria
-
+                        <?php
+                        $count = 0;
+                        foreach ($dados_evolucao as $posicao => $dados):
+                            if ($dados['total'] == 0) continue;
+                            $count++;
+                            $id_collapse = "collapse_" . $count;
                             $porcentagem = ($dados['dominados'] / $dados['total']) * 100;
-                            $cor_barra = 'bg-info';
-                            if ($porcentagem >= 100) $cor_barra = 'bg-success';
-                            elseif ($porcentagem < 50) $cor_barra = 'bg-warning';
+                            $cor_barra = ($porcentagem >= 100) ? 'bg-success' : 'bg-info';
                         ?>
+
                             <div class="col-md-6 col-lg-4">
-                                <div class="card shadow-sm mb-4">
+                                <div class="card card-evolucao shadow-sm mb-3" data-toggle="collapse"
+                                    data-target="#<?php echo $id_collapse; ?>">
                                     <div class="card-body">
-                                        <h6 class="text-uppercase font-weight-bold text-dark">
-                                            <?php echo $posicao; ?>
-                                        </h6>
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <small class="text-muted">Domínio da Categoria</small>
-                                            <small class="font-weight-bold"><?php echo round($porcentagem); ?>%</small>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="text-uppercase font-weight-bold m-0"><?php echo $posicao; ?></h6>
+                                            <i class="fas fa-chevron-down text-muted small"></i>
                                         </div>
-                                        <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
-                                            <div class="progress-bar <?php echo $cor_barra; ?> progress-bar-striped"
-                                                role="progressbar" style="width: <?php echo $porcentagem; ?>%">
-                                            </div>
+
+                                        <div class="progress mb-2" style="height: 10px; border-radius: 5px;">
+                                            <div class="progress-bar <?php echo $cor_barra; ?>"
+                                                style="width: <?php echo $porcentagem; ?>%"></div>
                                         </div>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="badge badge-light border">
-                                                <i class="fas fa-medal text-primary mr-1"></i> Selos:
-                                                <?php echo $dados['total']; ?>
-                                            </span>
-                                            <span class="badge badge-light border">
-                                                <i class="fas fa-check-circle text-success mr-1"></i> Dominados:
-                                                <?php echo $dados['dominados']; ?>
-                                            </span>
+
+                                        <div class="d-flex justify-content-between small">
+                                            <span><?php echo $dados['dominados']; ?>/<?php echo $dados['total']; ?>
+                                                Dominados</span>
+                                            <span class="font-weight-bold"><?php echo round($porcentagem); ?>%</span>
                                         </div>
+
+                                        <div class="collapse mt-3 border-top pt-2" id="<?php echo $id_collapse; ?>">
+                                            <?php foreach ($dados['tecnicas'] as $tec):
+                                                $is_dominado = (mb_strtolower($tec['status']) == 'dominado');
+                                            ?>
+                                                <div class="tecnica-item d-flex justify-content-between align-items-center">
+                                                    <span
+                                                        class="small text-uppercase <?php echo $is_dominado ? 'text-dark' : 'text-muted'; ?>">
+                                                        <?php echo $tec['tecnica']; ?>
+                                                    </span>
+                                                    <?php if ($is_dominado): ?>
+                                                        <i class="fas fa-check-circle status-dominado" title="Dominado"></i>
+                                                    <?php else: ?>
+                                                        <i class="fas fa-clock status-estudo" title="Em Estudo"></i>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
+
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -128,6 +172,14 @@ foreach ($habilidades as $h) {
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="dist/js/adminlte.min.js"></script>
+    <script>
+        // Gira o ícone de seta quando abre/fecha
+        $('.collapse').on('show.bs.collapse', function() {
+            $(this).parent().find(".fa-chevron-down").css("transform", "rotate(180deg)");
+        }).on('hide.bs.collapse', function() {
+            $(this).parent().find(".fa-chevron-down").css("transform", "rotate(0deg)");
+        });
+    </script>
 </body>
 
 </html>
