@@ -294,7 +294,8 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                                         <i class="fas fa-hand-holding-usd mr-2"></i> Definir como Atrasado
                                                     </a>
 
-                                                    <a class="dropdown-item" href="dar-presenca.php?id=<?php echo $id ?>">
+                                                    <a class="dropdown-item" href="#"
+                                                        onclick="darPresenca(<?php echo $id ?>, '<?php echo $usu['nome'] ?>')">
                                                         <i class="fas fa-check mr-2 text-success"></i> Dar Presença
                                                     </a>
 
@@ -354,6 +355,20 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 });
             });
         });
+
+        // Função para perguntar a quantidade de presenças
+        function darPresenca(id, nome) {
+            let quantidade = prompt("Quantas presenças deseja atribuir para " + nome + "?", "1");
+
+            if (quantidade !== null) {
+                if (isNaN(quantidade) || quantidade <= 0 || quantidade === "") {
+                    alert("Por favor, insira um número válido.");
+                    return;
+                }
+                // Redireciona para o arquivo de registro com o novo parâmetro quantidade
+                window.location.href = "dar-presenca.php?id=" + id + "&quantidade=" + quantidade;
+            }
+        }
     </script>
 </body>
 

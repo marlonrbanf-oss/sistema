@@ -2,8 +2,8 @@
 require_once("../conexao.php");
 @session_start();
 
-// 1. Validação de Segurança para Admin ou Balconista
-if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Balconista') {
+// 1. Validação de Segurança (Incluído Professor para ele também poder dar presença)
+if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "Acesso Negado!";
     exit();
 }
@@ -11,33 +11,40 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Ba
 $id_aluno = @$_GET['id'];
 $usuario_logado = $_SESSION['nome_usuario'];
 
+// Captura a quantidade vinda do prompt JS, se não existir, define como 1
+$quantidade = (isset($_GET['quantidade']) && $_GET['quantidade'] > 0) ? (int)$_GET['quantidade'] : 1;
+
 if ($id_aluno == "") {
     echo "Selecione um aluno válido!";
     exit();
 }
 
-// 2. Busca o nome do aluno para o Log (melhora a clareza do histórico)
-$query_u = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
-$query_u->bindValue(":id", $id_aluno);
-$query_u->execute();
-$dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
-$nome_aluno = ($dados_u) ? $dados_u['nome'] : "Desconhecido";
+try {
+    // 2. Busca o nome do aluno para o Log
+    $query_u = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
+    $query_u->bindValue(":id", $id_aluno);
+    $query_u->execute();
+    $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
+    $nome_aluno = ($dados_u) ? $dados_u['nome'] : "Desconhecido";
 
-// 3. Atualiza o total de aulas na tabela graduacoes
-$res = $pdo->prepare("UPDATE graduacoes SET total_aulas = total_aulas + 1 WHERE usuario_id = :id");
-$res->bindValue(":id", $id_aluno);
-$res->execute();
+    // 3. Atualiza o total de aulas na tabela graduacoes com a QUANTIDADE ESCOLHIDA
+    $res = $pdo->prepare("UPDATE graduacoes SET total_aulas = total_aulas + :qtd WHERE usuario_id = :id");
+    $res->bindValue(":qtd", $quantidade, PDO::PARAM_INT);
+    $res->bindValue(":id", $id_aluno);
+    $res->execute();
 
-// 4. REGISTRA NO LOG DE ATIVIDADES
-// Isso fará com que a ação apareça no seu novo Dashboard e na tela de Logs
-$acao = "Registrou presença para o aluno: " . $nome_aluno;
-$res_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:usuario_logado, :acao, NOW())");
-$res_log->bindValue(":usuario_logado", $usuario_logado);
-$res_log->bindValue(":acao", $acao);
-$res_log->execute();
+    // 4. REGISTRA NO LOG DE ATIVIDADES (Informando a quantidade no log)
+    $acao = "Lançou $quantidade presença(s) para o aluno: " . $nome_aluno;
+    $res_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:usuario_logado, :acao, NOW())");
+    $res_log->bindValue(":usuario_logado", $usuario_logado);
+    $res_log->bindValue(":acao", $acao);
+    $res_log->execute();
 
-// 5. Feedback e Redirecionamento
-echo "<script language='javascript'>
-        window.alert('Presença de $nome_aluno registrada com sucesso!'); 
-        window.location='usuarios.php';
-      </script>";
+    // 5. Feedback e Redirecionamento
+    echo "<script language='javascript'>
+            window.alert('Sucesso: $quantidade presença(s) para $nome_aluno registrada(s)!'); 
+            window.location='usuarios.php';
+          </script>";
+} catch (PDOException $e) {
+    echo "Erro no banco de dados: " . $e->getMessage();
+}
