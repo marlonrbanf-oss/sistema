@@ -63,77 +63,77 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
     <style>
-        body {
-            background-color: #f4f6f9;
-        }
+    body {
+        background-color: #f4f6f9;
+    }
 
-        .main-sidebar {
-            background-color: #1a1a1a !important;
-        }
+    .main-sidebar {
+        background-color: #1a1a1a !important;
+    }
 
+    .navbar-search-mobile {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+
+    @media (max-width: 576px) {
         .navbar-search-mobile {
-            flex: 1;
-            display: flex;
-            justify-content: center;
+            margin: 0 10px;
+        }
+    }
+
+    .bjj-belt {
+        width: 100%;
+        max-width: 400px;
+        height: 54px;
+        background: <?php echo $cor_css;
+        ?>;
+        border: 2px solid #333;
+        position: relative;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        margin: 15px auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .belt-bar {
+        width: 110px;
+        height: 100%;
+        background-color: <?php echo (mb_strtolower($status['faixa'])=='preta') ? '#d31b1b': '#000';
+        ?>;
+        position: absolute;
+        right: 30px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0 10px;
+        border-left: 1px solid rgba(0, 0, 0, 0.3);
+        border-right: 1px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .belt-stripe {
+        width: 7px;
+        height: 40px;
+        background-color: #fff;
+        border-radius: 1px;
+    }
+
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @keyframes pulse-animation {
+        0% {
+            box-shadow: 0 0 0 0px rgba(40, 167, 69, 0.7);
         }
 
-        @media (max-width: 576px) {
-            .navbar-search-mobile {
-                margin: 0 10px;
-            }
+        100% {
+            box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
         }
-
-        .bjj-belt {
-            width: 100%;
-            max-width: 400px;
-            height: 54px;
-            background: <?php echo $cor_css;
-                        ?>;
-            border: 2px solid #333;
-            position: relative;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            margin: 15px auto;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .belt-bar {
-            width: 110px;
-            height: 100%;
-            background-color: <?php echo (mb_strtolower($status['faixa']) == 'preta') ? '#d31b1b' : '#000';
-                                ?>;
-            position: absolute;
-            right: 30px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 10px;
-            border-left: 1px solid rgba(0, 0, 0, 0.3);
-            border-right: 1px solid rgba(0, 0, 0, 0.3);
-        }
-
-        .belt-stripe {
-            width: 7px;
-            height: 40px;
-            background-color: #fff;
-            border-radius: 1px;
-        }
-
-        .pulse {
-            animation: pulse-animation 2s infinite;
-        }
-
-        @keyframes pulse-animation {
-            0% {
-                box-shadow: 0 0 0 0px rgba(40, 167, 69, 0.7);
-            }
-
-            100% {
-                box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
-            }
-        }
+    }
     </style>
 </head>
 
@@ -198,6 +198,12 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                     class="nav-icon fas fa-receipt"></i>
                                 <p>Financeiro</p>
                             </a></li>
+                        <li class="nav-item">
+                            <a href="evolucao.php" class="nav-link">
+                                <i class="nav-icon fas fa-chart-line"></i>
+                                <p>Evolução Técnica</p>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
             </div>
@@ -220,7 +226,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                     <div class="bjj-belt">
                                         <div class="belt-bar">
                                             <?php for ($i = 0; $i < $status['grau']; $i++): ?>
-                                                <div class="belt-stripe"></div>
+                                            <div class="belt-stripe"></div>
                                             <?php endfor; ?>
                                         </div>
                                     </div>
@@ -241,13 +247,13 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                             </div>
                             <div class="card shadow-sm border-0 p-3 mb-4">
                                 <?php if ($status['pode']): ?>
-                                    <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
-                                        class="btn btn-success btn-lg btn-block pulse shadow"><i
-                                            class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU / FAIXA</button>
+                                <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
+                                    class="btn btn-success btn-lg btn-block pulse shadow"><i
+                                        class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU / FAIXA</button>
                                 <?php else: ?>
-                                    <button class="btn btn-secondary btn-block disabled" disabled><i
-                                            class="fas fa-lock mr-2"></i> FALTA
-                                        <?php echo ($status['meta'] - $status['aulas']); ?> AULAS</button>
+                                <button class="btn btn-secondary btn-block disabled" disabled><i
+                                        class="fas fa-lock mr-2"></i> FALTA
+                                    <?php echo ($status['meta'] - $status['aulas']); ?> AULAS</button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -280,29 +286,29 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                 foreach ($res_hab as $hab) {
                                                     $cor_selo = (mb_strtolower($hab['status']) == 'dominado') ? 'badge-success' : 'badge-info';
                                                 ?>
-                                                    <tr>
-                                                        <td class="font-weight-bold text-uppercase">
-                                                            <?php echo $hab['tecnica']; ?></td>
-                                                        <td>
-                                                            <div class="progress progress-xxs mt-2">
-                                                                <div class="progress-bar bg-dark"
-                                                                    style="width: <?php echo $hab['nivel']; ?>%"></div>
-                                                            </div>
-                                                        </td>
-                                                        <td class="text-center"><span
-                                                                class="badge <?php echo $cor_selo; ?> shadow-sm"><?php echo strtoupper($hab['status']); ?></span>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <?php if (mb_strtolower($hab['status']) != 'dominado'): ?>
-                                                                <button class="btn btn-xs btn-primary shadow-sm"
-                                                                    onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')"><i
-                                                                        class="fas fa-qrcode mr-1"></i> VALIDAR</button>
-                                                            <?php else: ?>
-                                                                <span class="text-success small"><i
-                                                                        class="fas fa-check-double"></i> Validado</span>
-                                                            <?php endif; ?>
-                                                        </td>
-                                                    </tr>
+                                                <tr>
+                                                    <td class="font-weight-bold text-uppercase">
+                                                        <?php echo $hab['tecnica']; ?></td>
+                                                    <td>
+                                                        <div class="progress progress-xxs mt-2">
+                                                            <div class="progress-bar bg-dark"
+                                                                style="width: <?php echo $hab['nivel']; ?>%"></div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center"><span
+                                                            class="badge <?php echo $cor_selo; ?> shadow-sm"><?php echo strtoupper($hab['status']); ?></span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <?php if (mb_strtolower($hab['status']) != 'dominado'): ?>
+                                                        <button class="btn btn-xs btn-primary shadow-sm"
+                                                            onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')"><i
+                                                                class="fas fa-qrcode mr-1"></i> VALIDAR</button>
+                                                        <?php else: ?>
+                                                        <span class="text-success small"><i
+                                                                class="fas fa-check-double"></i> Validado</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
                                                 <?php } ?>
                                             </tbody>
                                         </table>
@@ -333,20 +339,20 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                 $data_f = date('d/m/Y', strtotime($aula['data_aula']));
                                                 $tema_exibir = (!empty($aula['tema'])) ? $aula['tema'] : 'Aula Particular';
                                         ?>
-                                                <div class="col-6 col-md-3">
-                                                    <div class="info-box shadow-none border">
-                                                        <span class="info-box-icon bg-success elevation-1"><i
-                                                                class="fas fa-user-check"></i></span>
-                                                        <div class="info-box-content">
-                                                            <span class="info-box-text text-uppercase font-weight-bold"
-                                                                style="font-size:10px;"><?php echo $tema_exibir; ?></span>
-                                                            <span
-                                                                class="info-box-number small text-muted"><?php echo $data_f; ?></span>
-                                                            <span class="small text-primary">Prof.
-                                                                <?php echo explode(' ', $aula['nome_professor'])[0]; ?></span>
-                                                        </div>
-                                                    </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="info-box shadow-none border">
+                                                <span class="info-box-icon bg-success elevation-1"><i
+                                                        class="fas fa-user-check"></i></span>
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text text-uppercase font-weight-bold"
+                                                        style="font-size:10px;"><?php echo $tema_exibir; ?></span>
+                                                    <span
+                                                        class="info-box-number small text-muted"><?php echo $data_f; ?></span>
+                                                    <span class="small text-primary">Prof.
+                                                        <?php echo explode(' ', $aula['nome_professor'])[0]; ?></span>
                                                 </div>
+                                            </div>
+                                        </div>
                                         <?php
                                             }
                                         } else {
@@ -424,91 +430,91 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script src="dist/js/adminlte.js"></script>
 
     <script>
-        let html5QrCode;
+    let html5QrCode;
 
-        function carregarImgPerfil() {
-            var target = document.getElementById('target-perfil');
-            var file = document.querySelector('#foto-perfil').files[0];
-            var reader = new FileReader();
-            reader.onloadend = function() {
-                target.src = reader.result;
-            };
-            if (file) {
-                reader.readAsDataURL(file);
-            }
+    function carregarImgPerfil() {
+        var target = document.getElementById('target-perfil');
+        var file = document.querySelector('#foto-perfil').files[0];
+        var reader = new FileReader();
+        reader.onloadend = function() {
+            target.src = reader.result;
+        };
+        if (file) {
+            reader.readAsDataURL(file);
         }
-        $("#form-perfil-completo").submit(function(e) {
-            e.preventDefault();
-            var formData = new FormData(this);
-            $.ajax({
-                url: "editar-perfil.php",
-                type: 'POST',
-                data: formData,
-                success: function(mensagem) {
-                    if (mensagem.trim() == "Salvo com Sucesso") {
-                        location.reload();
-                    } else {
-                        $('#mensagem-perfil').removeClass().addClass(
-                            'text-danger mt-2 font-weight-bold').text(mensagem);
-                    }
-                },
-                cache: false,
-                contentType: false,
-                processData: false
-            });
-        });
-
-        function pesquisarEvolucao() {
-            var nome = $('#buscar_aluno').val();
-            if (nome.length < 2) return;
-            $.post("buscar_evolucao.php", {
-                nome: nome
-            }, function(data) {
-                $('#resultado_pesquisa').fadeIn().html(data);
-            });
-        }
-
-        function abrirLeitorQR(tipo, nome, id = 0) {
-            $('#tipo_v').val(tipo);
-            $('#id_v').val(id);
-            $('#nome_v').text(nome);
-            $('#modalQR').modal('show');
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({
-                facingMode: "environment"
-            }, {
-                fps: 10,
-                qrbox: 250
-            }, onScanSuccess);
-        }
-
-        function onScanSuccess(decodedText) {
-            pararCamera();
-            let tipo = $('#tipo_v').val();
-            let id = $('#id_v').val();
-            let url = (tipo == 'graduacao') ? "validar-promocao.php" : "validar-tecnica.php";
-            $.post(url, {
-                token_professor: decodedText,
-                id: id
-            }, function(res) {
-                if (res.trim() == "Sucesso") {
-                    confetti();
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1200);
+    }
+    $("#form-perfil-completo").submit(function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            url: "editar-perfil.php",
+            type: 'POST',
+            data: formData,
+            success: function(mensagem) {
+                if (mensagem.trim() == "Salvo com Sucesso") {
+                    location.reload();
                 } else {
-                    alert(res);
-                    $('#modalQR').modal('hide');
+                    $('#mensagem-perfil').removeClass().addClass(
+                        'text-danger mt-2 font-weight-bold').text(mensagem);
                 }
-            });
-        }
-
-        function pararCamera() {
-            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
-        }
-        $("#buscar_aluno").keypress(function(e) {
-            if (e.which == 13) pesquisarEvolucao();
+            },
+            cache: false,
+            contentType: false,
+            processData: false
         });
+    });
+
+    function pesquisarEvolucao() {
+        var nome = $('#buscar_aluno').val();
+        if (nome.length < 2) return;
+        $.post("buscar_evolucao.php", {
+            nome: nome
+        }, function(data) {
+            $('#resultado_pesquisa').fadeIn().html(data);
+        });
+    }
+
+    function abrirLeitorQR(tipo, nome, id = 0) {
+        $('#tipo_v').val(tipo);
+        $('#id_v').val(id);
+        $('#nome_v').text(nome);
+        $('#modalQR').modal('show');
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({
+            facingMode: "environment"
+        }, {
+            fps: 10,
+            qrbox: 250
+        }, onScanSuccess);
+    }
+
+    function onScanSuccess(decodedText) {
+        pararCamera();
+        let tipo = $('#tipo_v').val();
+        let id = $('#id_v').val();
+        let url = (tipo == 'graduacao') ? "validar-promocao.php" : "validar-tecnica.php";
+        $.post(url, {
+            token_professor: decodedText,
+            id: id
+        }, function(res) {
+            if (res.trim() == "Sucesso") {
+                confetti();
+                setTimeout(() => {
+                    location.reload();
+                }, 1200);
+            } else {
+                alert(res);
+                $('#modalQR').modal('hide');
+            }
+        });
+    }
+
+    function pararCamera() {
+        if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
+    }
+    $("#buscar_aluno").keypress(function(e) {
+        if (e.which == 13) pesquisarEvolucao();
+    });
     </script>
 </body>
 
