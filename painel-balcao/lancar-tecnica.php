@@ -2,13 +2,11 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. Validação de Segurança
 if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
-// 2. Recuperação de dados do Aluno
 if (!isset($_GET['id'])) {
     echo "<script>window.location='usuarios.php';</script>";
     exit();
@@ -21,86 +19,20 @@ $query->execute();
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
 if (count($res) == 0) {
-    echo "<script>alert('Aluno não encontrado!'); window.location='usuarios.php';</script>";
     exit();
 }
 $nome_aluno = $res[0]['nome'];
 
-// 3. Array de Técnicas Únicas (Extraídas das suas lições anteriores)
-$tecnicas_lista = [
-    "Princípio da Alavanca",
-    "Gravata por trás",
-    "Gangorra + Levantada técnica",
-    "Defesa de tapa com queda",
-    "Montada + Arm-lock",
-    "Pegada pelas costas + Mata leão",
-    "Rolamento de costas + Fuga de quadril",
-    "Upa e roda",
-    "Postura de guarda e passagem",
-    "Estrangulamento montado",
-    "Rolamento de frente",
-    "Sprawl",
-    "Abraço por cima dos braços por trás",
-    "Saída de cotovelo",
-    "Estrangulamento na guarda",
-    "Raspagem tesourada",
-    "Raspagem com mãos nos calcanhares",
-    "Abraço por cima dos braços",
-    "Reposição de guarda",
-    "Raspagem com mão na faixa",
-    "Kimura",
-    "Koshi Guruma",
-    "Baiana",
-    "Toreando",
-    "Kimura partindo do 100kg",
-    "Virada de 4",
-    "Americana",
-    "Chave de braço girando",
-    "Defesa gravata com soco",
-    "Defesa de gravata lateral",
-    "Montada com chave de braço",
-    "Montada com estrangulamento",
-    "Educativo para pé na virilha",
-    "Raspagem pé na virilha",
-    "Balão",
-    "Arm-lock invertido",
-    "Guilhotina",
-    "Raspagem com pêndulo",
-    "Chave de braço na guarda",
-    "Empurrão no peito",
-    "Montada técnica",
-    "Defesa de guilhotina",
-    "Joelho na barriga",
-    "Baiana de joelhos",
-    "Passagem para meia guarda",
-    "Meia guarda para montada",
-    "Abraço pela frente",
-    "Estrangulamento com braço enrolado",
-    "Chave de braço na guarda em pé",
-    "Seat belt",
-    "Retenção das costas",
-    "Estrangulamento de golas",
-    "Saída de gravata lateral",
-    "Defesa de pegada de costas",
-    "Single leg",
-    "Guarda aberta / Triângulo",
-    "Raspagem de tripé",
-    "Defesa de jab",
-    "Cinturada por trás",
-    "Estrangulamento relógio",
-    "Rolo de 4 apoios",
-    "Varredura por dentro",
-    "Passagem com joelho por dentro",
-    "Ippon Seoi",
-    "Raspagem de gancho",
-    "Passagem de meia guarda joelho cruzado",
-    "Ezequiel da montada",
-    "Esgrima",
-    "Passagem cruzando o joelho"
+// Mapeamento de Técnicas x Posições (Ajuste conforme sua preferência)
+$mapa_tecnicas = [
+    'Quedas' => ['Baiana', 'Single leg', 'Ippon Seoi', 'Koshi Guruma', 'Sprawl', 'Defesa de tapa com queda'],
+    'passagem de guarda' => ['Toreando', 'Passagem com joelho por dentro', 'Passagem de meia guarda joelho cruzado', 'Postura de guarda e passagem'],
+    'guarda fechada por baixo' => ['Raspagem tesourada', 'Chave de braço na guarda', 'Triângulo', 'Kimura', 'Guilhotina'],
+    'montada ataque (por cima)' => ['Ezequiel da montada', 'Arm-lock', 'Estrangulamento montado', 'Americana'],
+    'Defesa Pessoal' => ['Gravata por trás', 'Abraço por trás', 'Saída de gravata lateral', 'Defesa de jab'],
+    'Fundamentos' => ['Princípio da Alavanca', 'Rolamento de frente', 'Fuga de quadril', 'Levantada técnica']
 ];
-sort($tecnicas_lista);
 
-// 4. Posições para o Botão Rádio
 $posicoes_lista = [
     'Fundamentos',
     'Defesa Pessoal',
@@ -141,103 +73,91 @@ $posicoes_lista = [
             border-radius: 15px;
         }
 
-        .custom-range::-webkit-slider-thumb {
-            background: #007bff;
-        }
-
-        .card-header {
-            border-top-left-radius: 15px !important;
-            border-top-right-radius: 15px !important;
-        }
-
-        .status-options .custom-control-label {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .custom-control-input:checked~.custom-control-label {
-            border-color: #007bff;
-            background-color: rgba(0, 123, 255, 0.05);
-            font-weight: bold;
-        }
-
-        /* Grid para as posições ficarem organizadas */
-        .posicao-container {
+        .grid-select {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 5px;
-            margin-top: 10px;
+            margin-bottom: 15px;
         }
 
-        .pos-card label {
+        .opt-card input {
+            display: none;
+        }
+
+        .opt-card label {
             border: 1px solid #ccc;
             padding: 6px;
             border-radius: 5px;
             display: block;
             text-align: center;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             background: #fff;
+            transition: 0.2s;
         }
 
-        .pos-card input:checked+label {
+        .opt-card input:checked+label {
             background: #007bff;
             color: #fff;
             border-color: #007bff;
+            font-weight: bold;
         }
 
-        @media (max-width: 576px) {
-            .container {
-                padding: 10px;
-                margin-top: 20px !important;
-            }
+        .section-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
         }
     </style>
 </head>
 
-<body class="bg-light">
-    <div class="container mt-5">
+<body>
+    <div class="container mt-4 mb-5">
         <div class="row justify-content-center">
-            <div class="col-lg-6 col-md-8 col-sm-12">
+            <div class="col-lg-7 col-md-10">
                 <div class="card shadow-lg border-0">
-                    <div class="card-header bg-dark text-white p-3 text-center">
-                        <h5 class="m-0 font-weight-bold">
-                            <i class="fas fa-stamp mr-2 text-warning"></i>LANÇAR SELO
-                        </h5>
-                        <small class="text-light text-uppercase">Aluno: <?php echo $nome_aluno ?></small>
+                    <div class="card-header bg-dark text-white text-center p-3">
+                        <h5 class="m-0 font-weight-bold">LANÇAR SELO</h5>
+                        <small>Aluno: <?php echo $nome_aluno ?></small>
                     </div>
                     <div class="card-body p-4">
                         <form action="salvar-tecnica.php" method="POST">
                             <input type="hidden" name="id_aluno" value="<?php echo $id_aluno ?>">
 
-                            <div class="form-group mb-3">
-                                <label class="font-weight-bold">Escolha a Técnica</label>
-                                <select name="tecnica" class="form-control" required>
-                                    <option value="">Selecione...</option>
-                                    <?php foreach ($tecnicas_lista as $item_t): ?>
-                                        <option value="<?php echo $item_t ?>"><?php echo $item_t ?></option>
+                            <div class="section-title">Escolha a Técnica</div>
+                            <div class="grid-select">
+                                <?php foreach ($mapa_tecnicas as $pos_ref => $tecs): ?>
+                                    <?php foreach ($tecs as $t): ?>
+                                        <div class="opt-card">
+                                            <input type="radio" name="tecnica" id="t_<?php echo md5($t) ?>"
+                                                value="<?php echo $t ?>" data-posicao="<?php echo $pos_ref ?>"
+                                                onclick="selecionarPosicao(this)">
+                                            <label for="t_<?php echo md5($t) ?>"><?php echo $t ?></label>
+                                        </div>
                                     <?php endforeach; ?>
-                                </select>
+                                <?php endforeach; ?>
                             </div>
 
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold">Posição / Categoria</label>
-                                <div class="posicao-container">
-                                    <?php foreach ($posicoes_lista as $index_p => $item_p): ?>
-                                        <div class="pos-card">
-                                            <input type="radio" name="posicao" id="p<?php echo $index_p ?>"
-                                                value="<?php echo $item_p ?>" style="display:none;" required>
-                                            <label for="p<?php echo $index_p ?>"><?php echo $item_p ?></label>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                <label class="font-weight-bold">Outras Técnicas (Escrita manual)</label>
+                                <input type="text" name="tecnica_manual" id="tecnica_manual" class="form-control"
+                                    placeholder="Digite aqui se não estiver acima..." oninput="limparRadiosTecnica()">
                             </div>
+
+                            <div class="section-title">Posição / Categoria</div>
+                            <div class="grid-select" id="container_posicoes">
+                                <?php foreach ($posicoes_lista as $idx => $p): ?>
+                                    <div class="opt-card">
+                                        <input type="radio" name="posicao" id="p_<?php echo $idx ?>"
+                                            value="<?php echo $p ?>" required>
+                                        <label for="p_<?php echo $idx ?>"><?php echo $p ?></label>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <hr>
 
                             <div class="form-group mb-3">
                                 <label class="font-weight-bold d-flex justify-content-between">
@@ -250,31 +170,27 @@ $posicoes_lista = [
                             <div class="form-group mb-4">
                                 <label class="font-weight-bold mb-2">Status do Selo</label>
                                 <div class="status-options">
-                                    <div class="custom-control custom-radio">
-                                        <input type="radio" id="status1" name="status" value="Em Estudo"
+                                    <div class="custom-radio custom-control">
+                                        <input type="radio" id="s1" name="status" value="Em Estudo"
                                             class="custom-control-input" required>
-                                        <label class="custom-control-label" for="status1">🟡 Em Estudo (Amarelo)</label>
+                                        <label class="custom-control-label" for="s1">🟡 Em Estudo</label>
                                     </div>
-                                    <div class="custom-control custom-radio">
-                                        <input type="radio" id="status2" name="status" value="Aprendido"
+                                    <div class="custom-radio custom-control">
+                                        <input type="radio" id="s2" name="status" value="Aprendido"
                                             class="custom-control-input">
-                                        <label class="custom-control-label" for="status2">🔵 Aprendido (Azul)</label>
+                                        <label class="custom-control-label" for="s2">🔵 Aprendido</label>
                                     </div>
-                                    <div class="custom-control custom-radio">
-                                        <input type="radio" id="status3" name="status" value="Dominado"
+                                    <div class="custom-radio custom-control">
+                                        <input type="radio" id="s3" name="status" value="Dominado"
                                             class="custom-control-input">
-                                        <label class="custom-control-label" for="status3">🟢 Dominado (Verde)</label>
+                                        <label class="custom-control-label" for="s3">🟢 Dominado</label>
                                     </div>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm">
-                                <i class="fas fa-check-circle mr-1"></i> GRAVAR SELO
-                            </button>
-
-                            <a href="usuarios.php" class="btn btn-light btn-block border mt-2">
-                                <i class="fas fa-arrow-left mr-1"></i> Voltar para Usuários
-                            </a>
+                            <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold">GRAVAR
+                                SELO</button>
+                            <a href="usuarios.php" class="btn btn-light btn-block border mt-2">Voltar</a>
                         </form>
                     </div>
                 </div>
@@ -282,8 +198,30 @@ $posicoes_lista = [
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function selecionarPosicao(el) {
+            // Limpa o campo manual ao selecionar uma técnica pronta
+            document.getElementById('tecnica_manual').value = "";
+
+            let posicaoAlvo = el.getAttribute('data-posicao');
+            let radiosPosicao = document.getElementsByName('posicao');
+
+            for (let r of radiosPosicao) {
+                if (r.value === posicaoAlvo) {
+                    r.checked = true;
+                    break;
+                }
+            }
+        }
+
+        function limparRadiosTecnica() {
+            // Desmarca os botões de rádio da técnica se o professor escrever manualmente
+            let radiosTec = document.getElementsByName('tecnica');
+            for (let r of radiosTec) {
+                r.checked = false;
+            }
+        }
+    </script>
 </body>
 
 </html>
