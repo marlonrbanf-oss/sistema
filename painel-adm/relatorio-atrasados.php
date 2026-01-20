@@ -26,153 +26,193 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
 
     <style>
-    body {
-        background-color: #f8f9fa;
-        font-size: 0.9rem;
-    }
-
-    .relatorio-container {
-        background: #fff;
-        padding: 40px;
-        min-height: 100vh;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .header-rep {
-        border-bottom: 3px solid #333;
-        margin-bottom: 30px;
-    }
-
-    .table thead th {
-        background-color: #343a40;
-        color: white;
-        border: none;
-    }
-
-    .text-atraso {
-        color: #dc3545;
-        font-weight: bold;
-    }
-
-    /* Estilos para Impressão */
-    @media print {
         body {
-            background-color: #fff;
-            padding: 0;
+            background-color: #f4f7f6;
+            font-size: 0.85rem;
+            /* Letras menores e mais elegantes */
+            color: #333;
         }
 
         .relatorio-container {
-            box-shadow: none;
-            padding: 0;
+            background: #fff;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .btn-print,
-        .btn-whatsapp,
-        .btn-voltar {
-            display: none !important;
+        /* Cabeçalho Responsivo */
+        .header-rep {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
         }
 
-        .table {
-            width: 100%;
-            border-collapse: collapse;
+        h1 {
+            font-size: 1.5rem;
         }
 
-        .table th,
-        .table td {
-            border: 1px solid #dee2e6 !important;
+        /* Título menor */
+
+        .table thead th {
+            background-color: #212529;
+            color: white;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
         }
-    }
 
-    .btn-whatsapp {
-        color: #25d366;
-        text-decoration: none;
-        font-weight: bold;
-        transition: 0.3s;
-    }
+        .text-atraso {
+            color: #d9534f;
+            font-weight: 700;
+        }
 
-    .btn-whatsapp:hover {
-        color: #128c7e;
-        text-decoration: none;
-    }
+        .btn-whatsapp {
+            background-color: #25d366;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.3s;
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #128c7e;
+            transform: scale(1.05);
+        }
+
+        /* Ajustes Mobile */
+        @media (max-width: 576px) {
+            .header-rep {
+                text-align: center;
+                flex-direction: column;
+            }
+
+            .btn-group-print {
+                margin-top: 15px;
+                width: 100%;
+            }
+
+            .btn-group-print .btn {
+                width: 48%;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Estilos para Impressão */
+        @media print {
+            body {
+                background-color: #fff;
+            }
+
+            .relatorio-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .btn-print,
+            .btn-whatsapp,
+            .btn-voltar,
+            .no-print {
+                display: none !important;
+            }
+
+            .table td,
+            .table th {
+                border: 1px solid #eee !important;
+            }
+
+            .text-atraso {
+                color: #000 !important;
+            }
+        }
     </style>
 </head>
 
 <body>
 
     <div class="container relatorio-container">
-        <div class="header-rep d-flex justify-content-between align-items-center pb-3">
+        <div class="header-rep d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="font-weight-bold mb-0">NOVA ARTE BJJ</h1>
-                <p class="text-muted mb-0">Gestão de Inadimplência e Cobrança</p>
+                <h1 class="font-weight-bold mb-0 text-dark">NOVA ARTE BJJ</h1>
+                <p class="text-muted mb-0 small"><i class="fas fa-exclamation-circle mr-1"></i> Lista de Inadimplência</p>
             </div>
-            <div class="text-right">
-                <p class="mb-1"><b>Gerado em:</b> <?php echo date('d/m/Y H:i') ?></p>
+            <div class="text-md-right mt-2 mt-md-0">
+                <p class="mb-2 small"><b>Data do Relatório:</b> <?php echo date('d/m/Y') ?></p>
                 <div class="btn-group-print">
-                    <button onclick="window.print()" class="btn btn-danger btn-sm btn-print">
-                        <i class="fas fa-print mr-1"></i> Imprimir / PDF
+                    <button onclick="window.print()" class="btn btn-outline-danger btn-sm btn-print">
+                        <i class="fas fa-print"></i> PDF
                     </button>
-                    <a href="usuarios.php" class="btn btn-dark btn-sm btn-voltar ml-2">
-                        <i class="fas fa-arrow-left mr-1"></i> Voltar
+                    <a href="usuarios.php" class="btn btn-outline-dark btn-sm btn-voltar ml-1">
+                        <i class="fas fa-arrow-left"></i> Sair
                     </a>
                 </div>
             </div>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-sm table-hover">
                 <thead>
                     <tr>
-                        <th>Aluno</th>
+                        <th>Aluno / E-mail</th>
                         <th>Vencimento</th>
-                        <th class="text-center">Dias de Atraso</th>
-                        <th class="text-center btn-print">Ação Rápida</th>
+                        <th class="text-center">Atraso</th>
+                        <th class="text-right no-print">Ação</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
-                if(count($res) > 0){
-                    foreach($res as $row) { 
-                        $data_venc = new DateTime($row['data_venc']);
-                        $agora = new DateTime($hoje);
-                        $intervalo = $data_venc->diff($agora);
-                        $dias_atraso = $intervalo->days;
+                    <?php
+                    if (count($res) > 0) {
+                        foreach ($res as $row) {
+                            $data_venc = new DateTime($row['data_venc']);
+                            $agora = new DateTime($hoje);
+                            $intervalo = $data_venc->diff($agora);
+                            $dias_atraso = $intervalo->days;
 
-                        // Configuração da mensagem de WhatsApp
-                        $tel_limpo = preg_replace('/[^0-9]/', '', $row['telefone']);
-                        $msg = "Olá *{$row['nome']}*, tudo bem? Notamos que sua mensalidade na *Nova Arte BJJ* está pendente desde o dia " . date('d/m/Y', strtotime($row['data_venc'])) . ". Como podemos te ajudar a regularizar? Oss!";
-                        $url_zap = "https://api.whatsapp.com/send?phone=55$tel_limpo&text=" . urlencode($msg);
-                ?>
-                    <tr>
-                        <td class="align-middle">
-                            <span class="font-weight-bold"><?php echo mb_strtoupper($row['nome']) ?></span><br>
-                            <small class="text-muted"><?php echo $row['usuario'] ?></small>
-                        </td>
-                        <td class="align-middle text-atraso">
-                            <?php echo date('d/m/Y', strtotime($row['data_venc'])) ?>
-                        </td>
-                        <td class="align-middle text-center">
-                            <span class="badge badge-danger px-3 py-2"><?php echo $dias_atraso ?> dias</span>
-                        </td>
-                        <td class="align-middle text-center btn-print">
-                            <a href="<?php echo $url_zap ?>" target="_blank" class="btn-whatsapp">
-                                <i class="fab fa-whatsapp fa-lg mr-1"></i> Cobrar via Zap
-                            </a>
-                        </td>
-                    </tr>
-                    <?php 
-                    } 
-                } else {
-                    echo "<tr><td colspan='4' class='text-center py-4'>Parabéns! Não há alunos em atraso no momento.</td></tr>";
-                }
-                ?>
+                            $tel_limpo = preg_replace('/[^0-9]/', '', $row['telefone']);
+                            $msg = "Olá *{$row['nome']}*, tudo bem? Notamos que sua mensalidade na *Nova Arte BJJ* está pendente desde o dia " . date('d/m/Y', strtotime($row['data_venc'])) . ". Como podemos te ajudar a regularizar? Oss!";
+                            $url_zap = "https://api.whatsapp.com/send?phone=55$tel_limpo&text=" . urlencode($msg);
+                    ?>
+                            <tr>
+                                <td class="py-3">
+                                    <span class="font-weight-bold text-uppercase" style="font-size: 0.8rem;"><?php echo $row['nome'] ?></span><br>
+                                    <span class="text-muted small"><?php echo $row['usuario'] ?></span>
+                                </td>
+                                <td class="align-middle text-atraso">
+                                    <?php echo date('d/m/Y', strtotime($row['data_venc'])) ?>
+                                </td>
+                                <td class="align-middle text-center">
+                                    <span class="badge badge-pill badge-light border text-danger" style="font-size: 0.7rem;">
+                                        <?php echo $dias_atraso ?> dias
+                                    </span>
+                                </td>
+                                <td class="align-middle text-right no-print">
+                                    <a href="<?php echo $url_zap ?>" target="_blank" class="btn-whatsapp">
+                                        <i class="fab fa-whatsapp mr-1"></i> COBRAR
+                                    </a>
+                                </td>
+                            </tr>
+                    <?php
+                        }
+                    } else {
+                        echo "<tr><td colspan='4' class='text-center py-5 text-muted'>Parabéns! Todos os alunos estão em dia.</td></tr>";
+                    }
+                    ?>
                 </tbody>
             </table>
         </div>
 
-        <div class="mt-5 pt-3 border-top text-center">
-            <p class="text-muted small">
-                Total de registros: <b><?php echo count($res) ?></b> inadimplente(s) ativo(s).
-            </p>
+        <div class="mt-4 pt-3 border-top d-flex justify-content-between">
+            <p class="text-muted small">Relatório gerado automaticamente pelo Sistema Nova Arte.</p>
+            <p class="font-weight-bold small">Total: <?php echo count($res) ?> aluno(s)</p>
         </div>
     </div>
 
