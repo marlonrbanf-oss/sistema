@@ -124,10 +124,21 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
             <div class="col-md mb-4">
                 <a href="licoes.php" class="text-decoration-none text-dark">
                     <div class="card card-menu shadow-sm p-3 text-center border-top"
-                        style="border-top: 5px solid #007bff !important;">
-                        <i class="fas fa-chalkboard-teacher fa-2x mb-2 text-primary"></i>
+                        style="border-top: 5px solid #28a745 !important;">
+                        <i class="fas fa-chalkboard-teacher fa-2x mb-2 text-success"></i>
                         <h6 class="font-weight-bold">Lição do Dia</h6>
-                        <p class="text-muted small mb-0">Lançar Conteúdo</p>
+                        <p class="text-muted small mb-0">Lançar Auto</p>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md mb-4">
+                <a href="usuarios.php" class="text-decoration-none text-dark">
+                    <div class="card card-menu shadow-sm p-3 text-center border-top"
+                        style="border-top: 5px solid #007bff !important;">
+                        <i class="fas fa-user-check fa-2x mb-2 text-primary"></i>
+                        <h6 class="font-weight-bold">Presenças/Selos</h6>
+                        <p class="text-muted small mb-0">Aplicar Manual</p>
                     </div>
                 </a>
             </div>
@@ -158,14 +169,6 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
                         <p class="text-muted small mb-0">Financeiro</p>
                     </div>
                 </a>
-            </div>
-
-            <div class="col-md mb-4">
-                <div class="card card-menu shadow-sm p-3 bg-gradient-dark text-center">
-                    <i class="fas fa-users fa-2x mb-2 text-white-50"></i>
-                    <h3 class="font-weight-bold mb-0"><?php echo $total_alunos ?></h3>
-                    <p class="small mb-0">Alunos Ativos</p>
-                </div>
             </div>
         </div>
 
@@ -247,6 +250,12 @@ $total_aulas_pendentes = $pdo->query("SELECT id FROM pedidos_aulas WHERE id_prof
             </div>
 
             <div class="col-md-4">
+                <div class="card card-menu shadow-sm p-3 bg-gradient-dark text-center mb-4">
+                    <i class="fas fa-users fa-2x mb-2 text-white-50"></i>
+                    <h3 class="font-weight-bold mb-0 text-white"><?php echo $total_alunos ?></h3>
+                    <p class="small mb-0 text-white">Alunos Ativos</p>
+                </div>
+
                 <?php if ($_SESSION['nivel_usuario'] == 'Admin'): ?>
                     <div class="card bg-info text-white shadow-sm p-4 text-center mb-4"
                         style="border-radius: 15px; border:none;">
