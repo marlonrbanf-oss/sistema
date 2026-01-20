@@ -2,13 +2,13 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. Validação de Segurança para Admin, Professor e Balconista
+// 1. Validação de Segurança
 if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
-// 2. Recuperação de dados do Aluno (Usando BindValue para segurança)
+// 2. Recuperação de dados do Aluno
 if (!isset($_GET['id'])) {
     echo "<script>window.location='usuarios.php';</script>";
     exit();
@@ -25,6 +25,101 @@ if (count($res) == 0) {
     exit();
 }
 $nome_aluno = $res[0]['nome'];
+
+// 3. Array de Técnicas Únicas (Extraídas das suas lições anteriores)
+$tecnicas_lista = [
+    "Princípio da Alavanca",
+    "Gravata por trás",
+    "Gangorra + Levantada técnica",
+    "Defesa de tapa com queda",
+    "Montada + Arm-lock",
+    "Pegada pelas costas + Mata leão",
+    "Rolamento de costas + Fuga de quadril",
+    "Upa e roda",
+    "Postura de guarda e passagem",
+    "Estrangulamento montado",
+    "Rolamento de frente",
+    "Sprawl",
+    "Abraço por cima dos braços por trás",
+    "Saída de cotovelo",
+    "Estrangulamento na guarda",
+    "Raspagem tesourada",
+    "Raspagem com mãos nos calcanhares",
+    "Abraço por cima dos braços",
+    "Reposição de guarda",
+    "Raspagem com mão na faixa",
+    "Kimura",
+    "Koshi Guruma",
+    "Baiana",
+    "Toreando",
+    "Kimura partindo do 100kg",
+    "Virada de 4",
+    "Americana",
+    "Chave de braço girando",
+    "Defesa gravata com soco",
+    "Defesa de gravata lateral",
+    "Montada com chave de braço",
+    "Montada com estrangulamento",
+    "Educativo para pé na virilha",
+    "Raspagem pé na virilha",
+    "Balão",
+    "Arm-lock invertido",
+    "Guilhotina",
+    "Raspagem com pêndulo",
+    "Chave de braço na guarda",
+    "Empurrão no peito",
+    "Montada técnica",
+    "Defesa de guilhotina",
+    "Joelho na barriga",
+    "Baiana de joelhos",
+    "Passagem para meia guarda",
+    "Meia guarda para montada",
+    "Abraço pela frente",
+    "Estrangulamento com braço enrolado",
+    "Chave de braço na guarda em pé",
+    "Seat belt",
+    "Retenção das costas",
+    "Estrangulamento de golas",
+    "Saída de gravata lateral",
+    "Defesa de pegada de costas",
+    "Single leg",
+    "Guarda aberta / Triângulo",
+    "Raspagem de tripé",
+    "Defesa de jab",
+    "Cinturada por trás",
+    "Estrangulamento relógio",
+    "Rolo de 4 apoios",
+    "Varredura por dentro",
+    "Passagem com joelho por dentro",
+    "Ippon Seoi",
+    "Raspagem de gancho",
+    "Passagem de meia guarda joelho cruzado",
+    "Ezequiel da montada",
+    "Esgrima",
+    "Passagem cruzando o joelho"
+];
+sort($tecnicas_lista);
+
+// 4. Posições para o Botão Rádio
+$posicoes_lista = [
+    'Fundamentos',
+    'Defesa Pessoal',
+    'Quedas',
+    'passagem de guarda',
+    'guarda fechada por baixo',
+    'guarda fechada por cima',
+    'guarda aberta',
+    'montada ataque (por cima)',
+    'montada defesa (por baixo)',
+    '100 kilos ataque (por cima)',
+    '100 kilos defesa (por baixo)',
+    'meia guarda por cima',
+    'costas ataque (por cima)',
+    'costas defesa (por baixo)',
+    '4 apoios ataque (por cima)',
+    '4 apoios por defesa (por baixo)',
+    'defesa de finalizações'
+];
 ?>
 
 <!DOCTYPE html>
@@ -72,6 +167,31 @@ $nome_aluno = $res[0]['nome'];
             font-weight: bold;
         }
 
+        /* Grid para as posições ficarem organizadas */
+        .posicao-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .pos-card label {
+            border: 1px solid #ccc;
+            padding: 6px;
+            border-radius: 5px;
+            display: block;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            background: #fff;
+        }
+
+        .pos-card input:checked+label {
+            background: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
+
         @media (max-width: 576px) {
             .container {
                 padding: 10px;
@@ -84,7 +204,7 @@ $nome_aluno = $res[0]['nome'];
 <body class="bg-light">
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-lg-5 col-md-8 col-sm-12">
+            <div class="col-lg-6 col-md-8 col-sm-12">
                 <div class="card shadow-lg border-0">
                     <div class="card-header bg-dark text-white p-3 text-center">
                         <h5 class="m-0 font-weight-bold">
@@ -97,9 +217,26 @@ $nome_aluno = $res[0]['nome'];
                             <input type="hidden" name="id_aluno" value="<?php echo $id_aluno ?>">
 
                             <div class="form-group mb-3">
-                                <label class="font-weight-bold">Nome da Técnica</label>
-                                <input type="text" name="tecnica" class="form-control"
-                                    placeholder="Ex: Triângulo, Passagem de Guarda" required>
+                                <label class="font-weight-bold">Escolha a Técnica</label>
+                                <select name="tecnica" class="form-control" required>
+                                    <option value="">Selecione...</option>
+                                    <?php foreach ($tecnicas_lista as $item_t): ?>
+                                        <option value="<?php echo $item_t ?>"><?php echo $item_t ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold">Posição / Categoria</label>
+                                <div class="posicao-container">
+                                    <?php foreach ($posicoes_lista as $index_p => $item_p): ?>
+                                        <div class="pos-card">
+                                            <input type="radio" name="posicao" id="p<?php echo $index_p ?>"
+                                                value="<?php echo $item_p ?>" style="display:none;" required>
+                                            <label for="p<?php echo $index_p ?>"><?php echo $item_p ?></label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
 
                             <div class="form-group mb-3">
@@ -108,7 +245,6 @@ $nome_aluno = $res[0]['nome'];
                                 </label>
                                 <input type="range" name="nivel" class="custom-range" min="0" max="100" value="50"
                                     oninput="document.getElementById('val_range').innerHTML = this.value + '%'">
-                                <small class="text-muted small">Arraste para definir o progresso.</small>
                             </div>
 
                             <div class="form-group mb-4">
