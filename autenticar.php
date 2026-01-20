@@ -46,9 +46,3 @@ if ($linhas > 0) {
 	// 5. Caso os dados estejam incorretos
 	echo "<script language='javascript'>window.alert('Dados Incorretos!!'); window.location='login.php'; </script>";
 }
-?>
-//Login: admin@novaarte.com
-
-//Senha: admin123
-
-//Destino: O script lerá o nível Admin e te enviará automaticamente para painel-admin/index.php.
