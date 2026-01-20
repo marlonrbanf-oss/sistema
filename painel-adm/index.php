@@ -8,6 +8,10 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
     exit();
 }
 
+// CAPTURA O NOME E NÍVEL DO USUÁRIO LOGADO
+$nome_usuario_logado = @$_SESSION['nome_usuario'];
+$nivel_logado = @$_SESSION['nivel_usuario'];
+
 $hoje = date('Y-m-d');
 
 // --- BUSCA DE ESTATÍSTICAS PARA OS CARDS ---
@@ -131,9 +135,25 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             margin: 10px 20px;
         }
 
+        /* BARRA SUPERIOR */
+        .header-top {
+            background: #fff;
+            margin: -24px -24px 25px -24px;
+            padding: 12px 25px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 min-height: auto;
+            }
+
+            .header-top {
+                margin: -24px -24px 15px -24px;
             }
         }
     </style>
@@ -178,6 +198,21 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             </div>
 
             <div class="col-md-10 p-4">
+
+                <div class="header-top">
+                    <div>
+                        <i class="far fa-calendar-alt text-muted mr-1"></i>
+                        <span class="text-muted"><?php echo date('d/m/Y'); ?></span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="mr-3">Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></span>
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style="width: 35px; height: 35px;">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+
                 <h4 class="font-weight-bold mb-4">Dashboard de Gestão</h4>
 
                 <div class="row mb-4">
