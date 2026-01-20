@@ -2,8 +2,8 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. VALIDAÇÃO DE SEGURANÇA
-if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin') {
+// 1. VALIDAÇÃO DE SEGURANÇA (Atualizada para incluir Professor)
+if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }

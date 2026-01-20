@@ -25,15 +25,16 @@ if ($linhas > 0) {
 	$_SESSION['id_usuario'] = $dados[0]['id'];
 	$_SESSION['nome_usuario'] = $dados[0]['nome'];
 	$_SESSION['email_usuario'] = $dados[0]['usuario'];
-	$_SESSION['nivel_usuario'] = $dados[0]['nivel']; // Coluna 'nivel'
+	$_SESSION['nivel_usuario'] = $dados[0]['nivel'];
 
 	$nivel = $dados[0]['nivel'];
 
-	// 4. Redirecionamento para as pastas da sua imagem
+	// 4. Redirecionamento baseado no nível (Professor entra no Balcão)
 	if ($nivel == 'Admin') {
 		echo "<script language='javascript'>window.location='painel-adm/index.php'; </script>";
 		exit();
-	} else if ($nivel == 'Balconista') {
+	} else if ($nivel == 'Balconista' || $nivel == 'Professor') {
+		// Redireciona ambos para a mesma pasta painel-balcao
 		echo "<script language='javascript'>window.location='painel-balcao/index.php'; </script>";
 		exit();
 	} else {
