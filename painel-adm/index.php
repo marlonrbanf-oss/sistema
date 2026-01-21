@@ -19,8 +19,8 @@ $total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->
 $total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
-// --- CONTAGEM DE AULAS EXPERIMENTAIS PENDENTES (Para a Badge) ---
-$total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE status = 'Experimental'")->rowCount();
+// --- CORREÇÃO DO ERRO: BUSCA EXPERIMENTAIS PELA DESCRIÇÃO (Já que não existe a coluna status) ---
+$total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor = '0' AND descricao LIKE '%EXPERIMENTAL%'")->rowCount();
 
 // --- LÓGICA DO GRÁFICO DE FAIXAS (AGRUPAMENTO DE SINÔNIMOS) ---
 $query_f = $pdo->query("SELECT cor_faixa, COUNT(*) as qtd FROM graduacoes GROUP BY cor_faixa");
@@ -138,7 +138,6 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             margin: 10px 20px;
         }
 
-        /* BARRA SUPERIOR */
         .header-top {
             background: #fff;
             margin: -24px -24px 25px -24px;
@@ -148,16 +147,6 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                min-height: auto;
-            }
-
-            .header-top {
-                margin: -24px -24px 15px -24px;
-            }
         }
     </style>
 </head>
@@ -177,7 +166,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     <a href="usuarios.php?nivel=Cliente"><i class="fas fa-user-graduate mr-2 text-success"></i>
                         Alunos</a>
                     <a href="usuarios.php?nivel=Professor"><i class="fas fa-chalkboard-teacher mr-2 text-warning"></i>
-                        Professores / Staff</a>
+                        Staff</a>
 
                     <a href="aulas_experimentais.php" class="d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-flask mr-2 text-info"></i> Experimentais</span>
@@ -192,35 +181,23 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 <div class="sidebar-footer">
                     <div class="divider"></div>
                     <small class="px-3 text-muted d-block mb-2">COBRANÇA & RETENÇÃO</small>
-
-                    <a href="usuarios.php?status=atrasado" class="text-danger font-weight-bold">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> Alunos Atrasados
-                    </a>
-
-                    <a href="alunos-inativos.php" class="text-secondary">
-                        <i class="fas fa-user-slash mr-2"></i> Alunos Inativos
-                    </a>
-
-                    <a href="../logout.php" class="text-white bg-danger mt-2 mx-2 rounded text-center py-2"
-                        style="border:none;">
-                        <i class="fas fa-sign-out-alt mr-2"></i> Sair
-                    </a>
+                    <a href="usuarios.php?status=atrasado" class="text-danger font-weight-bold"><i
+                            class="fas fa-exclamation-triangle mr-2"></i> Alunos Atrasados</a>
+                    <a href="alunos-inativos.php" class="text-secondary"><i class="fas fa-user-slash mr-2"></i> Alunos
+                        Inativos</a>
+                    <a href="../logout.php" class="text-white bg-danger mt-2 mx-2 rounded text-center py-2"><i
+                            class="fas fa-sign-out-alt mr-2"></i> Sair</a>
                 </div>
             </div>
 
             <div class="col-md-10 p-4">
-
                 <div class="header-top">
-                    <div>
-                        <i class="far fa-calendar-alt text-muted mr-1"></i>
-                        <span class="text-muted"><?php echo date('d/m/Y'); ?></span>
-                    </div>
+                    <div><i class="far fa-calendar-alt text-muted mr-1"></i><span
+                            class="text-muted"><?php echo date('d/m/Y'); ?></span></div>
                     <div class="d-flex align-items-center">
                         <span class="mr-3">Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></span>
                         <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                            style="width: 35px; height: 35px;">
-                            <i class="fas fa-user-check"></i>
-                        </div>
+                            style="width: 35px; height: 35px;"><i class="fas fa-user-check"></i></div>
                     </div>
                 </div>
 
@@ -297,36 +274,10 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                 <table class="table table-sm table-striped mb-0" style="font-size: 0.75rem;">
                                     <tbody>
                                         <?php
-                                        // Busca os últimos 8 logs para preencher melhor o espaço lateral
                                         $logs = $pdo->query("SELECT * FROM logs ORDER BY id DESC LIMIT 8")->fetchAll(PDO::FETCH_ASSOC);
-
-                                        if (count($logs) > 0) {
-                                            foreach ($logs as $l) {
-                                                $data_log = date('d/m H:i', strtotime($l['data']));
-
-                                                // Lógica visual para destacar validações de selos
-                                                $bg_log = "";
-                                                $icone = "<i class='fas fa-info-circle text-muted mr-1'></i>";
-
-                                                if (strpos($l['acao'], 'Validou selo') !== false) {
-                                                    $bg_log = "background-color: #f0fff4;"; // Leve tom de verde
-                                                    $icone = "<i class='fas fa-medal text-warning mr-1 shadow-sm'></i>";
-                                                }
-                                        ?>
-                                                <tr style="<?php echo $bg_log; ?>">
-                                                    <td class='p-2 px-3 border-bottom'>
-                                                        <small class='text-muted'><?php echo $data_log; ?></small> <br>
-                                                        <?php echo $icone; ?> <b><?php echo $l['usuario']; ?></b>:
-                                                        <span
-                                                            class="<?php echo ($bg_log != "") ? 'text-success font-weight-bold' : ''; ?>">
-                                                            <?php echo $l['acao']; ?>
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                        <?php
-                                            }
-                                        } else {
-                                            echo "<tr><td class='text-center p-4 text-muted'>Nenhuma atividade registrada.</td></tr>";
+                                        foreach ($logs as $l) {
+                                            $data_log = date('d/m H:i', strtotime($l['data']));
+                                            echo "<tr><td class='p-2 px-3 border-bottom'><small class='text-muted'>$data_log</small><br><b>{$l['usuario']}</b>: {$l['acao']}</td></tr>";
                                         }
                                         ?>
                                     </tbody>
@@ -355,10 +306,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12
-                        }
+                        position: 'bottom'
                     }
                 }
             }
@@ -370,8 +318,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 labels: ['Em Dia', 'Atrasado', 'Inativo'],
                 datasets: [{
                     data: [<?php echo $pagos ?>, <?php echo $atrasados ?>, <?php echo $inativos ?>],
-                    backgroundColor: ['#28a745', '#dc3545', '#adb5bd'],
-                    hoverOffset: 4
+                    backgroundColor: ['#28a745', '#dc3545', '#adb5bd']
                 }]
             },
             options: {
@@ -379,10 +326,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 cutout: '70%',
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12
-                        }
+                        position: 'bottom'
                     }
                 }
             }
