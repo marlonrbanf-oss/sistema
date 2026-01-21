@@ -17,12 +17,13 @@ $total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->
 $total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
-// --- BUSCA EXPERIMENTAIS PENDENTES ---
-$total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor = '0' AND descricao LIKE '%EXPERIMENTAL%'")->rowCount();
+// --- CORREÇÃO DE COLUNAS: Usando professor_id e observacoes conforme seu banco ---
+$total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor_id = '0' AND observacoes LIKE '%EXPERIMENTAL%'")->rowCount();
 
-// --- LÓGICA DO GRÁFICO DE FAIXAS ---
+// --- LÓGICA DO GRÁFICO DE FAIXAS (AGRUPAMENTO) ---
 $query_f = $pdo->query("SELECT cor_faixa, COUNT(*) as qtd FROM graduacoes GROUP BY cor_faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
+
 $consolidado = [];
 $traducao = ['branca' => 'Branca', 'white' => 'Branca', 'azul' => 'Azul', 'blue' => 'Azul', 'roxa' => 'Roxa', 'purple' => 'Roxa', 'marrom' => 'Marrom', 'brown' => 'Marrom', 'preta' => 'Preta', 'black' => 'Preta'];
 $mapa_cores = ['Branca' => '#FFFFFF', 'Azul' => '#007bff', 'Roxa' => '#6f42c1', 'Marrom' => '#6d4c41', 'Preta' => '#212529'];
@@ -151,7 +152,6 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     </a>
 
                     <a href="logs.php"><i class="fas fa-history mr-2"></i> Logs do Sistema</a>
-
                     <a href="relatorio_experimentais.php"><i class="fas fa-file-invoice mr-2 text-light"></i> Relatório
                         de Aulas</a>
                 </div>
@@ -172,7 +172,11 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 <div class="header-top">
                     <div><i class="far fa-calendar-alt text-muted mr-1"></i><span
                             class="text-muted"><?php echo date('d/m/Y'); ?></span></div>
-                    <div>Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></div>
+                    <div class="d-flex align-items-center">
+                        <span class="mr-3">Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></span>
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style="width: 35px; height: 35px;"><i class="fas fa-user-check"></i></div>
+                    </div>
                 </div>
 
                 <h4 class="font-weight-bold mb-4">Dashboard de Gestão</h4>
@@ -185,7 +189,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                 <div class="bg-light p-3 rounded mr-3 text-primary"><i
                                         class="fas fa-user-graduate fa-2x"></i></div>
                                 <div>
-                                    <p class="text-muted mb-0">ALUNOS</p>
+                                    <p class="text-muted mb-0 small">ALUNOS</p>
                                     <h2 class="font-weight-bold mb-0"><?php echo $total_alunos; ?></h2>
                                 </div>
                             </div>
@@ -198,7 +202,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                 <div class="bg-light p-3 rounded mr-3 text-warning"><i class="fas fa-users fa-2x"></i>
                                 </div>
                                 <div>
-                                    <p class="text-muted mb-0">STAFF</p>
+                                    <p class="text-muted mb-0 small">STAFF</p>
                                     <h2 class="font-weight-bold mb-0"><?php echo $total_staff; ?></h2>
                                 </div>
                             </div>
@@ -211,7 +215,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                 <div class="bg-light p-3 rounded mr-3 text-dark"><i
                                         class="fas fa-user-shield fa-2x"></i></div>
                                 <div>
-                                    <p class="text-muted mb-0">ADMINS</p>
+                                    <p class="text-muted mb-0 small">ADMINS</p>
                                     <h2 class="font-weight-bold mb-0"><?php echo $total_adm; ?></h2>
                                 </div>
                             </div>
@@ -220,19 +224,44 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 mb-4">
+                    <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom p-3">Distribuição por Faixa</div>
+                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold">DISTRIBUIÇÃO POR
+                                FAIXA</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartFaixas"></canvas></div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-4">
+                    <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom p-3 text-center">Saúde Financeira</div>
+                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold text-center">SAÚDE
+                                FINANCEIRA</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartMensalidade"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card shadow-sm h-100 border-top border-dark">
+                            <div
+                                class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                                <span class="small font-weight-bold">ATIVIDADE RECENTE</span>
+                                <a href="logs.php" class="btn btn-xs btn-outline-primary py-0"
+                                    style="font-size: 0.65rem;">HISTÓRICO</a>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm table-striped mb-0" style="font-size: 0.75rem;">
+                                    <tbody>
+                                        <?php
+                                        $logs = $pdo->query("SELECT * FROM logs ORDER BY id DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($logs as $l) {
+                                            $data_log = date('d/m H:i', strtotime($l['data']));
+                                            echo "<tr><td class='p-2 px-3 border-bottom'><small class='text-muted'>$data_log</small><br><b>{$l['usuario']}</b>: {$l['acao']}</td></tr>";
+                                        }
+                                        ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -257,7 +286,13 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            font: {
+                                size: 10
+                            }
+                        }
                     }
                 }
             }
@@ -274,10 +309,16 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             },
             options: {
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '75%',
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            font: {
+                                size: 10
+                            }
+                        }
                     }
                 }
             }
