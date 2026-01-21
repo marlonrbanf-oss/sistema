@@ -2,19 +2,18 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. VALIDAÇÃO DE SEGURANÇA (Garante que só Professor, Balconista ou Admin acessem)
+// 1. VALIDAÇÃO DE SEGURANÇA
 if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
-$id_professor = $_SESSION['id_usuario']; // ID do professor logado
+$id_professor = $_SESSION['id_usuario'];
 
-// Lógica para Aprovar ou Recusar via GET (simplificado)
+// Lógica para Aprovar ou Recusar (Apenas para pedidos normais)
 if (isset($_GET['acao']) && isset($_GET['id_pedido'])) {
     $status = ($_GET['acao'] == 'aprovar') ? 'Aprovado' : 'Recusado';
     $id_p = $_GET['id_pedido'];
-
     $pdo->query("UPDATE pedidos_aulas SET status = '$status' WHERE id = '$id_p'");
     echo "<script>window.location='pedidos-aulas.php'</script>";
     exit();
@@ -40,6 +39,11 @@ if (isset($_GET['acao']) && isset($_GET['id_pedido'])) {
             background-color: #343a40 !important;
             color: #fff !important;
         }
+
+        .badge-experimental {
+            background-color: #6f42c1;
+            color: white;
+        }
     </style>
 </head>
 
@@ -57,8 +61,7 @@ if (isset($_GET['acao']) && isset($_GET['id_pedido'])) {
 
         <div class="card card-dark shadow">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-calendar-check mr-2"></i> Solicitações de Aulas Particulares
-                </h3>
+                <h3 class="card-title"><i class="fas fa-calendar-check mr-2"></i> Solicitações e Experimentais</h3>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -67,42 +70,67 @@ if (isset($_GET['acao']) && isset($_GET['id_pedido'])) {
                             <tr>
                                 <th>Aluno</th>
                                 <th>Data</th>
-                                <th>Horário</th>
-                                <th>Status</th>
+                                <th>Info / Horário</th>
+                                <th>Status / Tipo</th>
                                 <th class="text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            // Busca os pedidos e o nome do aluno fazendo um JOIN
-                            $query = $pdo->prepare("SELECT p.*, u.nome as nome_aluno 
-                                                  FROM pedidos_aulas p 
-                                                  INNER JOIN usuarios u ON p.id_aluno = u.id 
-                                                  WHERE p.id_professor = :prof 
-                                                  ORDER BY p.data_pedido DESC");
+                            // QUERY UNIFICADA: Busca Pedidos normais E Aulas Experimentais
+                            // Usamos NULL para colunas que não existem em uma das tabelas para manter a união
+                            $sql = "SELECT id, id_aluno, data_aula as data, horario_aula as info, status, 'NORMAL' as tipo 
+                                    FROM pedidos_aulas 
+                                    WHERE id_professor = :prof
+                                    
+                                    UNION 
+                                    
+                                    SELECT id, aluno_id as id_aluno, data as data, observacoes as info, 'Agendada' as status, 'EXPERIMENTAL' as tipo 
+                                    FROM aulas_particulares 
+                                    WHERE professor_id = :prof AND observacoes LIKE '%EXPERIMENTAL%'
+                                    
+                                    ORDER BY data DESC";
+
+                            $query = $pdo->prepare($sql);
                             $query->bindValue(":prof", $id_professor);
                             $query->execute();
                             $pedidos = $query->fetchAll(PDO::FETCH_ASSOC);
 
                             if (count($pedidos) > 0) {
                                 foreach ($pedidos as $pedido) {
+                                    // Buscar nome do aluno
+                                    $id_aluno = $pedido['id_aluno'];
+                                    $q_aluno = $pdo->query("SELECT nome FROM usuarios WHERE id = '$id_aluno'");
+                                    $res_aluno = $q_aluno->fetch(PDO::FETCH_ASSOC);
+                                    $nome_aluno = $res_aluno['nome'] ?? 'Aluno Excluído';
+
+                                    // Estilo do Status
                                     $classe_status = 'badge-warning';
-                                    if ($pedido['status'] == 'Aprovado') $classe_status = 'badge-success';
+                                    if ($pedido['status'] == 'Aprovado' || $pedido['status'] == 'Agendada') $classe_status = 'badge-success';
                                     if ($pedido['status'] == 'Recusado') $classe_status = 'badge-danger';
+                                    if ($pedido['tipo'] == 'EXPERIMENTAL') $classe_status = 'badge-experimental';
+
+                                    // Formatar Informação (Horário ou Observação)
+                                    $info_exibir = $pedido['info'];
+                                    if ($pedido['tipo'] == 'NORMAL') $info_exibir = date('H:i', strtotime($pedido['info']));
                             ?>
                                     <tr>
-                                        <td><b><?php echo $pedido['nome_aluno']; ?></b></td>
-                                        <td><?php echo date('d/m/Y', strtotime($pedido['data_aula'])); ?></td>
-                                        <td><?php echo date('H:i', strtotime($pedido['horario_aula'])); ?></td>
-                                        <td><span
-                                                class="badge <?php echo $classe_status; ?>"><?php echo $pedido['status']; ?></span>
+                                        <td><b><?php echo $nome_aluno; ?></b></td>
+                                        <td><?php echo date('d/m/Y', strtotime($pedido['data'])); ?></td>
+                                        <td><small><?php echo $info_exibir; ?></small></td>
+                                        <td>
+                                            <span class="badge <?php echo $classe_status; ?>">
+                                                <?php echo ($pedido['tipo'] == 'EXPERIMENTAL') ? 'EXPERIMENTAL' : $pedido['status']; ?>
+                                            </span>
                                         </td>
                                         <td class="text-center">
-                                            <?php if ($pedido['status'] == 'Pendente'): ?>
+                                            <?php if ($pedido['tipo'] == 'NORMAL' && $pedido['status'] == 'Pendente'): ?>
                                                 <a href="pedidos-aulas.php?acao=aprovar&id_pedido=<?php echo $pedido['id']; ?>"
                                                     class="btn btn-xs btn-success shadow-sm mr-1">Aprovar</a>
                                                 <a href="pedidos-aulas.php?acao=recusar&id_pedido=<?php echo $pedido['id']; ?>"
                                                     class="btn btn-xs btn-danger shadow-sm">Recusar</a>
+                                            <?php elseif ($pedido['tipo'] == 'EXPERIMENTAL'): ?>
+                                                <span class="badge badge-info">Confirmada pelo Admin</span>
                                             <?php else: ?>
                                                 <span class="text-muted small">Finalizado</span>
                                             <?php endif; ?>
