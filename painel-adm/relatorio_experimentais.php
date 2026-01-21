@@ -11,7 +11,7 @@ if (@$_SESSION['nivel_usuario'] != 'Admin') {
 $mes_atual = isset($_GET['mes']) ? $_GET['mes'] : date('m');
 $ano_atual = isset($_GET['ano']) ? $_GET['ano'] : date('Y');
 
-// CORREÇÃO APLICADA: Busca usando aluno_id, professor_id e observacoes
+// Busca as aulas agendadas (professor_id != 0)
 $query = $pdo->query("SELECT a.*, u.nome as nome_aluno, p.nome as nome_professor 
                       FROM aulas_particulares a 
                       INNER JOIN usuarios u ON a.aluno_id = u.id 
@@ -23,13 +23,15 @@ $query = $pdo->query("SELECT a.*, u.nome as nome_aluno, p.nome as nome_professor
                       ORDER BY a.data DESC");
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 $total_mes = count($res);
+
+$meses = ["01" => "Janeiro", "02" => "Fevereiro", "03" => "Março", "04" => "Abril", "05" => "Maio", "06" => "Junho", "07" => "Julho", "08" => "Agosto", "09" => "Setembro", "10" => "Outubro", "11" => "Novembro", "12" => "Dezembro"];
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
-    <title>Relatório de Experimentais - Nova Arte BJJ</title>
+    <title>Relatório de Conversão - Nova Arte BJJ</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/bootstrap.css">
@@ -47,20 +49,14 @@ $total_mes = count($res);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
-        .table-resumo {
-            background: #fff;
-            border-radius: 10px;
-            overflow: hidden;
+        .thead-dark th {
+            background: #212529;
+            color: white;
         }
 
         @media print {
             .no-print {
                 display: none;
-            }
-
-            .card-stats {
-                box-shadow: none;
-                border: 1px solid #ddd;
             }
         }
     </style>
@@ -82,13 +78,10 @@ $total_mes = count($res);
                 <div class="col-md-4">
                     <label class="small font-weight-bold">Mês</label>
                     <select name="mes" class="form-control form-control-sm">
-                        <?php
-                        $meses = ["01" => "Janeiro", "02" => "Fevereiro", "03" => "Março", "04" => "Abril", "05" => "Maio", "06" => "Junho", "07" => "Julho", "08" => "Agosto", "09" => "Setembro", "10" => "Outubro", "11" => "Novembro", "12" => "Dezembro"];
-                        foreach ($meses as $num => $nome) {
+                        <?php foreach ($meses as $num => $nome) {
                             $sel = ($num == $mes_atual) ? "selected" : "";
                             echo "<option value='$num' $sel>$nome</option>";
-                        }
-                        ?>
+                        } ?>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -103,47 +96,41 @@ $total_mes = count($res);
         </div>
 
         <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card card-stats p-4 text-center border-top border-primary"
-                    style="border-width: 4px !important;">
-                    <h6 class="text-muted mb-1 text-uppercase small">Aulas Experimentais Agendadas</h6>
-                    <h1 class="font-weight-bold mb-0"><?php echo $total_mes; ?></h1>
-                    <small class="text-info">Período: <?php echo $meses[$mes_atual] ?> /
-                        <?php echo $ano_atual ?></small>
-                </div>
+            <div class="col-12 text-center card card-stats p-4 border-top border-primary"
+                style="border-width: 4px !important;">
+                <h6 class="text-muted mb-1 small">AULAS EXPERIMENTAIS REALIZADAS</h6>
+                <h1 class="font-weight-bold mb-0"><?php echo $total_mes; ?></h1>
+                <small class="text-info"><?php echo $meses[$mes_atual] ?> / <?php echo $ano_atual ?></small>
             </div>
         </div>
 
-        <div class="card table-resumo shadow-sm">
+        <div class="card card-stats overflow-hidden">
             <table class="table table-hover mb-0">
                 <thead class="thead-dark">
                     <tr>
                         <th>Data da Aula</th>
                         <th>Aluno</th>
                         <th>Professor Atribuído</th>
-                        <th class="text-right">Observações</th>
+                        <th class="text-right">Informações/Obs</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($res as $row) { ?>
+                    <?php foreach ($res as $row) {
+                        // Limpa a string "EXPERIMENTAL" das observações para mostrar apenas o horário ou notas extras
+                        $info_limpa = str_replace("EXPERIMENTAL - ", "", $row['observacoes'] ?? '');
+                    ?>
                         <tr>
-                            <td><b><?php echo date('d/m/Y', strtotime($row['data'])); ?></b>
-                                <small><?php echo $row['horario']; ?></small>
-                            </td>
+                            <td><b><?php echo date('d/m/Y', strtotime($row['data'])); ?></b></td>
                             <td><?php echo $row['nome_aluno']; ?></td>
                             <td><span class="badge badge-light p-2"><i class="fas fa-user-tie mr-1"></i>
                                     <?php echo $row['nome_professor']; ?></span></td>
-                            <td class="text-right text-muted small"><?php echo $row['observacoes']; ?></td>
+                            <td class="text-right text-muted small"><?php echo $info_limpa; ?></td>
                         </tr>
                     <?php }
-                    if ($total_mes == 0) echo "<tr><td colspan='4' class='text-center p-4'>Nenhum agendamento realizado neste período.</td></tr>"; ?>
+                    if ($total_mes == 0) echo "<tr><td colspan='4' class='text-center p-4'>Nenhum agendamento para este período.</td></tr>"; ?>
                 </tbody>
             </table>
         </div>
-
-        <footer class="mt-4 text-center text-muted small no-print">
-            Relatório gerado em <?php echo date('d/m/Y H:i'); ?> - Academia Nova Arte BJJ
-        </footer>
     </div>
 </body>
 
