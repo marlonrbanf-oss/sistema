@@ -126,6 +126,14 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
             border: none;
             padding: 10px 25px;
         }
+
+        /* Ajuste para mensagens de alerta no modal */
+        .small-alert {
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
     </style>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -158,7 +166,8 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                         </div>
 
                         <div class="text-center mt-3">
-                            <a class="text-danger small" href="" data-toggle="modal" data-target="#modal-rec">Esqueceu
+                            <a class="text-danger small font-weight-bold" href="" data-toggle="modal"
+                                data-target="#modal-rec">Esqueceu
                                 sua senha?</a>
                         </div>
 
@@ -236,24 +245,27 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
     </div>
 
     <div class="modal fade" id="modal-rec" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Recuperar Senha</h5>
+                    <h5 class="modal-title"><i class="fas fa-key mr-2"></i>Recuperar Senha</h5>
                     <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <form method="post">
-                        <div class="form-group">
-                            <label class="text-dark">Digite seu e-mail cadastrado</label>
-                            <input type="email" class="form-control" id="email-recuperar" name="email-recuperar"
-                                required>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-3 text-muted">
+                        <i class="fas fa-envelope-open-text fa-3x"></i>
+                    </div>
+                    <form method="post" id="form-recuperar">
+                        <div class="form-group text-left">
+                            <label class="text-dark font-weight-bold small">E-MAIL DE CADASTRO</label>
+                            <input type="email" class="form-control form-control-lg" id="email-recuperar"
+                                name="email-recuperar" placeholder="seu@email.com" required style="font-size: 16px;">
                         </div>
                         <div align="center" id="mensagem2"></div>
-                </div>
-                <div class="modal-footer">
-                    <button id="btn-rec" class="btn btn-dark-modal">ENVIAR SENHA</button>
                     </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button id="btn-rec" class="btn btn-dark-modal btn-block">ENVIAR SENHA</button>
                 </div>
             </div>
         </div>
@@ -295,21 +307,51 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
         $(document).ready(function() {
             $('#btn-rec').click(function(event) {
                 event.preventDefault();
+
+                var email = $('#email-recuperar').val();
+                if (email == "") {
+                    $('#mensagem2').removeClass().addClass('text-danger small font-weight-bold').text(
+                        "Por favor, preencha o e-mail.");
+                    return;
+                }
+
+                // Feedback visual de carregamento
+                var btn = $(this);
+                var btnOriginalText = btn.text();
+                btn.html('<i class="fas fa-spinner fa-spin"></i> ENVIANDO...').prop('disabled', true);
+                $('#mensagem2').text("");
+
                 $.ajax({
                     url: "recuperar.php",
                     method: "post",
-                    data: $('form').serialize(),
+                    data: {
+                        'email-recuperar': email
+                    },
                     dataType: "text",
                     success: function(mensagem) {
-                        $('#mensagem2').removeClass()
+                        $('#mensagem2').removeClass();
                         if (mensagem.trim() == 'Senha enviada para o seu Email!') {
-                            $('#mensagem2').addClass('text-success')
-                            $('#email-recuperar').val('')
+                            $('#mensagem2').addClass('alert alert-success small-alert').text(
+                                mensagem);
+                            $('#email-recuperar').val('');
+
+                            // Fecha o modal após 3 segundos
+                            setTimeout(function() {
+                                $('#modal-rec').modal('hide');
+                                $('#mensagem2').removeClass().text("");
+                            }, 3000);
                         } else {
-                            $('#mensagem2').addClass('text-danger')
+                            $('#mensagem2').addClass('alert alert-danger small-alert').text(
+                                mensagem);
                         }
-                        $('#mensagem2').text(mensagem)
                     },
+                    error: function() {
+                        $('#mensagem2').addClass('alert alert-danger small-alert').text(
+                            "Erro ao processar solicitação.");
+                    },
+                    complete: function() {
+                        btn.text(btnOriginalText).prop('disabled', false);
+                    }
                 })
             })
         })
