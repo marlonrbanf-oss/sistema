@@ -1,77 +1,95 @@
 <?php
-require_once("conexao.php");
+require_once("../conexao.php");
 
-// 1. Recebe todos os dados do formulário
-$nome = trim(@$_POST['nome']);
-$cpf = trim(@$_POST['cpf']);
-$telefone = trim(@$_POST['telefone']);
-$usuario = trim(@$_POST['email']);
-$endereco = trim(@$_POST['endereco']);
-$senha = trim(@$_POST['senha']);
-$experimental = @$_POST['experimental']; // Captura o checkbox da aula experimental
-$nivel = 'Cliente';
+$nome = $_POST['nome'];
+$cpf = $_POST['cpf'];
+$email = $_POST['email'];
+$senha = $_POST['senha'];
+$nivel = $_POST['nivel'];
+$telefone = $_POST['telefone'];
+$endereco = $_POST['endereco'];
+$data_venc = @$_POST['data_venc'];
+$id = $_POST['id'];
 
-// 2. Validação de campos obrigatórios
-if ($nome == "" || $usuario == "" || $senha == "" || $cpf == "") {
-    echo "Erro: Preencha Nome, E-mail, CPF e Senha!";
+// VALIDAR E-MAIL DUPLICADO
+$query = $pdo->query("SELECT * FROM usuarios WHERE email = '$email'");
+$res = $query->fetchAll(PDO::FETCH_ASSOC);
+$total_reg = @count($res);
+if ($total_reg > 0 && $res[0]['id'] != $id) {
+    echo 'E-mail já Cadastrado, escolha outro!';
     exit();
 }
 
-// 3. REGRA: Senha não pode ser igual ao E-mail
-if (strtolower($senha) === strtolower($usuario)) {
-    echo "Erro: Por segurança, sua senha não pode ser igual ao seu e-mail!";
+// VALIDAR CPF DUPLICADO
+$query = $pdo->query("SELECT * FROM usuarios WHERE cpf = '$cpf'");
+$res = $query->fetchAll(PDO::FETCH_ASSOC);
+$total_reg = @count($res);
+if ($total_reg > 0 && $res[0]['id'] != $id) {
+    echo 'CPF já Cadastrado!';
     exit();
 }
 
-// 4. REGRA: Senha ÚNICA para o Check-in
-$query_senha = $pdo->prepare("SELECT id FROM usuarios WHERE senha = :senha");
-$query_senha->bindValue(":senha", $senha);
-$query_senha->execute();
+// SCRIPT PARA SUBIR FOTO NO SERVIDOR
+$nome_img = date('d-m-Y-H-i-s') . '-' . @$_FILES['foto']['name'];
+$nome_img = preg_replace('/[ :]+/', '-', $nome_img);
+$caminho = "../img/perfil/" . $nome_img;
 
-if ($query_senha->rowCount() > 0) {
-    echo "Erro: Esta senha já está em uso por outro aluno!";
-    exit();
+$imagem_temp = @$_FILES['foto']['tmp_name'];
+
+if (@$_FILES['foto']['name'] != "") {
+    $extensao = pathinfo($nome_img, PATHINFO_EXTENSION);
+    if ($extensao == 'png' || $extensao == 'jpg' || $extensao == 'jpeg' || $extensao == 'gif') {
+        move_uploaded_file($imagem_temp, $caminho);
+    } else {
+        echo 'Extensão de Imagem não permitida!';
+        exit();
+    }
+} else {
+    $nome_img = 'sem-perfil.jpg';
 }
 
-// 5. Verifica duplicidade de E-mail ou CPF
-$query_duplicado = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = :usuario OR cpf = :cpf");
-$query_duplicado->bindValue(":usuario", $usuario);
-$query_duplicado->bindValue(":cpf", $cpf);
-$query_duplicado->execute();
+if ($id == "") {
+    // INSERIR NOVO USUÁRIO
+    $res = $pdo->prepare("INSERT INTO usuarios SET nome = :nome, cpf = :cpf, email = :email, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, foto = '$nome_img', ativo = 'Sim', data_venc = :data_venc, data_cad = curDate()");
 
-if ($query_duplicado->rowCount() > 0) {
-    echo "Erro: Este E-mail ou CPF já está cadastrado!";
-    exit();
+    $res->bindValue(":data_venc", $data_venc);
+} else {
+    // EDITAR USUÁRIO EXISTENTE
+    if (@$_FILES['foto']['name'] != "") {
+        $res = $pdo->prepare("UPDATE usuarios SET nome = :nome, cpf = :cpf, email = :email, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, foto = '$nome_img', data_venc = :data_venc WHERE id = :id");
+    } else {
+        $res = $pdo->prepare("UPDATE usuarios SET nome = :nome, cpf = :cpf, email = :email, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, data_venc = :data_venc WHERE id = :id");
+    }
+    $res->bindValue(":id", $id);
+    $res->bindValue(":data_venc", $data_venc);
 }
-
-// 6. INSERÇÃO COMPLETA
-$res = $pdo->prepare("INSERT INTO usuarios (nome, cpf, telefone, usuario, endereco, senha, nivel) 
-                      VALUES (:nome, :cpf, :telefone, :usuario, :endereco, :senha, :nivel)");
 
 $res->bindValue(":nome", $nome);
 $res->bindValue(":cpf", $cpf);
-$res->bindValue(":telefone", $telefone);
-$res->bindValue(":usuario", $usuario);
-$res->bindValue(":endereco", $endereco);
+$res->bindValue(":email", $email);
 $res->bindValue(":senha", $senha);
 $res->bindValue(":nivel", $nivel);
+$res->bindValue(":telefone", $telefone);
+$res->bindValue(":endereco", $endereco);
+$res->execute();
 
-if ($res->execute()) {
+// --- FUNCIONALIDADE DE AULA EXPERIMENTAL (CORRIGIDA) ---
+if (@$_POST['experimental'] == 'Sim' && $id == "") {
     $ultimo_id = $pdo->lastInsertId();
+    $hoje = date('Y-m-d');
 
-    // 7. Criação da graduação inicial
-    $pdo->query("INSERT INTO graduacoes (usuario_id, cor_faixa, graus, total_aulas) VALUES ('$ultimo_id', 'Branca', 0, 0)");
+    // Mapeamento exato para as colunas: aluno_id, professor_id, tema, data, observacoes
+    $res_exp = $pdo->prepare("INSERT INTO aulas_particulares SET 
+        aluno_id = :aluno, 
+        professor_id = '0', 
+        data = :data, 
+        tema = 'Aula Experimental', 
+        horario = '00:00',
+        observacoes = 'EXPERIMENTAL'");
 
-    // 8. LÓGICA DA AULA EXPERIMENTAL (Sem alterar banco)
-    // Inserimos na tabela de aulas particulares com professor 0 e status Experimental
-    if ($experimental == 'Sim') {
-        $res_exp = $pdo->prepare("INSERT INTO aulas_particulares (cliente, professor, data, status, descricao) 
-                                  VALUES (:cliente, '0', CURDATE(), 'Experimental', 'NOVO ALUNO: SOLICITOU AULA EXPERIMENTAL NO CADASTRO')");
-        $res_exp->bindValue(":cliente", $ultimo_id);
-        $res_exp->execute();
-    }
-
-    echo "Cadastrado com Sucesso!!";
-} else {
-    echo "Erro ao processar o cadastro no banco de dados.";
+    $res_exp->bindValue(":aluno", $ultimo_id);
+    $res_exp->bindValue(":data", $hoje);
+    $res_exp->execute();
 }
+
+echo 'Salvo com Sucesso';
