@@ -4,10 +4,11 @@ require_once("conexao.php");
 // 1. Recebe todos os dados do formulário
 $nome = trim(@$_POST['nome']);
 $cpf = trim(@$_POST['cpf']);
-$telefone = trim(@$_POST['telefone']); // Captura o telefone do formulário
+$telefone = trim(@$_POST['telefone']);
 $usuario = trim(@$_POST['email']);
-$endereco = trim(@$_POST['endereco']); // Captura o endereço
+$endereco = trim(@$_POST['endereco']);
 $senha = trim(@$_POST['senha']);
+$experimental = @$_POST['experimental']; // Captura o checkbox da aula experimental
 $nivel = 'Cliente';
 
 // 2. Validação de campos obrigatórios
@@ -43,7 +44,7 @@ if ($query_duplicado->rowCount() > 0) {
     exit();
 }
 
-// 6. INSERÇÃO COMPLETA: Incluindo telefone e endereço para evitar o erro de 'default value'
+// 6. INSERÇÃO COMPLETA
 $res = $pdo->prepare("INSERT INTO usuarios (nome, cpf, telefone, usuario, endereco, senha, nivel) 
                       VALUES (:nome, :cpf, :telefone, :usuario, :endereco, :senha, :nivel)");
 
@@ -56,10 +57,21 @@ $res->bindValue(":senha", $senha);
 $res->bindValue(":nivel", $nivel);
 
 if ($res->execute()) {
-    // 7. Criação da graduação inicial
     $ultimo_id = $pdo->lastInsertId();
+
+    // 7. Criação da graduação inicial
     $pdo->query("INSERT INTO graduacoes (usuario_id, cor_faixa, graus, total_aulas) VALUES ('$ultimo_id', 'Branca', 0, 0)");
-    echo "Cadastrado com Sucesso!";
+
+    // 8. LÓGICA DA AULA EXPERIMENTAL (Sem alterar banco)
+    // Inserimos na tabela de aulas particulares com professor 0 e status Experimental
+    if ($experimental == 'Sim') {
+        $res_exp = $pdo->prepare("INSERT INTO aulas_particulares (cliente, professor, data, status, descricao) 
+                                  VALUES (:cliente, '0', CURDATE(), 'Experimental', 'NOVO ALUNO: SOLICITOU AULA EXPERIMENTAL NO CADASTRO')");
+        $res_exp->bindValue(":cliente", $ultimo_id);
+        $res_exp->execute();
+    }
+
+    echo "Cadastrado com Sucesso!!";
 } else {
     echo "Erro ao processar o cadastro no banco de dados.";
 }

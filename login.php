@@ -164,6 +164,19 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                             <a href="" class="text-dark font-weight-bold" data-toggle="modal"
                                 data-target="#modal-login">Matricule-se</a>
                         </div>
+                        <div class="form-group mt-3">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="experimental"
+                                    name="experimental" value="Sim">
+                                <label class="custom-control-label text-dark font-weight-bold" for="experimental"
+                                    style="cursor:pointer;">
+                                    Desejo uma aula experimental
+                                </label>
+                            </div>
+                            <small style="color: #999; font-size: 11px; display: block;">
+                                Somente para pessoas que nunca fizeram jiu-jítsu.
+                            </small>
+                        </div>
 
                         <div class="text-center mt-3">
                             <a class="text-danger small font-weight-bold" href="" data-toggle="modal"

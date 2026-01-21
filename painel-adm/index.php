@@ -19,6 +19,9 @@ $total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->
 $total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
+// --- CONTAGEM DE AULAS EXPERIMENTAIS PENDENTES (Para a Badge) ---
+$total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE status = 'Experimental'")->rowCount();
+
 // --- LÓGICA DO GRÁFICO DE FAIXAS (AGRUPAMENTO DE SINÔNIMOS) ---
 $query_f = $pdo->query("SELECT cor_faixa, COUNT(*) as qtd FROM graduacoes GROUP BY cor_faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
@@ -175,6 +178,14 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                         Alunos</a>
                     <a href="usuarios.php?nivel=Professor"><i class="fas fa-chalkboard-teacher mr-2 text-warning"></i>
                         Professores / Staff</a>
+
+                    <a href="aulas_experimentais.php" class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-flask mr-2 text-info"></i> Experimentais</span>
+                        <?php if ($total_experimentais > 0): ?>
+                            <span class="badge badge-danger"><?php echo $total_experimentais; ?></span>
+                        <?php endif; ?>
+                    </a>
+
                     <a href="logs.php"><i class="fas fa-history mr-2"></i> Logs do Sistema</a>
                 </div>
 
