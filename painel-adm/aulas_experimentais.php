@@ -10,17 +10,27 @@ if (@$_SESSION['nivel_usuario'] != 'Admin') {
 
 $hoje = date('Y-m-d');
 
-// Lógica para Salvar o Agendamento - ATUALIZADO PARA professor_id
+// Lógica para Salvar o Agendamento
 if (isset($_POST['id_aula'])) {
     $id_aula = $_POST['id_aula'];
     $id_professor = $_POST['professor'];
     $data_aula = $_POST['data_aula'];
-    $horario = $_POST['horario'];
+    $horario = $_POST['horario']; // Pegamos o valor do formulário
 
-    $res = $pdo->prepare("UPDATE aulas_particulares SET professor_id = :prof, data = :data, horario = :hora WHERE id = :id");
+    // CORREÇÃO: Como não existe a coluna 'horario', vamos salvar a hora junto com a observação
+    // para você não perder a informação de que horas será a aula.
+    $obs_final = "EXPERIMENTAL - Hora: " . $horario;
+
+    // Removemos o campo 'horario' da query abaixo para evitar o erro Fatal
+    $res = $pdo->prepare("UPDATE aulas_particulares SET 
+        professor_id = :prof, 
+        data = :data, 
+        observacoes = :obs 
+        WHERE id = :id");
+
     $res->bindValue(":prof", $id_professor);
     $res->bindValue(":data", $data_aula);
-    $res->bindValue(":hora", $horario);
+    $res->bindValue(":obs", $obs_final);
     $res->bindValue(":id", $id_aula);
     $res->execute();
 
@@ -65,10 +75,6 @@ if (isset($_POST['id_aula'])) {
             padding: 4px 8px;
             font-size: 0.8rem;
         }
-
-        .btn-whatsapp:hover {
-            background-color: #1ebe57;
-        }
     </style>
 </head>
 
@@ -77,7 +83,7 @@ if (isset($_POST['id_aula'])) {
         <div class="row justify-content-center">
             <div class="col-md-11">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="font-weight-bold"><i class="fas fa-flask text-info mr-2"></i> Solicitações de Aulas
+                    <h4 class="font-weight-bold"><i class="fas fa-flask text-info mr-2"></i> Solicitações de
                         Experimentais</h4>
                     <a href="index.php" class="btn btn-sm btn-dark shadow-sm">Voltar ao Dashboard</a>
                 </div>
@@ -88,15 +94,14 @@ if (isset($_POST['id_aula'])) {
                             <thead class="thead-light">
                                 <tr>
                                     <th>Aluno</th>
-                                    <th>Contacto (WhatsApp)</th>
-                                    <th>Data do Pedido</th>
-                                    <th>Situação</th>
+                                    <th>WhatsApp</th>
+                                    <th>Data Pedido</th>
                                     <th class="text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php
-                                // QUERY ATUALIZADA: aluno_id, professor_id e observacoes
+                                // Busca apenas as que ainda não tem professor (pendentes)
                                 $query = $pdo->query("SELECT a.*, u.nome as nome_aluno, u.telefone 
                                                       FROM aulas_particulares a 
                                                       INNER JOIN usuarios u ON a.aluno_id = u.id 
@@ -105,33 +110,25 @@ if (isset($_POST['id_aula'])) {
                                 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
                                 foreach ($res as $row) {
-                                    $dataF = date('d/m/Y', strtotime($row['data']));
-                                    $tel = $row['telefone'];
-                                    $whatsapp_num = preg_replace('/[^0-9]/', '', $tel);
-
-                                    $texto_wp = "Olá " . $row['nome_aluno'] . ", aqui é da *Academia Nova Arte BJJ*! Recebemos seu pedido para uma aula experimental. Gostaria de verificar qual o melhor horário para você?";
-                                    $texto_url = urlencode($texto_wp);
+                                    $whatsapp_num = preg_replace('/[^0-9]/', '', $row['telefone']);
                                 ?>
                                     <tr>
                                         <td><b><?php echo $row['nome_aluno']; ?></b></td>
                                         <td>
-                                            <a href="https://api.whatsapp.com/send?phone=55<?php echo $whatsapp_num; ?>&text=<?php echo $texto_url; ?>"
-                                                target="_blank" class="btn-whatsapp shadow-sm">
-                                                <i class="fab fa-whatsapp mr-1"></i> Chamar Aluno
+                                            <a href="https://api.whatsapp.com/send?phone=55<?php echo $whatsapp_num; ?>"
+                                                target="_blank" class="btn-whatsapp">
+                                                <i class="fab fa-whatsapp"></i> Chamar
                                             </a>
-                                            <small class="text-muted ml-2"><?php echo $tel; ?></small>
                                         </td>
-                                        <td><?php echo $dataF; ?></td>
-                                        <td><span class="status-badge bg-warning text-dark border">Pendente</span></td>
+                                        <td><?php echo date('d/m/Y', strtotime($row['data'])); ?></td>
                                         <td class="text-center">
-                                            <button class="btn btn-primary btn-sm shadow-sm"
+                                            <button class="btn btn-primary btn-sm"
                                                 onclick="agendar('<?php echo $row['id']; ?>', '<?php echo $row['nome_aluno']; ?>')">
-                                                <i class="fas fa-calendar-alt mr-1"></i> Agendar Aula
+                                                <i class="fas fa-calendar-alt"></i> Agendar
                                             </button>
                                         </td>
                                     </tr>
-                                <?php }
-                                if (count($res) == 0) echo "<tr><td colspan='5' class='text-center p-5 text-muted'>Nenhuma nova solicitação de aula experimental no momento.</td></tr>"; ?>
+                                <?php } ?>
                             </tbody>
                         </table>
                     </div>
@@ -141,26 +138,24 @@ if (isset($_POST['id_aula'])) {
     </div>
 
     <div class="modal fade" id="modalAgendar" tabindex="-1" role="dialog">
-        <div class="modal-dialog shadow-lg" role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header bg-dark text-white border-0">
-                    <h5 class="modal-title font-weight-bold">Confirmar Agendamento</h5>
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Confirmar Agendamento</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <form method="post">
                     <div class="modal-body">
                         <input type="hidden" id="id_aula" name="id_aula">
-                        <div class="alert alert-secondary text-dark border-0">Aluno: <b id="nome_aluno_modal"></b></div>
+                        <p>Aluno: <b id="nome_aluno_modal"></b></p>
 
                         <div class="form-group">
-                            <label class="font-weight-bold">Selecionar Professor</label>
-                            <select class="form-control form-control-lg" name="professor" required
-                                style="font-size: 1rem;">
-                                <option value="">Escolha um instrutor...</option>
+                            <label>Professor</label>
+                            <select class="form-control" name="professor" required>
+                                <option value="">Escolha...</option>
                                 <?php
-                                $query_p = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Professor' ORDER BY nome ASC");
-                                $professores = $query_p->fetchAll(PDO::FETCH_ASSOC);
-                                foreach ($professores as $p) {
+                                $profs = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Professor' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
+                                foreach ($profs as $p) {
                                     echo "<option value='{$p['id']}'>{$p['nome']}</option>";
                                 }
                                 ?>
@@ -169,23 +164,18 @@ if (isset($_POST['id_aula'])) {
 
                         <div class="row">
                             <div class="col-6">
-                                <div class="form-group">
-                                    <label class="font-weight-bold">Data</label>
-                                    <input type="date" class="form-control" name="data_aula"
-                                        value="<?php echo $hoje; ?>" required>
-                                </div>
+                                <label>Data</label>
+                                <input type="date" class="form-control" name="data_aula" value="<?php echo $hoje; ?>"
+                                    required>
                             </div>
                             <div class="col-6">
-                                <div class="form-group">
-                                    <label class="font-weight-bold">Horário</label>
-                                    <input type="time" class="form-control" name="horario" required>
-                                </div>
+                                <label>Horário</label>
+                                <input type="time" class="form-control" name="horario" required>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success px-4">Salvar Agendamento</button>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Salvar Agendamento</button>
                     </div>
                 </form>
             </div>
