@@ -1,27 +1,40 @@
 <?php
-require_once("conexao.php");
+@session_start();
+// Caminho corrigido para funcionar tanto local quanto no servidor Railway
+if (file_exists("conexao.php")) {
+    require_once("conexao.php");
+} else {
+    require_once("../conexao.php");
+}
 
+// Captura de variáveis com proteção para campos não preenchidos
 $nome = $_POST['nome'];
 $cpf = $_POST['cpf'];
-$email = $_POST['email'];
+$email = $_POST['email']; // Este é o valor vindo do formulário
 $senha = $_POST['senha'];
-$nivel = $_POST['nivel'];
+$nivel = isset($_POST['nivel']) ? $_POST['nivel'] : 'Cliente';
 $telefone = $_POST['telefone'];
 $endereco = $_POST['endereco'];
 $data_venc = @$_POST['data_venc'];
 $id = $_POST['id'];
 
-// VALIDAR E-MAIL DUPLICADO
-$query = $pdo->query("SELECT * FROM usuarios WHERE email = '$email'");
+// --- CORREÇÃO: No seu banco a coluna chama-se 'usuario' em vez de 'email' ---
+
+// VALIDAR USUÁRIO (E-MAIL) DUPLICADO
+$query = $pdo->prepare("SELECT * FROM usuarios WHERE usuario = :usuario");
+$query->bindValue(":usuario", $email);
+$query->execute();
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 $total_reg = @count($res);
 if ($total_reg > 0 && $res[0]['id'] != $id) {
-    echo 'E-mail já Cadastrado, escolha outro!';
+    echo 'E-mail (Usuário) já Cadastrado, escolha outro!';
     exit();
 }
 
 // VALIDAR CPF DUPLICADO
-$query = $pdo->query("SELECT * FROM usuarios WHERE cpf = '$cpf'");
+$query = $pdo->prepare("SELECT * FROM usuarios WHERE cpf = :cpf");
+$query->bindValue(":cpf", $cpf);
+$query->execute();
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 $total_reg = @count($res);
 if ($total_reg > 0 && $res[0]['id'] != $id) {
@@ -45,40 +58,45 @@ if (@$_FILES['foto']['name'] != "") {
         exit();
     }
 } else {
-    $nome_img = 'sem-perfil.jpg';
+    // Se for edição e não mudar a foto, mantém a antiga. Se for novo, usa padrão.
+    if ($id == "") {
+        $nome_img = 'sem-perfil.jpg';
+    } else {
+        // Busca a foto atual para não sobrescrever com 'sem-perfil' ao editar sem subir foto nova
+        $query_foto = $pdo->query("SELECT foto FROM usuarios WHERE id = '$id'");
+        $res_foto = $query_foto->fetch(PDO::FETCH_ASSOC);
+        $nome_img = $res_foto['foto'];
+    }
 }
 
-if ($id == "") {
-    // INSERIR NOVO USUÁRIO
-    $res = $pdo->prepare("INSERT INTO usuarios SET nome = :nome, cpf = :cpf, email = :email, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, foto = '$nome_img', ativo = 'Sim', data_venc = :data_venc, data_cad = curDate()");
+// --- SALVAMENTO NO BANCO (Nomes de colunas conforme sua imagem do Railway) ---
 
-    $res->bindValue(":data_venc", $data_venc);
+if ($id == "") {
+    // INSERIR NOVO USUÁRIO (Coluna 'usuario' recebe o $email do form)
+    $res = $pdo->prepare("INSERT INTO usuarios SET nome = :nome, cpf = :cpf, usuario = :usuario, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, foto = :foto, ativo = 'Sim', data_venc = :data_venc, data_cad = curDate()");
 } else {
     // EDITAR USUÁRIO EXISTENTE
-    if (@$_FILES['foto']['name'] != "") {
-        $res = $pdo->prepare("UPDATE usuarios SET nome = :nome, cpf = :cpf, email = :email, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, foto = '$nome_img', data_venc = :data_venc WHERE id = :id");
-    } else {
-        $res = $pdo->prepare("UPDATE usuarios SET nome = :nome, cpf = :cpf, email = :email, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, data_venc = :data_venc WHERE id = :id");
-    }
+    $res = $pdo->prepare("UPDATE usuarios SET nome = :nome, cpf = :cpf, usuario = :usuario, senha = :senha, nivel = :nivel, telefone = :telefone, endereco = :endereco, foto = :foto, data_venc = :data_venc WHERE id = :id");
     $res->bindValue(":id", $id);
-    $res->bindValue(":data_venc", $data_venc);
 }
 
 $res->bindValue(":nome", $nome);
 $res->bindValue(":cpf", $cpf);
-$res->bindValue(":email", $email);
+$res->bindValue(":usuario", $email);
 $res->bindValue(":senha", $senha);
 $res->bindValue(":nivel", $nivel);
 $res->bindValue(":telefone", $telefone);
 $res->bindValue(":endereco", $endereco);
+$res->bindValue(":foto", $nome_img);
+$res->bindValue(":data_venc", $data_venc);
 $res->execute();
 
-// --- FUNCIONALIDADE DE AULA EXPERIMENTAL (CORRIGIDA) ---
+// --- FUNCIONALIDADE DE AULA EXPERIMENTAL (Tabela: aulas_particulares) ---
 if (@$_POST['experimental'] == 'Sim' && $id == "") {
     $ultimo_id = $pdo->lastInsertId();
     $hoje = date('Y-m-d');
 
-    // Mapeamento exato para as colunas: aluno_id, professor_id, tema, data, observacoes
+    // Colunas confirmadas na sua imagem: aluno_id, professor_id, tema, data, observacoes
     $res_exp = $pdo->prepare("INSERT INTO aulas_particulares SET 
         aluno_id = :aluno, 
         professor_id = '0', 
