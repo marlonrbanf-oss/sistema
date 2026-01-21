@@ -238,6 +238,15 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 <p>Evolução Técnica</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="graficos_evolucao.php" class="nav-link">
+                                <i class="nav-icon fas fa-chart-pie text-warning"></i>
+                                <p>
+                                    Meus Gráficos
+                                    <span class="badge badge-info right">Novo</span>
+                                </p>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
             </div>
