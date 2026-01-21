@@ -11,13 +11,13 @@ if (@$_SESSION['nivel_usuario'] != 'Admin') {
 $mes_atual = isset($_GET['mes']) ? $_GET['mes'] : date('m');
 $ano_atual = isset($_GET['ano']) ? $_GET['ano'] : date('Y');
 
-// Busca as aulas experimentais que JÁ FORAM AGENDADAS (professor > 0)
+// CORREÇÃO APLICADA: Busca usando aluno_id, professor_id e observacoes
 $query = $pdo->query("SELECT a.*, u.nome as nome_aluno, p.nome as nome_professor 
                       FROM aulas_particulares a 
-                      INNER JOIN usuarios u ON a.cliente = u.id 
-                      INNER JOIN usuarios p ON a.professor = p.id
-                      WHERE a.descricao LIKE '%EXPERIMENTAL%' 
-                      AND a.professor != '0'
+                      INNER JOIN usuarios u ON a.aluno_id = u.id 
+                      INNER JOIN usuarios p ON a.professor_id = p.id
+                      WHERE a.observacoes LIKE '%EXPERIMENTAL%' 
+                      AND a.professor_id != '0'
                       AND MONTH(a.data) = '$mes_atual' 
                       AND YEAR(a.data) = '$ano_atual'
                       ORDER BY a.data DESC");
@@ -121,7 +121,7 @@ $total_mes = count($res);
                         <th>Data da Aula</th>
                         <th>Aluno</th>
                         <th>Professor Atribuído</th>
-                        <th class="text-right">Descrição Original</th>
+                        <th class="text-right">Observações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,7 +133,7 @@ $total_mes = count($res);
                             <td><?php echo $row['nome_aluno']; ?></td>
                             <td><span class="badge badge-light p-2"><i class="fas fa-user-tie mr-1"></i>
                                     <?php echo $row['nome_professor']; ?></span></td>
-                            <td class="text-right text-muted small"><?php echo $row['descricao']; ?></td>
+                            <td class="text-right text-muted small"><?php echo $row['observacoes']; ?></td>
                         </tr>
                     <?php }
                     if ($total_mes == 0) echo "<tr><td colspan='4' class='text-center p-4'>Nenhum agendamento realizado neste período.</td></tr>"; ?>

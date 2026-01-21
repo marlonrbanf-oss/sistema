@@ -10,14 +10,14 @@ if (@$_SESSION['nivel_usuario'] != 'Admin') {
 
 $hoje = date('Y-m-d');
 
-// Lógica para Salvar o Agendamento
+// Lógica para Salvar o Agendamento - ATUALIZADO PARA professor_id
 if (isset($_POST['id_aula'])) {
     $id_aula = $_POST['id_aula'];
     $id_professor = $_POST['professor'];
     $data_aula = $_POST['data_aula'];
     $horario = $_POST['horario'];
 
-    $res = $pdo->prepare("UPDATE aulas_particulares SET professor = :prof, data = :data, horario = :hora WHERE id = :id");
+    $res = $pdo->prepare("UPDATE aulas_particulares SET professor_id = :prof, data = :data, horario = :hora WHERE id = :id");
     $res->bindValue(":prof", $id_professor);
     $res->bindValue(":data", $data_aula);
     $res->bindValue(":hora", $horario);
@@ -96,21 +96,19 @@ if (isset($_POST['id_aula'])) {
                             </thead>
                             <tbody>
                                 <?php
+                                // QUERY ATUALIZADA: aluno_id, professor_id e observacoes
                                 $query = $pdo->query("SELECT a.*, u.nome as nome_aluno, u.telefone 
                                                       FROM aulas_particulares a 
-                                                      INNER JOIN usuarios u ON a.cliente = u.id 
-                                                      WHERE a.professor = '0' AND a.descricao LIKE '%EXPERIMENTAL%' 
+                                                      INNER JOIN usuarios u ON a.aluno_id = u.id 
+                                                      WHERE a.professor_id = '0' AND a.observacoes LIKE '%EXPERIMENTAL%' 
                                                       ORDER BY a.id DESC");
                                 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
                                 foreach ($res as $row) {
                                     $dataF = date('d/m/Y', strtotime($row['data']));
                                     $tel = $row['telefone'];
-
-                                    // Limpa o número para o link do WhatsApp
                                     $whatsapp_num = preg_replace('/[^0-9]/', '', $tel);
 
-                                    // MENSAGEM PERSONALIZADA
                                     $texto_wp = "Olá " . $row['nome_aluno'] . ", aqui é da *Academia Nova Arte BJJ*! Recebemos seu pedido para uma aula experimental. Gostaria de verificar qual o melhor horário para você?";
                                     $texto_url = urlencode($texto_wp);
                                 ?>
