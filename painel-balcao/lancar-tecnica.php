@@ -23,14 +23,25 @@ if (count($res) == 0) {
 }
 $nome_aluno = $res[0]['nome'];
 
-// Mapeamento de Técnicas x Posições (Ajuste conforme sua preferência)
+// Mapeamento de Técnicas x Posições (ATUALIZADO COM LIÇÕES 1 A 50)
 $mapa_tecnicas = [
-    'Quedas' => ['Baiana', 'Single leg', 'Ippon Seoi', 'Koshi Guruma', 'Sprawl', 'Defesa de tapa com queda'],
-    'passagem de guarda' => ['Toreando', 'Passagem com joelho por dentro', 'Passagem de meia guarda joelho cruzado', 'Postura de guarda e passagem'],
-    'guarda fechada por baixo' => ['Raspagem tesourada', 'Chave de braço na guarda', 'Triângulo', 'Kimura', 'Guilhotina'],
-    'montada ataque (por cima)' => ['Ezequiel da montada', 'Arm-lock', 'Estrangulamento montado', 'Americana'],
-    'Defesa Pessoal' => ['Gravata por trás', 'Abraço por trás', 'Saída de gravata lateral', 'Defesa de jab'],
-    'Fundamentos' => ['Princípio da Alavanca', 'Rolamento de frente', 'Fuga de quadril', 'Levantada técnica']
+    'Fundamentos' => ['Princípio da Alavanca', 'Gangorra + Levantada técnica', 'Rolamento de costas + Fuga de quadril', 'Rolamento de frente', 'Educativo para pé na virilha', 'Esgrima'],
+    'Defesa Pessoal' => ['Gravata por trás', 'Defesa de tapa com queda', 'Abraço por cima dos braços por trás', 'Abraço por cima dos braços', 'Gravata por trás (sentido contrário)', 'Defesa gravata com soco', 'Defesa de gravata lateral', 'Empurrão no peito (1 e 2 mãos)', 'Abraço pela frente por baixo dos braços', 'Saída de gravata lateral/chão (com gancho)', 'Defesa de jab'],
+    'Quedas' => ['Sprawl', 'Koshi Guruma com defesa pessoal', 'Baiana', 'Guilhotina puxando pra guarda', 'Baiana de joelhos', 'Single leg', 'Cinturada por trás', 'Pegada na perna com varredura por dentro', 'Ippon Seoi', 'Esgrima com single leg'],
+    'montada ataque (por cima)' => ['Montada + Arm-lock', 'Estrangulamento montado', 'Montada com chave de braço (ataque duplo)', 'Montada com estrangulamento (ataque duplo)', 'Montada técnica com estrangulamento pela gola', 'Montada técnica com chave de braço', 'Ezequiel da montada', 'Montada técnica (com perna em pé)', 'Arm-lock da Montada S', 'Triângulo da Montada', 'Guilhotina da Montada', 'Ezequiel da Montada', 'Triângulo da Montada Técnica (S-Mount)', 'Arm-lock técnico da montada'],
+    'costas ataque' => ['Pegada pelas costas + Mata leão', 'Seat belt + pegada pelas costas', 'Retenção das costas', 'Estrangulamento de golas', 'Triângulo das costas', 'Arco e flecha (Bow and Arrow)', 'Crucifixo das costas', 'Estrangulamento gola técnica', 'Mata-leão controle punho (4 apoios)', 'Ataque de braço das costas (Arm-lock)', 'Transição das costas para Triângulo'],
+    'montada defesa (por baixo)' => ['Upa e roda', 'Saída de cotovelo', 'Saída de montada com duas mãos na faixa', 'Saída de montada técnica (Camarão lateral)', 'Saída de montada (Upa travamento técnico)'],
+    'passagem de guarda' => ['Postura de guarda e passagem', 'Toreando', 'Passagem para meia guarda', 'Passagem com joelho por dentro / cabeça', 'Passagem de meia guarda joelho cruzado', 'Passagem cruzando o joelho', 'Passagem DLR (Estouro de gancho e esgrima)', 'Passagem DLR (Pressão Knee slide)', 'Passagem após tentativa de Omoplata (Circundar)', 'Passagem após tentativa de Omoplata (Salto oposto)', 'Passagem Guarda X (Grampo e Step over)', 'Passagem Guarda X (Passagem por cima do quadril)', 'Passagem Meia Profunda (Esgrima de quadril)', 'Passagem Meia Profunda (Peso morto)', 'Passagem One Leg X (Esgrima e quadril baixo)', 'Passagem One Leg X (Estouro e step back)', 'Leg Drag técnica', 'Smash Pass (Pressão)', 'Over-Under profunda', 'X-Pass (Em pé)', 'Passagem Guarda Aranha (Estouro de pegada)', 'Passagem circundando as pernas', 'Passagem Emborrachando profunda', 'Passagem cruzando o braço (Gift Wrap)'],
+    'guarda fechada por cima' => ['Estrangulamento na guarda', 'Postura de guarda com a mão na manga'],
+    'guarda fechada por baixo' => ['Raspagem tesourada', 'Raspagem com mão na faixa', 'Kimura', 'Raspagem com pêndulo', 'Chave de braço na guarda', 'Chave de braço na guarda em pé', 'Raspagem Omoplata (Capotagem clássica)', 'Raspagem Omoplata (Variação gola cruzada)', 'Raspagem Omoplata (Saindo para o Single Leg)', 'Finalização de Omoplata (Ajuste braço na cintura)', 'Triângulo invertido (Guarda)'],
+    'guarda aberta' => ['Raspagem com mãos nos calcanhares', 'Raspagem pé na virilha com gancho', 'Balão', 'Guarda aberta / Triângulo', 'Raspagem de tripé', 'Raspagem de gancho', 'Raspagem DLR (Chutar o joelho)', 'Raspagem DLR (Gancho Invertido)', 'Raspagem DLR (Indo para as costas)', 'Raspagem Guarda X (Desequilíbrio para trás)', 'Raspagem Guarda X (Levantada técnica)', 'Raspagem Guarda X (Chutando o quadril)', 'Raspagem One Leg X (Ataque no calcanhar)', 'Raspagem One Leg X (Tesoura técnica)', 'Omoplata (Guarda aberta)', 'Transição DLR para X-Guard', 'Raspagem de X-Guard (Variação tesoura)', 'Raspagem Balão (Tomoe-Nage gancho)', 'Raspagem Helicóptero técnica', 'Ataque de Omoplata da guarda aberta'],
+    '100 kilos ataque (por cima)' => ['Kimura partindo do 100kg', 'Americana', 'Chave de braço girando', 'Arm-lock invertido', 'Joelho na barriga (+ estrangulamento/arm-lock)', 'Estrangulamento com braço enrolado', 'Arm-lock com braço enrolado', 'Kata-gatame (Triângulo de mão)', 'Estrangulamento Norte-Sul', 'Arm-lock Joelho na Barriga', 'Ezequiel técnica (100kg)'],
+    '100 kilos defesa (por baixo)' => ['Reposição de guarda', 'Virada de 4', 'Saída de 100kg (Indo para os 4 apoios)', 'Saída de 100kg (Reposição perna de fora)', 'Saída de 100kg para 4 apoios (Antecipação)', 'Reposição de meia guarda profunda', 'Saída de 100kg (Esgrima e quadril)'],
+    'meia guarda por cima' => ['Meia guarda para montada', 'Raspagem Meia Profunda (Fura-bolo)', 'Raspagem Meia Profunda (Waiter Sweep)', 'Raspagem Meia Profunda (Saída para as costas)', 'Raspagem Meia Guarda (Gancho lateral)', 'Raspagem Meia Guarda (Pêndulo profundo)', 'Kimura da meia guarda'],
+    'costas defesa' => ['Defesa de pegada de costas (girando)', 'Saída de costas (Giro para a guarda)', 'Saída de costas (Deslizar quadril e ponte)', 'Defesa de Mata-leão (Mão na gola técnica)', 'Defesa de ganchos das costas'],
+    '4 apoios ataque (por cima)' => ['Estrangulamento relógio', 'Ataque de 4 apoios (Ida para as costas)', 'Ataque de 4 apoios (Triângulo de mão)', 'Ataque de 4 apoios (Transição para montada)', 'Estrangulamento de gola (4 apoios)'],
+    '4 apoios por defesa (por baixo)' => ['Reposição de guarda partindo de 4 apoios', 'Rolo de 4 apoios', 'Rolo de 4 apoios para reposição de guarda', 'Saída de 4 apoios (Levantada técnica)', 'Reposição de guarda de 4 apoios (Rolamento)', 'Fuga de quadril dos 4 apoios (Sit-out)'],
+    'defesa de finalizações' => ['Guilhotina', 'Defesa de guilhotina', 'Defesa de Omoplata (Rolamento antecipado)', 'Defesa de Triângulo (Postura e amasso)', 'Defesa de Arm-lock (Saída Hitchhiker)', 'Defesa de Kimura (Contra-ataque)', 'Contra-ataque de triângulo na passagem']
 ];
 
 $posicoes_lista = [
@@ -46,8 +57,8 @@ $posicoes_lista = [
     '100 kilos ataque (por cima)',
     '100 kilos defesa (por baixo)',
     'meia guarda por cima',
-    'costas ataque (por cima)',
-    'costas defesa (por baixo)',
+    'costas ataque',
+    'costas defesa',
     '4 apoios ataque (por cima)',
     '4 apoios por defesa (por baixo)',
     'defesa de finalizações'
@@ -110,6 +121,38 @@ $posicoes_lista = [
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
         }
+
+        .status-badge {
+            border-radius: 20px;
+            padding: 8px 5px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            display: block;
+            text-align: center;
+            transition: 0.3s;
+            font-size: 0.8rem;
+        }
+
+        #s1:checked+label {
+            background: #ffc107;
+            color: #000;
+            border-color: #ffc107;
+            font-weight: bold;
+        }
+
+        #s2:checked+label {
+            background: #17a2b8;
+            color: #fff;
+            border-color: #17a2b8;
+            font-weight: bold;
+        }
+
+        #s3:checked+label {
+            background: #28a745;
+            color: #fff;
+            border-color: #28a745;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -119,18 +162,29 @@ $posicoes_lista = [
             <div class="col-lg-7 col-md-10">
                 <div class="card shadow-lg border-0">
                     <div class="card-header bg-dark text-white text-center p-3">
-                        <h5 class="m-0 font-weight-bold">LANÇAR SELO</h5>
+                        <h5 class="m-0 font-weight-bold">LANÇAR SELO INDIVIDUAL</h5>
                         <small>Aluno: <?php echo $nome_aluno ?></small>
                     </div>
                     <div class="card-body p-4">
                         <form action="salvar-tecnica.php" method="POST">
                             <input type="hidden" name="id_aluno" value="<?php echo $id_aluno ?>">
 
-                            <div class="section-title">Escolha a Técnica</div>
-                            <div class="grid-select">
+                            <div class="section-title">1. Escolha a Técnica</div>
+
+                            <div class="input-group mb-3 shadow-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-right-0"><i
+                                            class="fas fa-search text-muted"></i></span>
+                                </div>
+                                <input type="text" id="busca_tecnica" class="form-control border-left-0"
+                                    placeholder="Digite para filtrar 50 lições..." onkeyup="filtrarTecnicas()">
+                            </div>
+
+                            <div class="grid-select" id="lista_tecnicas"
+                                style="max-height: 300px; overflow-y: auto; padding: 5px; border: 1px solid #eee; border-radius: 10px;">
                                 <?php foreach ($mapa_tecnicas as $pos_ref => $tecs): ?>
                                     <?php foreach ($tecs as $t): ?>
-                                        <div class="opt-card">
+                                        <div class="opt-card item-tecnica">
                                             <input type="radio" name="tecnica" id="t_<?php echo md5($t) ?>"
                                                 value="<?php echo $t ?>" data-posicao="<?php echo $pos_ref ?>"
                                                 onclick="selecionarPosicao(this)">
@@ -140,13 +194,13 @@ $posicoes_lista = [
                                 <?php endforeach; ?>
                             </div>
 
-                            <div class="form-group mb-3">
-                                <label class="font-weight-bold">Outras Técnicas (Escrita manual)</label>
+                            <div class="form-group mt-3 mb-3">
+                                <label class="font-weight-bold text-muted">Ou escreva manualmente:</label>
                                 <input type="text" name="tecnica_manual" id="tecnica_manual" class="form-control"
-                                    placeholder="Digite aqui se não estiver acima..." oninput="limparRadiosTecnica()">
+                                    placeholder="Nome da técnica..." oninput="limparRadiosTecnica()">
                             </div>
 
-                            <div class="section-title">Posição / Categoria</div>
+                            <div class="section-title">2. Posição / Categoria</div>
                             <div class="grid-select" id="container_posicoes">
                                 <?php foreach ($posicoes_lista as $idx => $p): ?>
                                     <div class="opt-card">
@@ -159,7 +213,23 @@ $posicoes_lista = [
 
                             <hr>
 
-                            <div class="form-group mb-3">
+                            <div class="section-title">3. Status do Conhecimento</div>
+                            <div class="row no-gutters mb-4">
+                                <div class="col-4 px-1">
+                                    <input type="radio" id="s1" name="status" value="Em Estudo" class="d-none" checked>
+                                    <label class="status-badge" for="s1">🟡 Estudo</label>
+                                </div>
+                                <div class="col-4 px-1">
+                                    <input type="radio" id="s2" name="status" value="Revisão" class="d-none">
+                                    <label class="status-badge" for="s2">🔵 Revisão</label>
+                                </div>
+                                <div class="col-4 px-1">
+                                    <input type="radio" id="s3" name="status" value="Concluído" class="d-none">
+                                    <label class="status-badge" for="s3">🟢 Concluído</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-4">
                                 <label class="font-weight-bold d-flex justify-content-between">
                                     Nível de Domínio <span id="val_range" class="badge badge-primary">50%</span>
                                 </label>
@@ -167,30 +237,9 @@ $posicoes_lista = [
                                     oninput="document.getElementById('val_range').innerHTML = this.value + '%'">
                             </div>
 
-                            <div class="form-group mb-4">
-                                <label class="font-weight-bold mb-2">Status do Selo</label>
-                                <div class="status-options">
-                                    <div class="custom-radio custom-control">
-                                        <input type="radio" id="s1" name="status" value="Em Estudo"
-                                            class="custom-control-input" required>
-                                        <label class="custom-control-label" for="s1">🟡 Em Estudo</label>
-                                    </div>
-                                    <div class="custom-radio custom-control">
-                                        <input type="radio" id="s2" name="status" value="Aprendido"
-                                            class="custom-control-input">
-                                        <label class="custom-control-label" for="s2">🔵 Aprendido</label>
-                                    </div>
-                                    <div class="custom-radio custom-control">
-                                        <input type="radio" id="s3" name="status" value="Dominado"
-                                            class="custom-control-input">
-                                        <label class="custom-control-label" for="s3">🟢 Dominado</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold">GRAVAR
+                            <button type="submit" class="btn btn-primary btn-block py-3 font-weight-bold shadow">GRAVAR
                                 SELO</button>
-                            <a href="usuarios.php" class="btn btn-light btn-block border mt-2">Voltar</a>
+                            <a href="usuarios.php" class="btn btn-light btn-block border mt-2 text-muted">Voltar</a>
                         </form>
                     </div>
                 </div>
@@ -199,13 +248,19 @@ $posicoes_lista = [
     </div>
 
     <script>
-        function selecionarPosicao(el) {
-            // Limpa o campo manual ao selecionar uma técnica pronta
-            document.getElementById('tecnica_manual').value = "";
+        function filtrarTecnicas() {
+            let input = document.getElementById('busca_tecnica').value.toLowerCase();
+            let itens = document.getElementsByClassName('item-tecnica');
+            for (let i = 0; i < itens.length; i++) {
+                let label = itens[i].getElementsByTagName('label')[0].innerText.toLowerCase();
+                itens[i].style.display = label.includes(input) ? "" : "none";
+            }
+        }
 
+        function selecionarPosicao(el) {
+            document.getElementById('tecnica_manual').value = "";
             let posicaoAlvo = el.getAttribute('data-posicao');
             let radiosPosicao = document.getElementsByName('posicao');
-
             for (let r of radiosPosicao) {
                 if (r.value === posicaoAlvo) {
                     r.checked = true;
@@ -215,7 +270,6 @@ $posicoes_lista = [
         }
 
         function limparRadiosTecnica() {
-            // Desmarca os botões de rádio da técnica se o professor escrever manualmente
             let radiosTec = document.getElementsByName('tecnica');
             for (let r of radiosTec) {
                 r.checked = false;

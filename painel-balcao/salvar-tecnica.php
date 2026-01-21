@@ -3,41 +3,63 @@ require_once("../conexao.php");
 @session_start();
 
 // 1. VALIDAÇÃO DE SEGURANÇA
-// Garante que apenas usuários autorizados possam salvar técnicas
 if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
-// 2. Recebe os dados do formulário
-if (empty($_POST['id_aluno']) || empty($_POST['tecnica'])) {
-    echo "<script language='javascript'>window.location='usuarios.php'; </script>";
+// 2. RECEBE E TRATA OS DADOS
+$id_aluno = $_POST['id_aluno'];
+$nivel = $_POST['nivel'];
+$status = $_POST['status'];
+$posicao = $_POST['posicao']; // Captura a posição/categoria selecionada
+$hoje = date('Y-m-d');
+$id_prof = $_SESSION['id_usuario'];
+$nome_prof = $_SESSION['nome_usuario'];
+
+// Define qual nome de técnica usar (Manual ou Selecionada)
+$tecnica = !empty($_POST['tecnica_manual']) ? $_POST['tecnica_manual'] : $_POST['tecnica'];
+
+if (empty($id_aluno) || empty($tecnica)) {
+    echo "<script language='javascript'>alert('Selecione uma técnica!'); window.history.back(); </script>";
     exit();
 }
 
-$id_aluno = $_POST['id_aluno'];
-$tecnica = $_POST['tecnica'];
-$nivel = $_POST['nivel'];
-$status = $_POST['status'];
-$hoje = date('Y-m-d');
-
 try {
-    // 3. Prepara a inserção na tabela 'habilidades'
-    $query = $pdo->prepare("INSERT INTO habilidades (usuario_id, tecnica, nivel, status, data_conquista) 
-                            VALUES (:usuario_id, :tecnica, :nivel, :status, :data_conquista)");
+    // 3. VERIFICA SE O ALUNO JÁ POSSUI ESSA TÉCNICA
+    $check = $pdo->prepare("SELECT id FROM habilidades WHERE usuario_id = :u AND tecnica = :t");
+    $check->execute([':u' => $id_aluno, ':t' => $tecnica]);
 
-    // 4. Vincula os parâmetros
-    $query->bindValue(":usuario_id", $id_aluno);
-    $query->bindValue(":tecnica", $tecnica);
-    $query->bindValue(":nivel", $nivel);
-    $query->bindValue(":status", $status);
-    $query->bindValue(":data_conquista", $hoje);
+    if ($check->rowCount() > 0) {
+        // ATUALIZA técnica existente
+        $query = $pdo->prepare("UPDATE habilidades SET nivel = :nivel, status = :status, posicao = :posicao WHERE usuario_id = :u AND tecnica = :t");
+        $query->bindValue(":nivel", $nivel);
+        $query->bindValue(":status", $status);
+        $query->bindValue(":posicao", $posicao);
+        $query->bindValue(":u", $id_aluno);
+        $query->bindValue(":t", $tecnica);
+    } else {
+        // INSERE nova técnica
+        $query = $pdo->prepare("INSERT INTO habilidades (usuario_id, tecnica, posicao, nivel, status, data_conquista) 
+                                VALUES (:u, :t, :posicao, :nivel, :status, :data_conquista)");
+        $query->bindValue(":u", $id_aluno);
+        $query->bindValue(":t", $tecnica);
+        $query->bindValue(":posicao", $posicao);
+        $query->bindValue(":nivel", $nivel);
+        $query->bindValue(":status", $status);
+        $query->bindValue(":data_conquista", $hoje);
+    }
 
     $query->execute();
 
-    // 5. Feedback e retorno
+    // 4. REGISTRA NO LOG (Opcional, mas recomendado)
+    $acao = "Lançou selo: $tecnica ($status) para o aluno ID $id_aluno";
+    $ins_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:user, :acao, NOW())");
+    $ins_log->execute([':user' => $nome_prof, ':acao' => $acao]);
+
+    // 5. FEEDBACK E RETORNO
     echo "<script language='javascript'>
-            alert('Selo de técnica lançado com sucesso!');
+            alert('Selo de técnica gravado com sucesso!');
             window.location='usuarios.php';
           </script>";
 } catch (PDOException $e) {
