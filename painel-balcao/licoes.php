@@ -126,6 +126,164 @@ $licoes_array = [
         ["t" => "Esgrima com single leg", "p" => "Quedas"],
         ["t" => "Passagem cruzando o joelho", "p" => "passagem de guarda"],
         ["t" => "Montada técnica (com perna em pé)", "p" => "montada ataque (por cima)"]
+    ],
+    21 => [
+        ["t" => "Raspagem DLR (Chutar o joelho)", "p" => "guarda aberta"],
+        ["t" => "Raspagem DLR (Gancho Invertido)", "p" => "guarda aberta"],
+        ["t" => "Raspagem DLR (Indo para as costas)", "p" => "guarda aberta"]
+    ],
+    22 => [
+        ["t" => "Passagem DLR (Estouro de gancho e esgrima)", "p" => "passagem de guarda"],
+        ["t" => "Passagem DLR (Pressão Knee slide)", "p" => "passagem de guarda"],
+        ["t" => "Defesa de Omoplata (Rolamento antecipado)", "p" => "defesa de finalizações"]
+    ],
+    23 => [
+        ["t" => "Raspagem Omoplata (Capotagem clássica)", "p" => "guarda fechada por baixo"],
+        ["t" => "Raspagem Omoplata (Variação gola cruzada)", "p" => "guarda fechada por baixo"],
+        ["t" => "Raspagem Omoplata (Saindo para o Single Leg)", "p" => "guarda fechada por baixo"]
+    ],
+    24 => [
+        ["t" => "Passagem após tentativa de Omoplata (Circundar)", "p" => "passagem de guarda"],
+        ["t" => "Passagem após tentativa de Omoplata (Salto oposto)", "p" => "passagem de guarda"],
+        ["t" => "Finalização de Omoplata (Ajuste braço na cintura)", "p" => "guarda fechada por baixo"]
+    ],
+    25 => [
+        ["t" => "Raspagem Guarda X (Desequilíbrio para trás)", "p" => "guarda aberta"],
+        ["t" => "Raspagem Guarda X (Levantada técnica)", "p" => "guarda aberta"],
+        ["t" => "Raspagem Guarda X (Chutando o quadril)", "p" => "guarda aberta"]
+    ],
+
+    // --- MÓDULO GUARDA X E MEIA PROFUNDA (26-30) ---
+    26 => [
+        ["t" => "Passagem Guarda X (Grampo e Step over)", "p" => "passagem de guarda"],
+        ["t" => "Passagem Guarda X (Passagem por cima do quadril)", "p" => "passagem de guarda"],
+        ["t" => "Finalização: Triângulo das costas", "p" => "costas ataque"]
+    ],
+    27 => [
+        ["t" => "Raspagem Meia Profunda (Fura-bolo)", "p" => "meia guarda por cima"],
+        ["t" => "Raspagem Meia Profunda (Waiter Sweep)", "p" => "meia guarda por cima"],
+        ["t" => "Raspagem Meia Profunda (Saída para as costas)", "p" => "meia guarda por cima"]
+    ],
+    28 => [
+        ["t" => "Passagem Meia Profunda (Esgrima de quadril)", "p" => "passagem de guarda"],
+        ["t" => "Passagem Meia Profunda (Peso morto)", "p" => "passagem de guarda"],
+        ["t" => "Saída de costas (Giro para a guarda)", "p" => "costas defesa"]
+    ],
+    29 => [
+        ["t" => "Raspagem One Leg X (Ataque no calcanhar)", "p" => "guarda aberta"],
+        ["t" => "Raspagem One Leg X (Tesoura técnica)", "p" => "guarda aberta"],
+        ["t" => "Finalização: Arco e flecha (Bow and Arrow)", "p" => "costas ataque"]
+    ],
+    30 => [
+        ["t" => "Passagem One Leg X (Esgrima e quadril baixo)", "p" => "passagem de guarda"],
+        ["t" => "Passagem One Leg X (Estouro e step back)", "p" => "passagem de guarda"],
+        ["t" => "Saída de costas (Deslizar quadril e ponte)", "p" => "costas defesa"]
+    ],
+
+    // --- MÓDULO MONTADA E 100KG AVANÇADO (31-35) ---
+    31 => [
+        ["t" => "Finalização: Arm-lock da Montada S", "p" => "montada ataque (por cima)"],
+        ["t" => "Finalização: Triângulo da Montada", "p" => "montada ataque (por cima)"],
+        ["t" => "Saída de montada técnica (Camarão lateral)", "p" => "montada defesa (por baixo)"]
+    ],
+    32 => [
+        ["t" => "Finalização: Kata-gatame (Triângulo de mão)", "p" => "100 kilos ataque (por cima)"],
+        ["t" => "Finalização: Estrangulamento Norte-Sul", "p" => "100 kilos ataque (por cima)"],
+        ["t" => "Saída de 100kg (Indo para os 4 apoios)", "p" => "100 kilos defesa (por baixo)"]
+    ],
+    33 => [
+        ["t" => "Finalização: Crucifixo das costas", "p" => "costas ataque"],
+        ["t" => "Finalização: Estrangulamento gola técnica", "p" => "costas ataque"],
+        ["t" => "Defesa de Mata-leão (Mão na gola técnica)", "p" => "costas defesa"]
+    ],
+    34 => [
+        ["t" => "Estrangulamento Relógio (Clock Choke)", "p" => "4 apoios ataque (por cima)"],
+        ["t" => "Ataque de 4 apoios (Ida para as costas)", "p" => "4 apoios ataque (por cima)"],
+        ["t" => "Rolo de 4 apoios para reposição de guarda", "p" => "4 apoios por defesa (por baixo)"]
+    ],
+    35 => [
+        ["t" => "Finalização: Kimura partindo do 100kg", "p" => "100 kilos ataque (por cima)"],
+        ["t" => "Finalização: Arm-lock invertido (100kg)", "p" => "100 kilos ataque (por cima)"],
+        ["t" => "Saída de 100kg (Reposição perna de fora)", "p" => "100 kilos defesa (por baixo)"]
+    ],
+
+    // --- MÓDULO PASSAGENS E DEFESAS (36-40) ---
+    36 => [
+        ["t" => "Passagem de Guarda: Leg Drag técnica", "p" => "passagem de guarda"],
+        ["t" => "Passagem de Guarda: Smash Pass (Pressão)", "p" => "passagem de guarda"],
+        ["t" => "Defesa de Triângulo (Postura e amasso)", "p" => "defesa de finalizações"]
+    ],
+    37 => [
+        ["t" => "Passagem de Guarda: Over-Under profunda", "p" => "passagem de guarda"],
+        ["t" => "Passagem de Guarda: X-Pass (Em pé)", "p" => "passagem de guarda"],
+        ["t" => "Defesa de Arm-lock (Saída Hitchhiker)", "p" => "defesa de finalizações"]
+    ],
+    38 => [
+        ["t" => "Finalização: Arm-lock Joelho na Barriga", "p" => "100 kilos ataque (por cima)"],
+        ["t" => "Finalização: Ezequiel técnica (100kg)", "p" => "100 kilos ataque (por cima)"],
+        ["t" => "Saída de montada (Upa travamento técnico)", "p" => "montada defesa (por baixo)"]
+    ],
+    39 => [
+        ["t" => "Finalização: Triângulo invertido (Guarda)", "p" => "guarda fechada por baixo"],
+        ["t" => "Finalização: Omoplata (Guarda aberta)", "p" => "guarda aberta"],
+        ["t" => "Defesa de Kimura (Contra-ataque)", "p" => "defesa de finalizações"]
+    ],
+    40 => [
+        ["t" => "Finalização: Guilhotina da Montada", "p" => "montada ataque (por cima)"],
+        ["t" => "Finalização: Ezequiel da Montada", "p" => "montada ataque (por cima)"],
+        ["t" => "Saída de 4 apoios (Levantada técnica)", "p" => "4 apoios por defesa (por baixo)"]
+    ],
+
+    // --- MÓDULO TRANSIÇÕES AVANÇADAS (41-50) ---
+    41 => [
+        ["t" => "Transição DLR para X-Guard", "p" => "guarda aberta"],
+        ["t" => "Raspagem de X-Guard (Variação tesoura)", "p" => "guarda aberta"],
+        ["t" => "Passagem de pressão em pé", "p" => "passagem de guarda"]
+    ],
+    42 => [
+        ["t" => "Passagem Guarda Aranha (Estouro de pegada)", "p" => "passagem de guarda"],
+        ["t" => "Passagem circundando as pernas", "p" => "passagem de guarda"],
+        ["t" => "Contra-ataque de triângulo na passagem", "p" => "defesa de finalizações"]
+    ],
+    43 => [
+        ["t" => "Raspagem Meia Guarda (Gancho lateral)", "p" => "meia guarda por cima"],
+        ["t" => "Raspagem Meia Guarda (Pêndulo profundo)", "p" => "meia guarda por cima"],
+        ["t" => "Finalização: Kimura da meia guarda", "p" => "meia guarda por cima"]
+    ],
+    44 => [
+        ["t" => "Saída de 100kg para 4 apoios (Antecipação)", "p" => "100 kilos defesa (por baixo)"],
+        ["t" => "Reposição de meia guarda profunda", "p" => "100 kilos defesa (por baixo)"],
+        ["t" => "Saída de 100kg (Esgrima e quadril)", "p" => "100 kilos defesa (por baixo)"]
+    ],
+    45 => [
+        ["t" => "Ataque de 4 apoios (Triângulo de mão)", "p" => "4 apoios ataque (por cima)"],
+        ["t" => "Ataque de 4 apoios (Transição para montada)", "p" => "4 apoios ataque (por cima)"],
+        ["t" => "Estrangulamento de gola (4 apoios)", "p" => "4 apoios ataque (por cima)"]
+    ],
+    46 => [
+        ["t" => "Passagem Emborrachando profunda", "p" => "passagem de guarda"],
+        ["t" => "Passagem cruzando o braço (Gift Wrap)", "p" => "passagem de guarda"],
+        ["t" => "Finalização: Arm-lock da passagem", "p" => "passagem de guarda"]
+    ],
+    47 => [
+        ["t" => "Raspagem Balão (Tomoe-Nage gancho)", "p" => "guarda aberta"],
+        ["t" => "Raspagem Helicóptero técnica", "p" => "guarda aberta"],
+        ["t" => "Ataque de Omoplata da guarda aberta", "p" => "guarda aberta"]
+    ],
+    48 => [
+        ["t" => "Mata-leão controle punho (4 apoios)", "p" => "costas ataque"],
+        ["t" => "Ataque de braço das costas (Arm-lock)", "p" => "costas ataque"],
+        ["t" => "Transição das costas para Triângulo", "p" => "costas ataque"]
+    ],
+    49 => [
+        ["t" => "Reposição de guarda de 4 apoios (Rolamento)", "p" => "4 apoios por defesa (por baixo)"],
+        ["t" => "Fuga de quadril dos 4 apoios (Sit-out)", "p" => "4 apoios por defesa (por baixo)"],
+        ["t" => "Defesa de ganchos das costas", "p" => "costas defesa"]
+    ],
+    50 => [
+        ["t" => "Triângulo da Montada Técnica (S-Mount)", "p" => "montada ataque (por cima)"],
+        ["t" => "Finalização: Arm-lock técnico da montada", "p" => "montada ataque (por cima)"],
+        ["t" => "Transição Joelho na barriga para montada", "p" => "montada ataque (por cima)"]
     ]
 ];
 ?>
