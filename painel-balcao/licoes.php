@@ -7,7 +7,7 @@ if (@$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] !=
     exit();
 }
 
-// Mapeamento Completo com Técnicas e suas Categorias/Posições
+// Mapeamento Completo com Técnicas e suas Categorias/Posições (1 a 50)
 $licoes_array = [
     1 => [
         ["t" => "Princípio da Alavanca", "p" => "Fundamentos"],
@@ -15,7 +15,7 @@ $licoes_array = [
         ["t" => "Gangorra + Levantada técnica", "p" => "Fundamentos"],
         ["t" => "Defesa de tapa com queda", "p" => "Defesa Pessoal"],
         ["t" => "Montada + Arm-lock", "p" => "montada ataque (por cima)"],
-        ["t" => "Pegada pelas costas + Mata leão", "p" => "costas ataque (por cima)"]
+        ["t" => "Pegada pelas costas + Mata leão", "p" => "costas ataque"]
     ],
     2 => [
         ["t" => "Rolamento de costas + Fuga de quadril", "p" => "Fundamentos"],
@@ -90,13 +90,13 @@ $licoes_array = [
         ["t" => "Chave de braço na guarda em pé", "p" => "guarda fechada por baixo"]
     ],
     14 => [
-        ["t" => "Seat belt + pegada pelas costas", "p" => "costas ataque (por cima)"],
-        ["t" => "Retenção das costas", "p" => "costas ataque (por cima)"],
-        ["t" => "Estrangulamento de golas", "p" => "costas ataque (por cima)"]
+        ["t" => "Seat belt + pegada pelas costas", "p" => "costas ataque"],
+        ["t" => "Retenção das costas", "p" => "costas ataque"],
+        ["t" => "Estrangulamento de golas", "p" => "costas ataque"]
     ],
     15 => [
         ["t" => "Saída de gravata lateral/chão (com gancho)", "p" => "Defesa Pessoal"],
-        ["t" => "Defesa de pegada de costas (girando)", "p" => "costas defesa (por baixo)"]
+        ["t" => "Defesa de pegada de costas (girando)", "p" => "costas defesa"]
     ],
     16 => [
         ["t" => "Single leg", "p" => "Quedas"],
@@ -152,8 +152,6 @@ $licoes_array = [
         ["t" => "Raspagem Guarda X (Levantada técnica)", "p" => "guarda aberta"],
         ["t" => "Raspagem Guarda X (Chutando o quadril)", "p" => "guarda aberta"]
     ],
-
-    // --- MÓDULO GUARDA X E MEIA PROFUNDA (26-30) ---
     26 => [
         ["t" => "Passagem Guarda X (Grampo e Step over)", "p" => "passagem de guarda"],
         ["t" => "Passagem Guarda X (Passagem por cima do quadril)", "p" => "passagem de guarda"],
@@ -179,8 +177,6 @@ $licoes_array = [
         ["t" => "Passagem One Leg X (Estouro e step back)", "p" => "passagem de guarda"],
         ["t" => "Saída de costas (Deslizar quadril e ponte)", "p" => "costas defesa"]
     ],
-
-    // --- MÓDULO MONTADA E 100KG AVANÇADO (31-35) ---
     31 => [
         ["t" => "Finalização: Arm-lock da Montada S", "p" => "montada ataque (por cima)"],
         ["t" => "Finalização: Triângulo da Montada", "p" => "montada ataque (por cima)"],
@@ -206,8 +202,6 @@ $licoes_array = [
         ["t" => "Finalização: Arm-lock invertido (100kg)", "p" => "100 kilos ataque (por cima)"],
         ["t" => "Saída de 100kg (Reposição perna de fora)", "p" => "100 kilos defesa (por baixo)"]
     ],
-
-    // --- MÓDULO PASSAGENS E DEFESAS (36-40) ---
     36 => [
         ["t" => "Passagem de Guarda: Leg Drag técnica", "p" => "passagem de guarda"],
         ["t" => "Passagem de Guarda: Smash Pass (Pressão)", "p" => "passagem de guarda"],
@@ -233,8 +227,6 @@ $licoes_array = [
         ["t" => "Finalização: Ezequiel da Montada", "p" => "montada ataque (por cima)"],
         ["t" => "Saída de 4 apoios (Levantada técnica)", "p" => "4 apoios por defesa (por baixo)"]
     ],
-
-    // --- MÓDULO TRANSIÇÕES AVANÇADAS (41-50) ---
     41 => [
         ["t" => "Transição DLR para X-Guard", "p" => "guarda aberta"],
         ["t" => "Raspagem de X-Guard (Variação tesoura)", "p" => "guarda aberta"],
@@ -293,13 +285,14 @@ $licoes_array = [
 
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Lançar Lição - Nova Arte BJJ</title>
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
         .radio-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
             gap: 10px;
         }
 
@@ -307,10 +300,12 @@ $licoes_array = [
             cursor: pointer;
             text-align: center;
             border: 1px solid #dee2e6;
-            padding: 10px;
+            padding: 10px 5px;
             border-radius: 5px;
             background: #fff;
             transition: all 0.2s;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
 
         .btn-radio:hover {
@@ -321,22 +316,84 @@ $licoes_array = [
             background-color: #343a40;
             color: #fff;
             border-color: #343a40;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .radio-grid {
+                grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+                gap: 8px;
+            }
+
+            .border-right {
+                border-right: none !important;
+                border-bottom: 1px solid #dee2e6;
+                margin-bottom: 20px;
+                padding-bottom: 20px;
+            }
+        }
+
+        /* Estilo para os rádios de Status */
+        .status-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-status {
+            cursor: pointer;
+            padding: 10px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: 0.3s;
+            background: #fff;
+        }
+
+        input[name="status"]:checked+.btn-estudo {
+            background: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+
+        input[name="status"]:checked+.btn-revisao {
+            background: #17a2b8;
+            border-color: #17a2b8;
+            color: #fff;
+        }
+
+        input[name="status"]:checked+.btn-concluido {
+            background: #28a745;
+            border-color: #28a745;
+            color: #fff;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .aluno-row {
+            cursor: pointer;
         }
     </style>
 </head>
 
 <body class="bg-light">
-    <div class="container-fluid mt-4">
+    <div class="container-fluid mt-3">
         <div class="card shadow">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">REGISTRAR LIÇÃO DO DIA</h5>
+                <h5 class="mb-0">REGISTRAR LIÇÃO</h5>
                 <a href="index.php" class="btn btn-outline-light btn-sm">Voltar</a>
             </div>
             <form action="lancar-selos.php" method="POST">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 border-right">
-                            <h6 class="font-weight-bold mb-3">1. Escolha a Lição do Dia</h6>
+                            <h6 class="font-weight-bold mb-3 text-primary"><i class="fas fa-list-ol mr-2"></i>1. Escolha
+                                a Lição</h6>
                             <div class="radio-grid mb-4">
                                 <?php foreach ($licoes_array as $n => $tecnicas) : ?>
                                     <label class="m-0">
@@ -348,23 +405,24 @@ $licoes_array = [
                             </div>
 
                             <h6 class="font-weight-bold">Técnicas desta aula:</h6>
-                            <div id="preview-tecnicas" class="p-3 bg-white border rounded" style="min-height: 200px;">
-                                <small class="text-muted">Selecione um botão de lição acima para conferir as
-                                    técnicas.</small>
+                            <div id="preview-tecnicas" class="p-3 bg-white border rounded shadow-sm"
+                                style="min-height: 150px;">
+                                <small class="text-muted">Selecione uma lição para visualizar as técnicas.</small>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <h6 class="font-weight-bold mb-3">2. Quem participou da aula?</h6>
+                            <h6 class="font-weight-bold mb-3 text-primary"><i class="fas fa-users mr-2"></i>2. Alunos
+                                Presentes</h6>
                             <div class="input-group input-group-sm mb-2">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
                                 </div>
                                 <input type="text" id="busca" class="form-control"
-                                    placeholder="Digite o nome do aluno...">
+                                    placeholder="Buscar aluno pelo nome...">
                             </div>
 
-                            <div style="height: 400px; overflow-y: auto;" class="border rounded bg-white">
+                            <div style="height: 350px; overflow-y: auto;" class="border rounded bg-white">
                                 <table class="table table-sm table-hover mb-0">
                                     <tbody id="tabela_alunos">
                                         <?php
@@ -372,15 +430,14 @@ $licoes_array = [
                                         $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                         foreach ($res as $aluno) {
                                         ?>
-                                            <tr>
-                                                <td width="40" class="text-center align-middle">
+                                            <tr class="aluno-row">
+                                                <td width="45" class="text-center align-middle">
                                                     <input type="checkbox" name="alunos[]"
-                                                        value="<?php echo $aluno['id']; ?>"
-                                                        style="width:18px; height:18px;">
+                                                        value="<?php echo $aluno['id']; ?>">
                                                 </td>
                                                 <td class="align-middle">
                                                     <span
-                                                        class="text-dark font-weight-bold"><?php echo $aluno['nome']; ?></span>
+                                                        class="text-dark font-weight-bold d-block py-2"><?php echo $aluno['nome']; ?></span>
                                                 </td>
                                             </tr>
                                         <?php } ?>
@@ -389,10 +446,34 @@ $licoes_array = [
                             </div>
                         </div>
                     </div>
+
+                    <hr>
+
+                    <div class="row mt-3">
+                        <div class="col-12 text-center">
+                            <h6 class="font-weight-bold mb-3 text-primary"><i class="fas fa-star mr-2"></i>3. Status do
+                                Conhecimento</h6>
+                            <div class="status-container">
+                                <label class="m-0">
+                                    <input type="radio" name="status" value="Em Estudo" class="d-none" checked>
+                                    <div class="btn-status btn-estudo">Em Estudo</div>
+                                </label>
+                                <label class="m-0">
+                                    <input type="radio" name="status" value="Revisão" class="d-none">
+                                    <div class="btn-status btn-revisao">Revisão</div>
+                                </label>
+                                <label class="m-0">
+                                    <input type="radio" name="status" value="Concluído" class="d-none">
+                                    <div class="btn-status btn-concluido">Concluído</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-footer bg-white">
-                    <button type="submit" class="btn btn-success btn-lg btn-block shadow font-weight-bold">
-                        <i class="fas fa-check-circle mr-2"></i> FINALIZAR LANÇAMENTO (STATUS: EM ESTUDO)
+
+                <div class="card-footer bg-white p-3">
+                    <button type="submit" class="btn btn-success btn-lg btn-block shadow font-weight-bold py-3">
+                        <i class="fas fa-check-circle mr-2"></i> FINALIZAR LANÇAMENTO
                     </button>
                 </div>
             </form>
@@ -403,7 +484,6 @@ $licoes_array = [
     <script>
         const licoes = <?php echo json_encode($licoes_array); ?>;
 
-        // Atualizar preview ao clicar no radio
         $('input[name="licao_id"]').change(function() {
             let id = $(this).val();
             if (id && licoes[id]) {
@@ -412,14 +492,20 @@ $licoes_array = [
                     html += `<li class="list-group-item px-0 py-2 border-0">
                                 <i class="fas fa-chevron-right text-success mr-2 small"></i>
                                 <strong>${item.t}</strong> <br>
-                                <small class="text-muted ml-4">Posição: ${item.p}</small>
+                                <span class="badge badge-light border text-muted ml-3">${item.p}</span>
                              </li>`;
                 });
                 $('#preview-tecnicas').html(html + '</ul>');
             }
         });
 
-        // Filtro de Busca
+        $('.aluno-row').click(function(e) {
+            if (e.target.type !== 'checkbox') {
+                let cb = $(this).find('input[type="checkbox"]');
+                cb.prop('checked', !cb.prop('checked'));
+            }
+        });
+
         $("#busca").on("keyup", function() {
             var v = $(this).val().toLowerCase();
             $("#tabela_alunos tr").filter(function() {
