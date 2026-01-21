@@ -2,16 +2,14 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. Validação de Segurança (ATUALIZADA: Permitindo Staff ver o Dashboard)
+// 1. Validação de Segurança
 if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
-// CAPTURA O NOME E NÍVEL DO USUÁRIO LOGADO
 $nome_usuario_logado = @$_SESSION['nome_usuario'];
 $nivel_logado = @$_SESSION['nivel_usuario'];
-
 $hoje = date('Y-m-d');
 
 // --- BUSCA DE ESTATÍSTICAS PARA OS CARDS ---
@@ -19,56 +17,33 @@ $total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->
 $total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
-// --- CORREÇÃO DO ERRO: BUSCA EXPERIMENTAIS PELA DESCRIÇÃO (Já que não existe a coluna status) ---
+// --- BUSCA EXPERIMENTAIS PENDENTES ---
 $total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor = '0' AND descricao LIKE '%EXPERIMENTAL%'")->rowCount();
 
-// --- LÓGICA DO GRÁFICO DE FAIXAS (AGRUPAMENTO DE SINÔNIMOS) ---
+// --- LÓGICA DO GRÁFICO DE FAIXAS ---
 $query_f = $pdo->query("SELECT cor_faixa, COUNT(*) as qtd FROM graduacoes GROUP BY cor_faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
-
 $consolidado = [];
-
-$traducao = [
-    'branca' => 'Branca',
-    'white'  => 'Branca',
-    'azul'   => 'Azul',
-    'blue'   => 'Azul',
-    'roxa'   => 'Roxa',
-    'purple' => 'Roxa',
-    'marrom' => 'Marrom',
-    'brown'  => 'Marrom',
-    'preta'  => 'Preta',
-    'black'  => 'Preta'
-];
-
-$mapa_cores = [
-    'Branca' => '#FFFFFF',
-    'Azul'   => '#007bff',
-    'Roxa'   => '#6f42c1',
-    'Marrom' => '#6d4c41',
-    'Preta'  => '#212529'
-];
+$traducao = ['branca' => 'Branca', 'white' => 'Branca', 'azul' => 'Azul', 'blue' => 'Azul', 'roxa' => 'Roxa', 'purple' => 'Roxa', 'marrom' => 'Marrom', 'brown' => 'Marrom', 'preta' => 'Preta', 'black' => 'Preta'];
+$mapa_cores = ['Branca' => '#FFFFFF', 'Azul' => '#007bff', 'Roxa' => '#6f42c1', 'Marrom' => '#6d4c41', 'Preta' => '#212529'];
 
 foreach ($dados_f as $row) {
     $cor_banco = strtolower(trim($row['cor_faixa'] ?? ''));
     if ($cor_banco == '') continue;
     $label_final = isset($traducao[$cor_banco]) ? $traducao[$cor_banco] : ucfirst($cor_banco);
-
     if (!isset($consolidado[$label_final])) {
         $consolidado[$label_final] = 0;
     }
     $consolidado[$label_final] += $row['qtd'];
 }
-
 $labels_faixas = array_keys($consolidado);
 $valores_faixas = array_values($consolidado);
 $cores_js = [];
-
 foreach ($labels_faixas as $l) {
     $cores_js[] = isset($mapa_cores[$l]) ? $mapa_cores[$l] : '#cccccc';
 }
 
-// --- LÓGICA DE MENSALIDADES REAIS ---
+// --- LÓGICA DE MENSALIDADES ---
 $pagos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' AND data_venc >= '$hoje'")->rowCount();
 $atrasados = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' AND data_venc < '$hoje'")->rowCount();
 $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Não'")->rowCount();
@@ -176,6 +151,9 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     </a>
 
                     <a href="logs.php"><i class="fas fa-history mr-2"></i> Logs do Sistema</a>
+
+                    <a href="relatorio_experimentais.php"><i class="fas fa-file-invoice mr-2 text-light"></i> Relatório
+                        de Aulas</a>
                 </div>
 
                 <div class="sidebar-footer">
@@ -194,11 +172,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 <div class="header-top">
                     <div><i class="far fa-calendar-alt text-muted mr-1"></i><span
                             class="text-muted"><?php echo date('d/m/Y'); ?></span></div>
-                    <div class="d-flex align-items-center">
-                        <span class="mr-3">Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></span>
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                            style="width: 35px; height: 35px;"><i class="fas fa-user-check"></i></div>
-                    </div>
+                    <div>Olá, <b class="text-dark"><?php echo $nome_usuario_logado; ?></b></div>
                 </div>
 
                 <h4 class="font-weight-bold mb-4">Dashboard de Gestão</h4>
@@ -246,7 +220,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 </div>
 
                 <div class="row">
-                    <div class="col-md-4 mb-4">
+                    <div class="col-md-6 mb-4">
                         <div class="card shadow-sm h-100">
                             <div class="card-header bg-white border-bottom p-3">Distribuição por Faixa</div>
                             <div class="card-body">
@@ -254,34 +228,11 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-4">
+                    <div class="col-md-6 mb-4">
                         <div class="card shadow-sm h-100">
                             <div class="card-header bg-white border-bottom p-3 text-center">Saúde Financeira</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartMensalidade"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card shadow-sm h-100 border-top border-dark">
-                            <div
-                                class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
-                                <span>Atividade Recente</span>
-                                <a href="logs.php" class="btn btn-xs btn-outline-primary py-0"
-                                    style="font-size: 0.7rem;">HISTÓRICO</a>
-                            </div>
-                            <div class="card-body p-0">
-                                <table class="table table-sm table-striped mb-0" style="font-size: 0.75rem;">
-                                    <tbody>
-                                        <?php
-                                        $logs = $pdo->query("SELECT * FROM logs ORDER BY id DESC LIMIT 8")->fetchAll(PDO::FETCH_ASSOC);
-                                        foreach ($logs as $l) {
-                                            $data_log = date('d/m H:i', strtotime($l['data']));
-                                            echo "<tr><td class='p-2 px-3 border-bottom'><small class='text-muted'>$data_log</small><br><b>{$l['usuario']}</b>: {$l['acao']}</td></tr>";
-                                        }
-                                        ?>
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
