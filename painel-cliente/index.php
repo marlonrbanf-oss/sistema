@@ -11,7 +11,7 @@ if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente
 
 $id_usuario = $_SESSION['id_usuario'];
 
-// 2. Busca UNIFICADA de Graduação (Regras de 350, 600, 1000 aulas, etc)
+// 2. Busca UNIFICADA de Graduação (Regras de aulas, faixa e grau)
 $status = verificarRequisitos($pdo, $id_usuario);
 
 // 3. Busca de Dados Pessoais
@@ -21,11 +21,33 @@ $query_u->execute();
 $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
 
 $nome_usuario = $dados_u['nome'] ?? 'Usuário';
-$telefone_usuario = $dados_u['telefone'] ?? '';
-$email_usuario = $dados_u['usuario'] ?? '';
 $foto_usuario = (!empty($dados_u['foto'])) ? $dados_u['foto'] : 'usuario-icone-claro.png';
 
-// 4. FUNÇÃO PARA COR DA FAIXA (ESTILO GOMOS)
+// --- AJUSTE: CÁLCULO DINÂMICO DA JORNADA DE MAESTRIA ---
+// 1. Contamos o total de técnicas cadastradas para este aluno (o 100% técnico)
+$query_total_hab = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id");
+$query_total_hab->bindValue(":id", $id_usuario);
+$query_total_hab->execute();
+$total_geral_tecnicas = $query_total_hab->fetch(PDO::FETCH_ASSOC)['total'] ?? 1;
+
+$total_faixas_jornada = 7; // Branca até Vermelha
+$meta_maestria = $total_geral_tecnicas + $total_faixas_jornada;
+
+// 2. Contamos quantas técnicas o aluno já dominou (validadas pelo professor)
+$query_maestria = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id AND (status = 'Dominado' OR status = 'Concluído')");
+$query_maestria->bindValue(":id", $id_usuario);
+$query_maestria->execute();
+$tecnicas_concluidas = $query_maestria->fetch(PDO::FETCH_ASSOC)['total'];
+
+// 3. Definimos o peso da faixa atual na jornada
+$niveis_faixa = ['branca' => 1, 'azul' => 2, 'roxa' => 3, 'marrom' => 4, 'preta' => 5, 'coral' => 6, 'vermelha' => 7];
+$nivel_faixa_atual = $niveis_faixa[mb_strtolower($status['faixa'])] ?? 1;
+
+// 4. Cálculo Final da Porcentagem de Maestria
+$progresso_maestria = (($tecnicas_concluidas + $nivel_faixa_atual) / $meta_maestria) * 100;
+if ($progresso_maestria > 100) $progresso_maestria = 100;
+// ------------------------------------------------------
+
 function tratarCorFaixa($cor)
 {
     $c = mb_strtolower(trim($cor));
@@ -235,6 +257,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 <div class="card-body text-center">
                                     <h5 class="text-muted">Faixa: <b
                                             class="text-dark"><?php echo strtoupper($status['faixa']); ?></b></h5>
+
                                     <div class="bjj-belt">
                                         <div class="belt-bar">
                                             <?php for ($i = 0; $i < $status['grau']; $i++): ?>
@@ -242,18 +265,40 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             <?php endfor; ?>
                                         </div>
                                     </div>
+
                                     <div class="mt-5 text-left px-md-4">
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span>Evolução</span>
+                                            <span><i class="fas fa-calendar-check mr-1 text-success"></i> Frequência
+                                                (Aulas)</span>
                                             <span><?php echo $status['aulas']; ?> / <?php echo $status['meta']; ?>
                                                 Aulas</span>
                                         </div>
-                                        <div class="progress" style="height: 20px; border-radius: 10px;">
+                                        <div class="progress mb-4"
+                                            style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
                                             <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $porcentagem_progresso ?>%">
                                                 <?php echo round($porcentagem_progresso); ?>%
                                             </div>
                                         </div>
+
+                                        <div class="d-flex justify-content-between mb-1 font-weight-bold">
+                                            <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica (Selos
+                                                + Faixa)</span>
+                                            <span><?php echo $tecnicas_concluidas; ?> /
+                                                <?php echo $total_geral_tecnicas; ?> Selos</span>
+                                        </div>
+                                        <div class="progress"
+                                            style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
+                                            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                                                style="width: <?php echo $progresso_maestria; ?>%">
+                                                <?php echo round($progresso_maestria); ?>%
+                                            </div>
+                                        </div>
+
+                                        <small class="text-muted d-block mt-2 text-center">
+                                            <i class="fas fa-info-circle"></i> Complete todas as técnicas e chegue à
+                                            faixa vermelha para atingir 100%.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
