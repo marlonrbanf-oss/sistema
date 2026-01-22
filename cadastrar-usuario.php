@@ -19,24 +19,31 @@ $endereco = isset($_POST['endereco']) ? $_POST['endereco'] : '';
 $data_venc = (isset($_POST['data_venc']) && $_POST['data_venc'] != "") ? $_POST['data_venc'] : null;
 $id = isset($_POST['id']) ? $_POST['id'] : '';
 
+// VARIÁVEIS DE GRADUAÇÃO (Vindas do Painel ADM)
+$cor_faixa = isset($_POST['cor_faixa']) ? $_POST['cor_faixa'] : 'Branca';
+$graus = isset($_POST['graus']) ? $_POST['graus'] : 0;
+$total_aulas = isset($_POST['total_aulas']) ? $_POST['total_aulas'] : 0;
+
 // 2. VALIDAÇÃO DE USUÁRIO (E-MAIL) - Usando coluna 'usuario'
 $query = $pdo->prepare("SELECT * FROM usuarios WHERE usuario = :usuario");
 $query->bindValue(":usuario", $email);
 $query->execute();
-$res = $query->fetchAll(PDO::FETCH_ASSOC);
-if (count($res) > 0 && ($id == "" || $res[0]['id'] != $id)) {
+$res_usu = $query->fetchAll(PDO::FETCH_ASSOC);
+if (count($res_usu) > 0 && ($id == "" || $res_usu[0]['id'] != $id)) {
     echo 'Este E-mail/Usuário já está cadastrado!';
     exit();
 }
 
 // 3. VALIDAÇÃO DE CPF
-$query = $pdo->prepare("SELECT * FROM usuarios WHERE cpf = :cpf");
-$query->bindValue(":cpf", $cpf);
-$query->execute();
-$res = $query->fetchAll(PDO::FETCH_ASSOC);
-if (count($res) > 0 && ($id == "" || $res[0]['id'] != $id)) {
-    echo 'Este CPF já está cadastrado!';
-    exit();
+if ($cpf != "") {
+    $query = $pdo->prepare("SELECT * FROM usuarios WHERE cpf = :cpf");
+    $query->bindValue(":cpf", $cpf);
+    $query->execute();
+    $res_cpf = $query->fetchAll(PDO::FETCH_ASSOC);
+    if (count($res_cpf) > 0 && ($id == "" || $res_cpf[0]['id'] != $id)) {
+        echo 'Este CPF já está cadastrado!';
+        exit();
+    }
 }
 
 // 4. TRATAMENTO DA FOTO (Upload)
@@ -54,7 +61,6 @@ if (isset($_FILES['foto']) && $_FILES['foto']['name'] != "") {
         exit();
     }
 } elseif ($id != "") {
-    // Se for edição sem foto nova, busca a atual para manter
     $query_f = $pdo->prepare("SELECT foto FROM usuarios WHERE id = :id");
     $query_f->bindValue(":id", $id);
     $query_f->execute();
@@ -62,7 +68,7 @@ if (isset($_FILES['foto']) && $_FILES['foto']['name'] != "") {
     if ($res_f) $nome_img = $res_f['foto'];
 }
 
-// 5. SALVAMENTO NA TABELA USUARIOS (Ajustado para seu banco)
+// 5. SALVAMENTO NA TABELA USUARIOS
 if ($id == "") {
     $res = $pdo->prepare("INSERT INTO usuarios SET 
         nome = :nome, 
@@ -101,12 +107,47 @@ $res->bindValue(":foto", $nome_img);
 $res->bindValue(":data_venc", $data_venc);
 $res->execute();
 
-// 6. AULA EXPERIMENTAL (Sincronizado com tabela: aulas_particulares)
-if (isset($_POST['experimental']) && $_POST['experimental'] == 'Sim' && $id == "") {
-    $ultimo_id = $pdo->lastInsertId();
-    $hoje = date('Y-m-d');
+// CAPTURA O ID (Se for novo cadastro ou edição)
+$ultimo_id = ($id == "") ? $pdo->lastInsertId() : $id;
 
-    // CORREÇÃO: Removida a coluna 'horario' que não existe na sua tabela
+// 6. GERENCIAMENTO DE GRADUAÇÃO (Apenas se for Nível Cliente)
+if ($nivel == 'Cliente') {
+    // Verifica se já existe graduação para este usuário
+    $query_g = $pdo->prepare("SELECT id FROM graduacoes WHERE usuario_id = :id");
+    $query_g->bindValue(":id", $ultimo_id);
+    $query_g->execute();
+
+    if ($query_g->rowCount() == 0) {
+        // Novo Registro de Graduação
+        $res_grad = $pdo->prepare("INSERT INTO graduacoes SET 
+            usuario_id = :id, 
+            cor_faixa = :cor, 
+            graus = :graus, 
+            total_aulas = :aulas");
+    } else {
+        // Atualização (Apenas se quem está salvando for Admin/Professor/Balconista)
+        if (@$_SESSION['nivel_usuario'] == 'Admin' || @$_SESSION['nivel_usuario'] == 'Professor' || @$_SESSION['nivel_usuario'] == 'Balconista') {
+            $res_grad = $pdo->prepare("UPDATE graduacoes SET 
+                cor_faixa = :cor, 
+                graus = :graus, 
+                total_aulas = :aulas 
+                WHERE usuario_id = :id");
+        }
+    }
+
+    // Só executa se for um insert novo ou se o nível logado permitir o update
+    if (isset($res_grad)) {
+        $res_grad->bindValue(":id", $ultimo_id);
+        $res_grad->bindValue(":cor", $cor_faixa);
+        $res_grad->bindValue(":graus", $graus);
+        $res_grad->bindValue(":aulas", $total_aulas);
+        $res_grad->execute();
+    }
+}
+
+// 7. AULA EXPERIMENTAL (Sincronizado com tabela: aulas_particulares)
+if (isset($_POST['experimental']) && $_POST['experimental'] == 'Sim' && $id == "") {
+    $hoje = date('Y-m-d');
     $res_exp = $pdo->prepare("INSERT INTO aulas_particulares SET 
         aluno_id = :aluno, 
         professor_id = '0', 

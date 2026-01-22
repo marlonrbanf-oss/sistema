@@ -248,8 +248,8 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             </tr>
                         </thead>
                         <tbody>
-                            <?php
-                            foreach ($res as $usu) {
+                            <?php foreach ($res as $usu) {
+                                // ... (Lógica da Tabela mantida idêntica à anterior) ...
                                 $id = $usu['id'];
                                 $data_venc = $usu['data_venc'];
                                 $tel = preg_replace('/[^0-9]/', '', $usu['telefone'] ?? '');
@@ -347,46 +347,76 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
-                <form action="cadastrar-usuario.php" method="POST" enctype="multipart/form-data">
+                <form action="cadastrar-usuario.php" method="POST">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 form-group">
                                 <label>Nome Completo</label>
-                                <input type="text" name="nome" class="form-control" placeholder="Ex: João Silva"
-                                    required>
+                                <input type="text" name="nome" class="form-control" required>
                             </div>
                             <div class="col-md-6 form-group">
                                 <label>E-mail / Usuário</label>
-                                <input type="email" name="email" class="form-control" placeholder="email@exemplo.com"
-                                    required>
+                                <input type="email" name="email" class="form-control" required>
                             </div>
                             <div class="col-md-4 form-group">
                                 <label>CPF</label>
-                                <input type="text" name="cpf" class="form-control" id="cpf_cad"
-                                    placeholder="000.000.000-00">
+                                <input type="text" name="cpf" class="form-control" id="cpf_cad">
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label>Telefone</label>
+                                <input type="text" name="telefone" class="form-control">
                             </div>
                             <div class="col-md-4 form-group">
                                 <label>Senha</label>
                                 <input type="password" name="senha" class="form-control" required>
                             </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-medal mr-2"></i> Dados de
+                            Treino e Graduação</h6>
+
+                        <div class="row">
                             <div class="col-md-4 form-group">
-                                <label>Nível</label>
-                                <select name="nivel" class="form-control">
+                                <label>Nível de Acesso</label>
+                                <select name="nivel" id="nivel_cad" class="form-control" onchange="toggleGraduacao()">
                                     <option value="Cliente">Cliente (Aluno)</option>
                                     <option value="Professor">Professor / Balconista</option>
                                     <option value="Admin">Administrador</option>
                                 </select>
                             </div>
+
+                            <div class="col-md-3 form-group div-grad">
+                                <label>Cor da Faixa</label>
+                                <select name="cor_faixa" class="form-control">
+                                    <option value="Branca">Branca</option>
+                                    <option value="Azul">Azul</option>
+                                    <option value="Roxa">Roxa</option>
+                                    <option value="Marrom">Marrom</option>
+                                    <option value="Preta">Preta</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 form-group div-grad">
+                                <label>Graus</label>
+                                <input type="number" name="graus" class="form-control" value="0" min="0" max="4">
+                            </div>
+                            <div class="col-md-3 form-group div-grad">
+                                <label>Aulas Realizadas</label>
+                                <input type="number" name="total_aulas" class="form-control" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <div class="row mt-2">
                             <div class="col-md-12">
                                 <label class="text-primary font-weight-bold">
-                                    <input type="checkbox" name="experimental" value="Sim"> Desejo uma aula experimental
-                                    gratuita
+                                    <input type="checkbox" name="experimental" value="Sim"> Ativar como Aula
+                                    Experimental
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success btn-block">FINALIZAR CADASTRO</button>
+                        <button type="submit" class="btn btn-success btn-block">SALVAR NOVO USUÁRIO</button>
                     </div>
                 </form>
             </div>
@@ -412,9 +442,8 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             <input type="file" name="arquivo_excel" class="form-control-file border p-2 w-100"
                                 accept=".xlsx, .xls" required>
                         </div>
-                        <button type="submit" class="btn btn-info btn-block mt-3 font-weight-bold">
-                            PROCESSAR IMPORTAÇÃO
-                        </button>
+                        <button type="submit" class="btn btn-info btn-block mt-3 font-weight-bold">PROCESSAR
+                            IMPORTAÇÃO</button>
                     </form>
                 </div>
             </div>
@@ -432,6 +461,16 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 });
             });
         });
+
+        // Função para esconder campos de graduação se não for aluno
+        function toggleGraduacao() {
+            let nivel = $('#nivel_cad').val();
+            if (nivel === 'Cliente') {
+                $('.div-grad').show();
+            } else {
+                $('.div-grad').hide();
+            }
+        }
 
         function darPresenca(id, nome) {
             let quantidade = prompt("Quantas presenças deseja atribuir para " + nome + "?", "1");

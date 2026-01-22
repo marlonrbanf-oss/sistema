@@ -3,15 +3,15 @@
 require_once("../conexao.php");
 
 // 1. Validação de Segurança
-if (@$_SESSION['nivel_usuario'] != 'Admin') {
+if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
 $id_usuario = $_GET['id'];
 
-// 2. Busca dados atuais
-$query = $pdo->query("SELECT u.*, g.cor_faixa, g.graus FROM usuarios as u LEFT JOIN graduacoes as g ON u.id = g.usuario_id WHERE u.id = '$id_usuario'");
+// 2. Busca dados atuais (Adicionado total_aulas na query)
+$query = $pdo->query("SELECT u.*, g.cor_faixa, g.graus, g.total_aulas FROM usuarios as u LEFT JOIN graduacoes as g ON u.id = g.usuario_id WHERE u.id = '$id_usuario'");
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
 if (count($res) > 0) {
@@ -19,11 +19,14 @@ if (count($res) > 0) {
     $usuario = $res[0]['usuario'];
     $cpf = $res[0]['cpf'];
     $senha = $res[0]['senha'];
+    $telefone = $res[0]['telefone'] ?? '';
+    $data_venc = $res[0]['data_venc'] ?? '';
 
-    // Tratamento para garantir a seleção (minúsculo e sem espaços)
+    // Tratamento para garantir a seleção
     $nivel_atual = strtolower(trim($res[0]['nivel']));
     $faixa_atual = strtolower(trim($res[0]['cor_faixa'] ?? 'branca'));
     $graus_atual = $res[0]['graus'] ?? 0;
+    $aulas_atual = $res[0]['total_aulas'] ?? 0;
 }
 ?>
 
@@ -47,7 +50,6 @@ if (count($res) > 0) {
             border: none;
         }
 
-        /* Estilização das Caixas de Seleção */
         .opcoes-flex {
             display: flex;
             flex-wrap: wrap;
@@ -94,7 +96,7 @@ if (count($res) > 0) {
                         <h5 class="m-0"><i class="fas fa-user-edit mr-2 text-warning"></i>EDITAR USUÁRIO</h5>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="salvar-usuario.php">
+                        <form method="POST" action="cadastrar-usuario.php">
                             <input type="hidden" name="id" value="<?php echo $id_usuario ?>">
 
                             <div class="form-group mb-4">
@@ -106,13 +108,25 @@ if (count($res) > 0) {
                             <div class="row">
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="font-weight-bold">CPF</label>
-                                    <input type="text" name="cpf" class="form-control" value="<?php echo $cpf ?>"
-                                        required>
+                                    <input type="text" name="cpf" class="form-control" value="<?php echo $cpf ?>">
                                 </div>
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="font-weight-bold">E-mail (Login)</label>
-                                    <input type="email" name="usuario" class="form-control"
-                                        value="<?php echo $usuario ?>" required>
+                                    <input type="email" name="email" class="form-control" value="<?php echo $usuario ?>"
+                                        required>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6 form-group">
+                                    <label class="font-weight-bold">Telefone</label>
+                                    <input type="text" name="telefone" class="form-control"
+                                        value="<?php echo $telefone ?>">
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label class="font-weight-bold">Data de Vencimento</label>
+                                    <input type="date" name="data_venc" class="form-control"
+                                        value="<?php echo $data_venc ?>">
                                 </div>
                             </div>
 
@@ -127,8 +141,7 @@ if (count($res) > 0) {
                                     <div class="opcoes-flex">
                                         <label class="item-selecao">
                                             <input type="radio" name="nivel" value="Cliente"
-                                                <?php if ($nivel_atual == 'cliente' || $nivel_atual == 'aluno') echo 'checked'; ?>
-                                                required> Aluno
+                                                <?php if ($nivel_atual == 'cliente') echo 'checked'; ?> required> Aluno
                                         </label>
                                         <label class="item-selecao">
                                             <input type="radio" name="nivel" value="Professor"
@@ -137,51 +150,48 @@ if (count($res) > 0) {
                                         </label>
                                         <label class="item-selecao">
                                             <input type="radio" name="nivel" value="Admin"
-                                                <?php if ($nivel_atual == 'admin' || $nivel_atual == 'administrador') echo 'checked'; ?>>
-                                            Admin
+                                                <?php if ($nivel_atual == 'admin') echo 'checked'; ?>> Admin
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
                             <div id="secao_graduacao"
-                                style="display: <?php echo ($nivel_atual == 'cliente' || $nivel_atual == 'aluno') ? 'block' : 'none'; ?>;">
+                                style="display: <?php echo ($nivel_atual == 'cliente') ? 'block' : 'none'; ?>;">
                                 <hr class="my-4">
                                 <div class="row">
                                     <div class="col-12 mb-3">
                                         <label class="secao-titulo font-weight-bold"><i
                                                 class="fas fa-medal mr-1"></i>Cor da Faixa</label>
                                         <div class="opcoes-flex">
-                                            <label class="item-selecao"><input type="radio" name="cor_faixa"
-                                                    value="Branca"
-                                                    <?php if ($faixa_atual == 'branca') echo 'checked'; ?>>
-                                                Branca</label>
-                                            <label class="item-selecao"><input type="radio" name="cor_faixa"
-                                                    value="Azul" <?php if ($faixa_atual == 'azul') echo 'checked'; ?>>
-                                                Azul</label>
-                                            <label class="item-selecao"><input type="radio" name="cor_faixa"
-                                                    value="Roxa" <?php if ($faixa_atual == 'roxa') echo 'checked'; ?>>
-                                                Roxa</label>
-                                            <label class="item-selecao"><input type="radio" name="cor_faixa"
-                                                    value="Marrom"
-                                                    <?php if ($faixa_atual == 'marrom') echo 'checked'; ?>>
-                                                Marrom</label>
-                                            <label class="item-selecao"><input type="radio" name="cor_faixa"
-                                                    value="Preta" <?php if ($faixa_atual == 'preta') echo 'checked'; ?>>
-                                                Preta</label>
+                                            <?php
+                                            $faixas = ['Branca', 'Azul', 'Roxa', 'Marrom', 'Preta'];
+                                            foreach ($faixas as $f):
+                                                $selected = ($faixa_atual == strtolower($f)) ? 'checked' : '';
+                                            ?>
+                                                <label class="item-selecao">
+                                                    <input type="radio" name="cor_faixa" value="<?php echo $f ?>"
+                                                        <?php echo $selected ?>> <?php echo $f ?>
+                                                </label>
+                                            <?php endforeach; ?>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 form-group mt-2">
+                                    <div class="col-md-6 form-group mt-2">
                                         <label class="font-weight-bold">Graus na Faixa</label>
                                         <input type="number" name="graus" class="form-control"
-                                            value="<?php echo $graus_atual ?>" min="0" max="9">
+                                            value="<?php echo $graus_atual ?>" min="0" max="4">
+                                    </div>
+                                    <div class="col-md-6 form-group mt-2">
+                                        <label class="font-weight-bold">Total de Aulas (Frequência)</label>
+                                        <input type="number" name="total_aulas" class="form-control"
+                                            value="<?php echo $aulas_atual ?>" min="0">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="mt-5">
                                 <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold shadow-sm">
-                                    <i class="fas fa-check-circle mr-2"></i>ATUALIZAR DADOS
+                                    <i class="fas fa-check-circle mr-2"></i>SALVAR ALTERAÇÕES
                                 </button>
                                 <a href="usuarios.php" class="btn btn-light btn-block border mt-2">
                                     <i class="fas fa-arrow-left mr-1"></i> Voltar
@@ -196,7 +206,6 @@ if (count($res) > 0) {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Gerencia a exibição da graduação
         $('input[name="nivel"]').change(function() {
             if ($(this).val() == 'Cliente') {
                 $('#secao_graduacao').fadeIn();
