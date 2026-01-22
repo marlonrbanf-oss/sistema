@@ -108,7 +108,7 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
         <i class="fas fa-external-link-alt mr-2"></i> IR PARA O TERMINAL
     </a>
 
-    <?php include_once(__DIR__ . "/modal-biometria.php"); ?>
+    <?php include_once("modal-biometria.php"); ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -151,12 +151,14 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
             // Abre o modal
             $('#modalBiometria').modal('show');
 
-            // Tenta iniciar a câmera definida no modal-biometria.php
-            if (typeof iniciarCameraBio === "function") {
-                iniciarCameraBio();
-            } else {
-                alert("Erro: Script de câmera não carregado.");
-            }
+            // Timeout de 500ms para garantir que o modal terminou de abrir antes de iniciar a câmera
+            setTimeout(function() {
+                if (typeof iniciarCameraBio === "function") {
+                    iniciarCameraBio();
+                } else {
+                    console.error("Função iniciarCameraBio não encontrada no modal-biometria.php");
+                }
+            }, 500);
         }
     </script>
 </body>

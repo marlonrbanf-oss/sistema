@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
 
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <style>
         body {
@@ -110,7 +110,7 @@
                 <video id="video" autoplay muted playsinline></video>
                 <canvas id="overlay"></canvas>
             </div>
-            <div id="status-ia" class="small text-muted mb-2">Iniciando Biometria...</div>
+            <div id="status-ia" class="small text-muted mb-2">Carregando IA...</div>
             <button class="btn-alternar" onclick="alternarModo('senha')">Usar senha manual</button>
         </div>
 
@@ -140,16 +140,19 @@
         let scanAtivo = true;
 
         async function iniciarTerminal() {
-            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+            // Caminho para a pasta local onde você colocou os arquivos baixados
+            const MODEL_URL = 'models';
 
             try {
-                statusIA.innerText = "Carregando Inteligência...";
-                // 1. Carrega Modelos de forma assíncrona
+                statusIA.innerText = "Sincronizando modelos...";
+
+                // 1. Carrega Modelos locais
                 await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-                // 2. Busca Biometrias do Banco
+                // 2. Busca Biometrias
+                statusIA.innerText = "Buscando dados...";
                 const res = await fetch('listar-biometrias.php');
                 const dadosAlunos = await res.json();
 
@@ -158,32 +161,41 @@
                         const descriptorArray = new Float32Array(JSON.parse(d.biometria));
                         return new faceapi.LabeledFaceDescriptors(d.id.toString(), [descriptorArray]);
                     });
-                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
-                    statusIA.innerText = "Posicione seu rosto";
-                    statusIA.classList.replace('text-muted', 'text-success');
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+                    statusIA.innerText = "Aproxime o rosto";
+                    statusIA.className = "small text-success mb-2";
                 } else {
-                    statusIA.innerText = "Nenhum rosto cadastrado.";
+                    statusIA.innerText = "Nenhum aluno cadastrado.";
+                    statusIA.className = "small text-warning mb-2";
                 }
+
+                iniciarCamera();
+
             } catch (err) {
-                console.error("Erro IA:", err);
-                statusIA.innerText = "Erro ao iniciar IA.";
+                console.error("Erro Crítico:", err);
+                statusIA.innerText = "Erro ao iniciar IA local.";
+                statusIA.className = "small text-danger mb-2";
             }
-            iniciarCamera();
         }
 
         async function iniciarCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        facingMode: "user"
+                        facingMode: "user",
+                        width: {
+                            ideal: 640
+                        },
+                        height: {
+                            ideal: 480
+                        }
                     }
                 });
                 video.srcObject = stream;
-                // Força o início do vídeo para evitar tela preta em alguns dispositivos
                 await video.play();
             } catch (err) {
                 console.error("Erro Câmera:", err);
-                statusIA.innerText = "Câmera não permitida.";
+                statusIA.innerText = "Acesso à câmera negado.";
                 alternarModo('senha');
             }
         }
@@ -205,7 +217,6 @@
 
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
                 canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-
                 faceapi.draw.drawDetections(canvas, resizedDetections);
 
                 resizedDetections.forEach(detection => {
@@ -220,7 +231,7 @@
         function processarCheckin(id) {
             scanAtivo = false;
             const msg = document.getElementById('mensagem_retorno');
-            msg.innerHTML = "<div class='spinner-border text-light spinner-border-sm'></div> Reconhecendo...";
+            msg.innerHTML = "<div class='spinner-border text-light spinner-border-sm'></div> Validando...";
 
             const formData = new FormData();
             formData.append('id_facial', id);
@@ -242,7 +253,6 @@
         function confirmarSenha() {
             const senha = document.getElementById('senha_aluno').value;
             const msg = document.getElementById('mensagem_retorno');
-
             const formData = new FormData();
             formData.append('senha', senha);
 

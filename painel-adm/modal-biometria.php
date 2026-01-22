@@ -10,9 +10,12 @@
                 </button>
             </div>
             <div class="modal-body text-center">
-                <div style="position: relative; width: 100%; height: 300px; background: #000;" class="rounded mb-3 border border-secondary">
-                    <video id="video-bio" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-                    <canvas id="overlay-bio" style="position: absolute; top: 0; left: 0;"></canvas>
+                <div style="position: relative; width: 100%; height: 300px; background: #000;"
+                    class="rounded mb-3 border border-secondary">
+                    <video id="video-bio" autoplay muted playsinline
+                        style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <canvas id="overlay-bio"
+                        style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
                 </div>
                 <div id="status-bio" class="alert alert-info py-1 small">Aguardando...</div>
                 <input type="hidden" id="id-aluno-bio">
@@ -33,20 +36,24 @@
     async function iniciarCameraBio() {
         const video = document.getElementById('video-bio');
         const status = document.getElementById('status-bio');
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+        /* CORREÇÃO DE CAMINHO: 
+           Se este arquivo está em /painel-adm/modal-biometria.php 
+           e sua pasta de modelos está na raiz /models, usamos '../models'
+        */
+        const MODEL_URL = '../models';
 
         try {
-            status.innerText = "Iniciando IA...";
+            status.innerText = "Carregando Inteligência Local...";
             status.className = "alert alert-warning py-1 small";
 
-            // Carrega os modelos se ainda não estiverem na memória
+            // Tenta carregar os modelos da sua pasta local
             await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
             await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
             await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-            status.innerText = "Abrindo câmera...";
+            status.innerText = "Iniciando câmera...";
 
-            // Solicita acesso à câmera
             streamBio = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: "user",
@@ -61,25 +68,28 @@
 
             video.srcObject = streamBio;
 
-            // Força o play do vídeo (importante para navegadores mobile)
-            await video.play();
+            // Força o play para evitar tela preta em dispositivos móveis
+            video.onloadedmetadata = () => {
+                video.play();
+                status.innerText = "Câmera Pronta! Centralize o rosto.";
+                status.className = "alert alert-success py-1 small";
+            };
 
-            status.innerText = "Câmera Ativa. Posicione o rosto.";
-            status.className = "alert alert-success py-1 small";
         } catch (err) {
-            console.error("Erro Biometria:", err);
+            console.error("Erro no carregamento:", err);
             status.className = "alert alert-danger py-1 small";
-            status.innerText = "Erro: Sem acesso à câmera ou falha na IA.";
+            status.innerText = "Erro: Verifique se a pasta /models existe na raiz ou se está em HTTPS.";
         }
     }
 
-    // Fecha a câmera ao fechar o modal
+    // Desliga a câmera ao fechar o modal para economizar bateria e CPU
     $('#modalBiometria').on('hidden.bs.modal', function() {
         if (streamBio) {
             streamBio.getTracks().forEach(track => track.stop());
             streamBio = null;
         }
         document.getElementById('status-bio').innerText = "Aguardando...";
+        document.getElementById('status-bio').className = "alert alert-info py-1 small";
         document.getElementById('btn-capturar').disabled = false;
     });
 
@@ -89,21 +99,24 @@
         const btn = document.getElementById('btn-capturar');
         const status = document.getElementById('status-bio');
 
-        if (!video.srcObject) {
+        if (!video.srcObject || video.paused) {
             alert("A câmera não está ativa.");
             return;
         }
 
         btn.disabled = true;
-        status.innerText = "Analisando rosto...";
+        status.innerText = "Analisando traços faciais...";
+        status.className = "alert alert-warning py-1 small";
 
-        // Captura o descriptor facial
+        // Detecta o rosto e gera o Descriptor (a "impressão digital" do rosto)
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
             .withFaceLandmarks()
             .withFaceDescriptor();
 
         if (detection) {
-            status.innerText = "Salvando no banco...";
+            status.innerText = "Enviando para o servidor...";
+
+            // Converte os dados da face em string para salvar no banco
             const bioData = JSON.stringify(Array.from(detection.descriptor));
 
             $.ajax({
@@ -119,15 +132,17 @@
                     location.reload();
                 },
                 error: function() {
-                    alert("Erro de conexão com o servidor.");
+                    alert("Erro ao conectar com o arquivo salvar_biometria.php");
                     btn.disabled = false;
-                    status.innerText = "Erro ao salvar.";
+                    status.innerText = "Erro de conexão.";
                 }
             });
         } else {
-            alert("Rosto não detectado. Tente ficar em um local mais iluminado e olhe para a câmera.");
+            alert(
+                "Rosto não detectado! \n\nCertifique-se de:\n1. Estar em um local iluminado.\n2. Não estar usando máscara ou óculos escuros.\n3. Olhar diretamente para a câmera.");
             btn.disabled = false;
             status.innerText = "Rosto não encontrado.";
+            status.className = "alert alert-danger py-1 small";
         }
     }
 </script>
