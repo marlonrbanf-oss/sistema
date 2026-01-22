@@ -46,9 +46,7 @@ $sql = "SELECT u.*, g.cor_faixa, g.graus, g.total_aulas
         FROM usuarios as u 
         LEFT JOIN graduacoes as g ON u.id = g.usuario_id";
 
-// Lógica de Filtros Combinada
 if ($status_filtro == 'atrasado') {
-    // Filtro vindo do Dashboard: Alunos ativos com vencimento menor que hoje
     $sql .= " WHERE u.nivel = 'Cliente' AND u.ativo = 'Sim' AND u.data_venc < '$hoje'";
 } elseif ($nivel_filtro == 'Cliente') {
     $sql .= " WHERE u.nivel = 'Cliente'";
@@ -154,6 +152,36 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
             z-index: 10;
         }
 
+        .btn-novo {
+            background-color: #28a745;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-novo:hover {
+            background-color: #218838;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .btn-importar {
+            background-color: #17a2b8;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-importar:hover {
+            background-color: #138496;
+            color: white;
+            transform: scale(1.05);
+        }
+
         @media (max-width: 768px) {
             .btn-group-mobile {
                 display: flex;
@@ -171,7 +199,15 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
             <h3 class="font-weight-bold mb-0 text-dark"><i class="fas fa-users-cog mr-2 text-primary"></i> Gestão de
                 Pessoas</h3>
+
             <div class="btn-group-mobile">
+                <button class="btn btn-sm btn-novo shadow-sm mr-2" data-toggle="modal" data-target="#modalNovo">
+                    <i class="fas fa-user-plus mr-1"></i> NOVO USUÁRIO
+                </button>
+                <button class="btn btn-sm btn-importar shadow-sm mr-2" data-toggle="modal" data-target="#modalImportar">
+                    <i class="fas fa-file-excel mr-1"></i> IMPORTAR EXCEL
+                </button>
+
                 <a href="relatorio-atrasados.php" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm mr-2">
                     <i class="fas fa-file-pdf mr-1"></i> Lista de Atrasados
                 </a>
@@ -243,27 +279,20 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                     <td>
                                         <span
                                             class="font-weight-bold d-block"><?php echo mb_strtoupper($usu['nome']) ?></span>
-                                        <span class="badge <?php echo $cor_selo ?> badge-nivel">
-                                            <?php echo ($usu['nivel'] == 'Balconista') ? 'PROFESSOR' : $usu['nivel']; ?>
-                                        </span>
+                                        <span
+                                            class="badge <?php echo $cor_selo ?> badge-nivel"><?php echo ($usu['nivel'] == 'Balconista') ? 'PROFESSOR' : $usu['nivel']; ?></span>
                                         <small class="text-muted ml-1"><?php echo $usu['usuario'] ?></small>
                                     </td>
-                                    <td>
-                                        <?php if ($usu['nivel'] == 'Cliente'): ?>
-                                            <span class="badge-aulas"><?php echo $total_aulas ?></span>
-                                        <?php else: ?>
-                                            <span class="text-muted">---</span>
-                                        <?php endif; ?>
-                                    </td>
+                                    <td><?php if ($usu['nivel'] == 'Cliente'): ?><span
+                                                class="badge-aulas"><?php echo $total_aulas ?></span><?php else: ?><span
+                                                class="text-muted">---</span><?php endif; ?></td>
                                     <td>
                                         <?php if ($usu['nivel'] == 'Cliente'): ?>
                                             <div class="faixa-amostra" style="background-color: <?php echo $cor_exibicao ?>;">
                                             </div>
                                             <span class="ml-1 small font-weight-bold"><?php echo $usu['graus'] ?? '0' ?>º
                                                 G</span>
-                                        <?php else: ?>
-                                            <span class="text-muted small">---</span>
-                                        <?php endif; ?>
+                                        <?php else: ?><span class="text-muted small">---</span><?php endif; ?>
                                     </td>
                                     <td>
                                         <span class="status-pill <?php echo $st_class ?>"><?php echo $st_txt ?></span>
@@ -277,61 +306,27 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                             <button class="btn btn-light btn-sm border dropdown-toggle" type="button"
                                                 data-toggle="dropdown">Gerenciar</button>
                                             <div class="dropdown-menu dropdown-menu-right shadow border-0">
-
                                                 <?php if ($usu['nivel'] == 'Cliente'): ?>
                                                     <a class="dropdown-item text-warning font-weight-bold"
-                                                        href="lancar-tecnica.php?id=<?php echo $id ?>">
-                                                        <i class="fas fa-stamp mr-2"></i> Lançar Selo/Técnica
-                                                    </a>
-
+                                                        href="lancar-tecnica.php?id=<?php echo $id ?>"><i
+                                                            class="fas fa-stamp mr-2"></i> Lançar Selo</a>
                                                     <a class="dropdown-item text-primary"
-                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=renovar">
-                                                        <i class="fas fa-calendar-check mr-2"></i> Renovar (Ativar/Em Dia)
-                                                    </a>
-
+                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=renovar"><i
+                                                            class="fas fa-calendar-check mr-2"></i> Renovar</a>
                                                     <a class="dropdown-item text-danger"
-                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=atrasar">
-                                                        <i class="fas fa-hand-holding-usd mr-2"></i> Definir como Atrasado
-                                                    </a>
-
+                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=atrasar"><i
+                                                            class="fas fa-hand-holding-usd mr-2"></i> Definir Atrasado</a>
                                                     <a class="dropdown-item" href="#"
-                                                        onclick="darPresenca(<?php echo $id ?>, '<?php echo $usu['nome'] ?>')">
-                                                        <i class="fas fa-check mr-2 text-success"></i> Dar Presença
-                                                    </a>
-
-                                                    <?php if ($st_txt == "Atrasado" && $tel != ''):
-                                                        $msg = "Olá {$usu['nome']}, notamos que sua mensalidade venceu em " . date('d/m/Y', strtotime($data_venc)) . ". Como podemos ajudar?";
-                                                    ?>
-                                                        <a class="dropdown-item text-success"
-                                                            href="https://api.whatsapp.com/send?phone=55<?php echo $tel ?>&text=<?php echo urlencode($msg) ?>"
-                                                            target="_blank">
-                                                            <i class="fab fa-whatsapp mr-2"></i> Cobrar WhatsApp
-                                                        </a>
-                                                    <?php endif; ?>
+                                                        onclick="darPresenca(<?php echo $id ?>, '<?php echo $usu['nome'] ?>')"><i
+                                                            class="fas fa-check mr-2 text-success"></i> Dar Presença</a>
                                                 <?php endif; ?>
-
                                                 <div class="dropdown-divider"></div>
-
-                                                <?php if ($usu['ativo'] == 'Sim'): ?>
-                                                    <a class="dropdown-item text-secondary"
-                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=inativar">
-                                                        <i class="fas fa-user-slash mr-2"></i> Inativar Conta
-                                                    </a>
-                                                <?php else: ?>
-                                                    <a class="dropdown-item text-success font-weight-bold"
-                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=ativar">
-                                                        <i class="fas fa-user-check mr-2"></i> Ativar Conta
-                                                    </a>
-                                                <?php endif; ?>
-
-                                                <a class="dropdown-item" href="editar-usuario.php?id=<?php echo $id ?>">
-                                                    <i class="fas fa-edit mr-2 text-info"></i> Editar / Senha
-                                                </a>
+                                                <a class="dropdown-item" href="editar-usuario.php?id=<?php echo $id ?>"><i
+                                                        class="fas fa-edit mr-2 text-info"></i> Editar</a>
                                                 <a class="dropdown-item text-danger"
                                                     href="excluir-usuario.php?id=<?php echo $id ?>"
-                                                    onclick="return confirm('Excluir?')">
-                                                    <i class="fas fa-trash-alt mr-2"></i> Excluir
-                                                </a>
+                                                    onclick="return confirm('Excluir?')"><i
+                                                        class="fas fa-trash-alt mr-2"></i> Excluir</a>
                                             </div>
                                         </div>
                                     </td>
@@ -339,6 +334,88 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             <?php } ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalNovo" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content shadow border-0" style="border-radius: 15px;">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i> Cadastrar Usuário
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form action="cadastrar-usuario.php" method="POST" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label>Nome Completo</label>
+                                <input type="text" name="nome" class="form-control" placeholder="Ex: João Silva"
+                                    required>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>E-mail / Usuário</label>
+                                <input type="email" name="email" class="form-control" placeholder="email@exemplo.com"
+                                    required>
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label>CPF</label>
+                                <input type="text" name="cpf" class="form-control" id="cpf_cad"
+                                    placeholder="000.000.000-00">
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label>Senha</label>
+                                <input type="password" name="senha" class="form-control" required>
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label>Nível</label>
+                                <select name="nivel" class="form-control">
+                                    <option value="Cliente">Cliente (Aluno)</option>
+                                    <option value="Professor">Professor / Balconista</option>
+                                    <option value="Admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="text-primary font-weight-bold">
+                                    <input type="checkbox" name="experimental" value="Sim"> Desejo uma aula experimental
+                                    gratuita
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success btn-block">FINALIZAR CADASTRO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalImportar" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content shadow border-0" style="border-radius: 15px;">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-file-import mr-2"></i> Importar via Excel</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="text-muted small">Use nossa planilha padrão para evitar erros no banco de dados.</p>
+                    <a href="modelo-importacao.xlsx" class="btn btn-sm btn-outline-secondary mb-3">
+                        <i class="fas fa-download mr-1"></i> Baixar Tabela Padrão (Modelo)
+                    </a>
+                    <hr>
+                    <form action="importar-excel.php" method="POST" enctype="multipart/form-data">
+                        <div class="form-group text-left">
+                            <label class="font-weight-bold">Selecione o arquivo preenchido:</label>
+                            <input type="file" name="arquivo_excel" class="form-control-file border p-2 w-100"
+                                accept=".xlsx, .xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-info btn-block mt-3 font-weight-bold">
+                            PROCESSAR IMPORTAÇÃO
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -356,16 +433,13 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
             });
         });
 
-        // Função para perguntar a quantidade de presenças
         function darPresenca(id, nome) {
             let quantidade = prompt("Quantas presenças deseja atribuir para " + nome + "?", "1");
-
             if (quantidade !== null) {
                 if (isNaN(quantidade) || quantidade <= 0 || quantidade === "") {
                     alert("Por favor, insira um número válido.");
                     return;
                 }
-                // Redireciona para o arquivo de registro com o novo parâmetro quantidade
                 window.location.href = "dar-presenca.php?id=" + id + "&quantidade=" + quantidade;
             }
         }
