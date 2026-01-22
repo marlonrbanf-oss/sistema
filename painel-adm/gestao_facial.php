@@ -67,7 +67,7 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
         </div>
     </div>
 
-    <a href="../terminal.php" target="_blank" class="btn btn-warning shadow-lg"
+    <a href="../terminal-presenca.php" target="_blank" class="btn btn-warning shadow-lg"
         style="position: fixed; bottom: 30px; right: 30px; border-radius: 50px; padding: 15px 25px; font-weight: bold;">
         <i class="fas fa-external-link-alt mr-2"></i> TESTAR NO TERMINAL
     </a>
