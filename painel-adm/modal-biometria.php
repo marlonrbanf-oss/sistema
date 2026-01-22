@@ -1,3 +1,5 @@
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
 <div class="modal fade" id="modalBiometria" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content bg-dark text-white">
@@ -8,12 +10,11 @@
                 </button>
             </div>
             <div class="modal-body text-center">
-                <div style="position: relative; width: 100%; height: 300px; background: #000;" class="rounded mb-3">
-                    <video id="video-bio" autoplay muted playsinline
-                        style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <div style="position: relative; width: 100%; height: 300px; background: #000;" class="rounded mb-3 border border-secondary">
+                    <video id="video-bio" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
                     <canvas id="overlay-bio" style="position: absolute; top: 0; left: 0;"></canvas>
                 </div>
-                <div id="status-bio" class="alert alert-info py-1 small">Aguardando detecção...</div>
+                <div id="status-bio" class="alert alert-info py-1 small">Aguardando...</div>
                 <input type="hidden" id="id-aluno-bio">
             </div>
             <div class="modal-footer border-secondary">
@@ -32,33 +33,54 @@
     async function iniciarCameraBio() {
         const video = document.getElementById('video-bio');
         const status = document.getElementById('status-bio');
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
         try {
-            // Garante que os modelos estão carregados (caso ainda não estejam)
-            const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-            if (!faceapi.nets.tinyFaceDetector.params) {
-                status.innerText = "Carregando Inteligência...";
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-            }
+            status.innerText = "Iniciando IA...";
+            status.className = "alert alert-warning py-1 small";
 
+            // Carrega os modelos se ainda não estiverem na memória
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+            status.innerText = "Abrindo câmera...";
+
+            // Solicita acesso à câmera
             streamBio = await navigator.mediaDevices.getUserMedia({
-                video: {}
+                video: {
+                    facingMode: "user",
+                    width: {
+                        ideal: 640
+                    },
+                    height: {
+                        ideal: 480
+                    }
+                }
             });
+
             video.srcObject = streamBio;
+
+            // Força o play do vídeo (importante para navegadores mobile)
+            await video.play();
+
             status.innerText = "Câmera Ativa. Posicione o rosto.";
+            status.className = "alert alert-success py-1 small";
         } catch (err) {
+            console.error("Erro Biometria:", err);
             status.className = "alert alert-danger py-1 small";
-            status.innerText = "Erro ao acessar câmera.";
+            status.innerText = "Erro: Sem acesso à câmera ou falha na IA.";
         }
     }
 
-    // Para a câmera ao fechar o modal para não gastar recurso
+    // Fecha a câmera ao fechar o modal
     $('#modalBiometria').on('hidden.bs.modal', function() {
         if (streamBio) {
             streamBio.getTracks().forEach(track => track.stop());
+            streamBio = null;
         }
+        document.getElementById('status-bio').innerText = "Aguardando...";
+        document.getElementById('btn-capturar').disabled = false;
     });
 
     async function salvarBiometria() {
@@ -67,16 +89,21 @@
         const btn = document.getElementById('btn-capturar');
         const status = document.getElementById('status-bio');
 
-        btn.disabled = true;
-        status.innerText = "Processando biometria...";
+        if (!video.srcObject) {
+            alert("A câmera não está ativa.");
+            return;
+        }
 
-        // Detecta o rosto e gera o Descriptor (assinatura numérica)
+        btn.disabled = true;
+        status.innerText = "Analisando rosto...";
+
+        // Captura o descriptor facial
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
             .withFaceLandmarks()
             .withFaceDescriptor();
 
         if (detection) {
-            // Converte o Float32Array para uma string JSON para salvar no banco
+            status.innerText = "Salvando no banco...";
             const bioData = JSON.stringify(Array.from(detection.descriptor));
 
             $.ajax({
@@ -89,17 +116,18 @@
                 success: function(response) {
                     alert("Biometria cadastrada com sucesso!");
                     $('#modalBiometria').modal('hide');
-                    location.reload(); // Recarrega para atualizar o status na lista
+                    location.reload();
                 },
                 error: function() {
-                    alert("Erro ao salvar no servidor.");
+                    alert("Erro de conexão com o servidor.");
                     btn.disabled = false;
+                    status.innerText = "Erro ao salvar.";
                 }
             });
         } else {
-            alert("Nenhum rosto detectado. Tente centralizar mais o rosto.");
+            alert("Rosto não detectado. Tente ficar em um local mais iluminado e olhe para a câmera.");
             btn.disabled = false;
-            status.innerText = "Erro: Rosto não encontrado.";
+            status.innerText = "Rosto não encontrado.";
         }
     }
 </script>

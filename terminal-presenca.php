@@ -143,13 +143,11 @@
             const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
 
             try {
-                // 1. Carrega Modelos
                 statusIA.innerText = "Carregando Inteligência...";
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-                ]);
+                // 1. Carrega Modelos de forma assíncrona
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
                 // 2. Busca Biometrias do Banco
                 const res = await fetch('listar-biometrias.php');
@@ -160,14 +158,14 @@
                         const descriptorArray = new Float32Array(JSON.parse(d.biometria));
                         return new faceapi.LabeledFaceDescriptors(d.id.toString(), [descriptorArray]);
                     });
-                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55); // Precisão de 55%
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
                     statusIA.innerText = "Posicione seu rosto";
                     statusIA.classList.replace('text-muted', 'text-success');
                 } else {
                     statusIA.innerText = "Nenhum rosto cadastrado.";
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Erro IA:", err);
                 statusIA.innerText = "Erro ao iniciar IA.";
             }
             iniciarCamera();
@@ -181,7 +179,10 @@
                     }
                 });
                 video.srcObject = stream;
+                // Força o início do vídeo para evitar tela preta em alguns dispositivos
+                await video.play();
             } catch (err) {
+                console.error("Erro Câmera:", err);
                 statusIA.innerText = "Câmera não permitida.";
                 alternarModo('senha');
             }
@@ -205,7 +206,6 @@
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
                 canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 
-                // Desenha o quadrado no rosto
                 faceapi.draw.drawDetections(canvas, resizedDetections);
 
                 resizedDetections.forEach(detection => {
