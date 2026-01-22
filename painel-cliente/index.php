@@ -11,7 +11,7 @@ if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente
 
 $id_usuario = $_SESSION['id_usuario'];
 
-// 2. Busca de Dados Pessoais (CORRIGIDO: Definindo variáveis para o modal)
+// 2. Busca de Dados Pessoais (Garante que Sidebar e Modais funcionem)
 $query_u = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id");
 $query_u->bindValue(":id", $id_usuario);
 $query_u->execute();
@@ -25,7 +25,7 @@ $telefone_usuario = $dados_u['telefone'] ?? '';
 // 3. Busca UNIFICADA de Graduação (Regras de aulas, faixa e grau)
 $status = verificarRequisitos($pdo, $id_usuario);
 
-// --- LÓGICA: ADICIONAR TÉCNICA DE ESTUDO (ALUNO) ---
+// --- LÓGICA: ADICIONAR TÉCNICA DE ESTUDO ---
 if (isset($_POST['nova_tecnica_estudo'])) {
     $tec_nome = $_POST['nova_tecnica_estudo'];
     $res_estudo = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo'");
@@ -59,13 +59,13 @@ function tratarCorFaixa($cor)
 {
     $c = mb_strtolower(trim($cor));
     $mapa = [
-        'branca'            => 'white',
-        'azul'              => '#0000FF',
-        'roxa'              => '#8A2BE2',
-        'marrom'            => '#8B4513',
-        'preta'             => 'black',
-        'coral'             => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #000 20%, #000 40%, #ff0000 40%, #ff0000 60%, #000 60%, #000 80%, #ff0000 80%, #ff0000 100%)',
-        'vermelha'          => 'red'
+        'branca' => 'white',
+        'azul' => '#0000FF',
+        'roxa' => '#8A2BE2',
+        'marrom' => '#8B4513',
+        'preta' => 'black',
+        'coral' => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #000 20%, #000 40%, #ff0000 40%, #ff0000 60%, #000 60%, #000 80%, #ff0000 80%, #ff0000 100%)',
+        'vermelha' => 'red'
     ];
     return $mapa[$c] ?? '#ddd';
 }
@@ -82,13 +82,11 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Portal do Atleta - Nova Arte BJJ</title>
-
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-
     <style>
         .card-body strong {
             display: -webkit-box;
@@ -194,7 +192,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 <div class="card-body text-center">
                                     <h5 class="text-muted">Faixa: <b
                                             class="text-dark"><?php echo strtoupper($status['faixa']); ?></b></h5>
-
                                     <div class="bjj-belt">
                                         <div class="belt-bar">
                                             <?php for ($i = 0; $i < $status['grau']; $i++): ?>
@@ -202,7 +199,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             <?php endfor; ?>
                                         </div>
                                     </div>
-
                                     <div class="mt-5 text-left px-md-4">
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
                                             <span><i class="fas fa-calendar-check mr-1 text-success"></i>
@@ -216,7 +212,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                 <?php echo round($porcentagem_progresso); ?>%
                                             </div>
                                         </div>
-
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
                                             <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica</span>
                                             <span><?php echo $tecnicas_concluidas; ?> Selos</span>
@@ -246,6 +241,31 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                     </div>
 
                     <div class="row">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>Particulares</h3>
+                                    <p>Minhas Aulas</p>
+                                </div>
+                                <div class="icon"><i class="fas fa-user-graduate"></i></div>
+                                <a href="particulares.php" class="small-box-footer">Ver Mais <i
+                                        class="fas fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>Financeiro</h3>
+                                    <p>Mensalidades</p>
+                                </div>
+                                <div class="icon"><i class="fas fa-receipt"></i></div>
+                                <a href="mensalidades.php" class="small-box-footer">Ver Mais <i
+                                        class="fas fa-arrow-circle-right"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-12">
                             <div class="card shadow-sm border-0 mb-4">
                                 <div class="card-header bg-primary">
@@ -263,7 +283,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             </div>
                                         </div>
                                     </form>
-
                                     <div class="row">
                                         <?php
                                         $query_estudo = $pdo->prepare("SELECT * FROM tecnicas_estudo WHERE usuario_id = :id ORDER BY status ASC, id DESC");
@@ -281,12 +300,10 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                     <div class="info-box-content">
                                                         <span class="info-box-text text-uppercase font-weight-bold"
                                                             style="font-size:10px;"><?php echo $item_e['nome_tecnica']; ?></span>
-
                                                         <?php if ($item_e['status'] == 'Em Estudo'): ?>
                                                             <button class="btn btn-xs btn-primary btn-block mt-1"
-                                                                onclick="abrirLeitorQR('estudo', '<?php echo $item_e['nome_tecnica']; ?>', '<?php echo $item_e['id']; ?>')">
-                                                                <i class="fas fa-qrcode mr-1"></i> VALIDAR
-                                                            </button>
+                                                                onclick="abrirLeitorQR('estudo', '<?php echo $item_e['nome_tecnica']; ?>', '<?php echo $item_e['id']; ?>')"><i
+                                                                    class="fas fa-qrcode mr-1"></i> VALIDAR</button>
                                                         <?php else: ?>
                                                             <span class="badge badge-success w-100">DOMINADO</span>
                                                             <small class="text-success" style="font-size: 9px;"><i
@@ -323,8 +340,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             $grupos[$posicao_label][] = $hab;
                                         }
 
-                                        foreach ($grupos as $posicao_titulo => $tecnicas) {
-                                    ?>
+                                        foreach ($grupos as $posicao_titulo => $tecnicas) { ?>
                                             <div class="row mt-3 mb-2">
                                                 <div class="col-12">
                                                     <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1">
@@ -372,22 +388,19 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header bg-dark text-white">
-                        <h5 class="modal-title">Editar Meus Dados</h5>
-                        <button type="button" class="close text-white"
+                        <h5 class="modal-title">Editar Meus Dados</h5><button type="button" class="close text-white"
                             data-dismiss="modal"><span>&times;</span></button>
                     </div>
                     <form id="form-perfil-completo" enctype="multipart/form-data">
                         <div class="modal-body">
                             <div class="row">
                                 <div class="col-8">
-                                    <div class="form-group"><label>Nome Completo</label>
-                                        <input type="text" class="form-control" name="nome"
-                                            value="<?php echo $nome_usuario ?>" required>
-                                    </div>
-                                    <div class="form-group"><label>Telefone</label>
-                                        <input type="text" class="form-control" name="telefone" id="telefone"
-                                            value="<?php echo $telefone_usuario ?>">
-                                    </div>
+                                    <div class="form-group"><label>Nome Completo</label><input type="text"
+                                            class="form-control" name="nome" value="<?php echo $nome_usuario ?>"
+                                            required></div>
+                                    <div class="form-group"><label>Telefone</label><input type="text"
+                                            class="form-control" name="telefone"
+                                            value="<?php echo $telefone_usuario ?>"></div>
                                 </div>
                                 <div class="col-4 text-center">
                                     <img src="../images/perfil/<?php echo $foto_usuario; ?>" id="target-perfil"
@@ -399,9 +412,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         onclick="$('#foto-perfil').click();">Alterar</button>
                                 </div>
                             </div>
-                            <div class="form-group"><label>E-mail (Login)</label>
-                                <input type="email" class="form-control" name="email"
-                                    value="<?php echo $email_usuario ?>" required>
+                            <div class="form-group"><label>E-mail (Login)</label><input type="email"
+                                    class="form-control" name="email" value="<?php echo $email_usuario ?>" required>
                             </div>
                             <div id="mensagem-perfil"></div>
                         </div>
@@ -416,8 +428,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">Validar com o Professor</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal"
+                        <h5 class="modal-title">Validar com o Professor</h5><button type="button"
+                            class="close text-white" data-dismiss="modal"
                             onclick="pararCamera()"><span>&times;</span></button>
                     </div>
                     <div class="modal-body text-center">
@@ -488,16 +500,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             pararCamera();
             let tipo = $('#tipo_v').val();
             let id = $('#id_v').val();
-
-            // LÓGICA DE URL DINÂMICA PARA CADA TIPO DE VALIDAÇÃO
-            let url = "";
-            if (tipo == 'graduacao') {
-                url = "validar-promocao.php";
-            } else if (tipo == 'tecnica') {
-                url = "validar-tecnica.php";
-            } else if (tipo == 'estudo') {
-                url = "validar-estudo.php";
-            }
+            let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'tecnica') ? "validar-tecnica.php" :
+                "validar-estudo.php";
 
             $.post(url, {
                 token_professor: decodedText,
