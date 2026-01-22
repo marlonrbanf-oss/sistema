@@ -145,19 +145,6 @@ if ($nivel == 'Cliente') {
     }
 }
 
-// 7. AULA EXPERIMENTAL (Sincronizado com tabela: aulas_particulares)
-if (isset($_POST['experimental']) && $_POST['experimental'] == 'Sim' && $id == "") {
-    $hoje = date('Y-m-d');
-    $res_exp = $pdo->prepare("INSERT INTO aulas_particulares SET 
-        aluno_id = :aluno, 
-        professor_id = '0', 
-        data = :data, 
-        tema = 'Aula Experimental', 
-        observacoes = 'EXPERIMENTAL'");
 
-    $res_exp->bindValue(":aluno", $ultimo_id);
-    $res_exp->bindValue(":data", $hoje);
-    $res_exp->execute();
-}
 
 echo 'Salvo com Sucesso';
