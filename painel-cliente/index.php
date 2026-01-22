@@ -281,17 +281,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                     <div class="info-box-content">
                                                         <span class="info-box-text text-uppercase font-weight-bold"
                                                             style="font-size:10px;"><?php echo $item_e['nome_tecnica']; ?></span>
-
-                                                        <?php if ($item_e['status'] == 'Em Estudo'): ?>
-                                                            <button class="btn btn-xs btn-primary btn-block mt-1"
-                                                                onclick="abrirLeitorQR('estudo', '<?php echo $item_e['nome_tecnica']; ?>', '<?php echo $item_e['id']; ?>')">
-                                                                <i class="fas fa-qrcode mr-1"></i> VALIDAR
-                                                            </button>
-                                                        <?php else: ?>
-                                                            <span class="badge badge-success w-100">DOMINADO</span>
-                                                            <small class="text-success" style="font-size: 9px;"><i
-                                                                    class="fas fa-check-double"></i> Validado</small>
-                                                        <?php endif; ?>
+                                                        <span
+                                                            class="badge <?php echo ($item_e['status'] == 'Dominado') ? 'badge-success' : 'badge-warning'; ?>"><?php echo strtoupper($item_e['status']); ?></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -438,6 +429,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script>
         let html5QrCode;
 
+        // SCRIPT PERFIL
         function carregarImgPerfil() {
             var target = document.getElementById('target-perfil');
             var file = document.querySelector('#foto-perfil').files[0];
@@ -470,6 +462,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             });
         });
 
+        // SCRIPT QR CODE
         function abrirLeitorQR(tipo, nome, id = 0) {
             $('#tipo_v').val(tipo);
             $('#id_v').val(id);
@@ -488,17 +481,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             pararCamera();
             let tipo = $('#tipo_v').val();
             let id = $('#id_v').val();
-
-            // LÓGICA DE URL DINÂMICA PARA CADA TIPO DE VALIDAÇÃO
-            let url = "";
-            if (tipo == 'graduacao') {
-                url = "validar-promocao.php";
-            } else if (tipo == 'tecnica') {
-                url = "validar-tecnica.php";
-            } else if (tipo == 'estudo') {
-                url = "validar-estudo.php";
-            }
-
+            let url = (tipo == 'graduacao') ? "validar-promocao.php" : "validar-tecnica.php";
             $.post(url, {
                 token_professor: decodedText,
                 id: id
@@ -519,6 +502,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
         }
 
+        // SCRIPT BUSCA
         function pesquisarEvolucao() {
             var nome = $('#buscar_aluno').val();
             if (nome.length < 2) return;
