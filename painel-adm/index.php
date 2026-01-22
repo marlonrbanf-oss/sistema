@@ -138,6 +138,10 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
 
                 <div class="nav-links">
                     <a href="index.php"><i class="fas fa-chart-line mr-2 text-primary"></i> Dashboard</a>
+                    <a href="gestao_facial.php" class="bg-dark text-white border-left border-primary"
+                        style="border-width: 4px !important;">
+                        <i class="fas fa-user-shield mr-2 text-warning"></i> <b>GESTÃO FACIAL</b>
+                    </a>
                     <a href="usuarios.php"><i class="fas fa-users-cog mr-2 text-info"></i> Todos os Usuários</a>
                     <a href="usuarios.php?nivel=Cliente"><i class="fas fa-user-graduate mr-2 text-success"></i>
                         Alunos</a>
@@ -155,6 +159,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     <a href="relatorio_experimentais.php"><i class="fas fa-file-invoice mr-2 text-light"></i> Relatório
                         de Aulas</a>
                 </div>
+
 
                 <div class="sidebar-footer">
                     <div class="divider"></div>
