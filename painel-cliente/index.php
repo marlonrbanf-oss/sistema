@@ -11,7 +11,10 @@ if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente
 
 $id_usuario = $_SESSION['id_usuario'];
 
-// 2. Busca de Dados Pessoais (CORRIGIDO: Definindo variáveis para o modal)
+// 2. Busca UNIFICADA de Graduação (Regras de aulas, faixa e grau)
+$status = verificarRequisitos($pdo, $id_usuario);
+
+// 3. Busca de Dados Pessoais
 $query_u = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id");
 $query_u->bindValue(":id", $id_usuario);
 $query_u->execute();
@@ -19,41 +22,31 @@ $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
 
 $nome_usuario = $dados_u['nome'] ?? 'Usuário';
 $foto_usuario = (!empty($dados_u['foto'])) ? $dados_u['foto'] : 'usuario-icone-claro.png';
-$email_usuario = $dados_u['usuario'] ?? '';
-$telefone_usuario = $dados_u['telefone'] ?? '';
 
-// 3. Busca UNIFICADA de Graduação (Regras de aulas, faixa e grau)
-$status = verificarRequisitos($pdo, $id_usuario);
-
-// --- LÓGICA: ADICIONAR TÉCNICA DE ESTUDO (ALUNO) ---
-if (isset($_POST['nova_tecnica_estudo'])) {
-    $tec_nome = $_POST['nova_tecnica_estudo'];
-    $res_estudo = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo'");
-    $res_estudo->bindValue(":id", $id_usuario);
-    $res_estudo->bindValue(":nome", $tec_nome);
-    $res_estudo->execute();
-    echo "<script>alert('Técnica enviada para sua lista de estudos!'); window.location='index.php'</script>";
-}
-
-// --- CÁLCULO DINÂMICO DA JORNADA DE MAESTRIA ---
+// --- AJUSTE: CÁLCULO DINÂMICO DA JORNADA DE MAESTRIA ---
+// 1. Contamos o total de técnicas cadastradas para este aluno (o 100% técnico)
 $query_total_hab = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id");
 $query_total_hab->bindValue(":id", $id_usuario);
 $query_total_hab->execute();
 $total_geral_tecnicas = $query_total_hab->fetch(PDO::FETCH_ASSOC)['total'] ?? 1;
 
-$total_faixas_jornada = 7;
+$total_faixas_jornada = 7; // Branca até Vermelha
 $meta_maestria = $total_geral_tecnicas + $total_faixas_jornada;
 
+// 2. Contamos quantas técnicas o aluno já dominou (validadas pelo professor)
 $query_maestria = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id AND (status = 'Dominado' OR status = 'Concluído')");
 $query_maestria->bindValue(":id", $id_usuario);
 $query_maestria->execute();
 $tecnicas_concluidas = $query_maestria->fetch(PDO::FETCH_ASSOC)['total'];
 
+// 3. Definimos o peso da faixa atual na jornada
 $niveis_faixa = ['branca' => 1, 'azul' => 2, 'roxa' => 3, 'marrom' => 4, 'preta' => 5, 'coral' => 6, 'vermelha' => 7];
 $nivel_faixa_atual = $niveis_faixa[mb_strtolower($status['faixa'])] ?? 1;
 
+// 4. Cálculo Final da Porcentagem de Maestria
 $progresso_maestria = (($tecnicas_concluidas + $nivel_faixa_atual) / $meta_maestria) * 100;
 if ($progresso_maestria > 100) $progresso_maestria = 100;
+// ------------------------------------------------------
 
 function tratarCorFaixa($cor)
 {
@@ -65,6 +58,7 @@ function tratarCorFaixa($cor)
         'marrom'            => '#8B4513',
         'preta'             => 'black',
         'coral'             => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #000 20%, #000 40%, #ff0000 40%, #ff0000 60%, #000 60%, #000 80%, #ff0000 80%, #ff0000 100%)',
+        'vermelha e branca' => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #fff 20%, #fff 40%, #ff0000 40%, #ff0000 60%, #fff 60%, #fff 80%, #ff0000 80%, #ff0000 100%)',
         'vermelha'          => 'red'
     ];
     return $mapa[$c] ?? '#ddd';
@@ -83,6 +77,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Portal do Atleta - Nova Arte BJJ</title>
 
+    <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
@@ -100,6 +95,26 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
         .card:hover {
             transform: translateY(-3px);
             transition: all 0.3s ease;
+        }
+
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .main-sidebar {
+            background-color: #1a1a1a !important;
+        }
+
+        .navbar-search-mobile {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (max-width: 576px) {
+            .navbar-search-mobile {
+                margin: 0 10px;
+            }
         }
 
         .bjj-belt {
@@ -129,6 +144,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             justify-content: space-around;
             align-items: center;
             padding: 0 10px;
+            border-left: 1px solid rgba(0, 0, 0, 0.3);
+            border-right: 1px solid rgba(0, 0, 0, 0.3);
         }
 
         .belt-stripe {
@@ -159,11 +176,11 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
         <nav class="main-header navbar navbar-expand navbar-light bg-white border-bottom shadow-sm">
             <ul class="navbar-nav">
-                <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#"><i
+                <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#" role="button"><i
                             class="fas fa-bars text-dark"></i></a></li>
             </ul>
-            <div class="navbar-search-mobile flex-grow-1 px-2">
-                <div class="input-group input-group-sm mx-auto" style="max-width: 350px;">
+            <div class="navbar-search-mobile">
+                <div class="input-group input-group-sm w-100" style="max-width: 350px;">
                     <input class="form-control border-secondary" type="text" id="buscar_aluno"
                         placeholder="Pesquisar colega...">
                     <div class="input-group-append">
@@ -174,7 +191,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             </div>
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item"><a href="../logout.php" class="nav-link text-danger font-weight-bold"><i
-                            class="fas fa-sign-out-alt"></i></a></li>
+                            class="fas fa-sign-out-alt"></i> <span class="d-none d-md-inline">SAIR</span></a></li>
             </ul>
         </nav>
 
@@ -205,12 +222,13 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
                                     <div class="mt-5 text-left px-md-4">
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span><i class="fas fa-calendar-check mr-1 text-success"></i>
-                                                Frequência</span>
+                                            <span><i class="fas fa-calendar-check mr-1 text-success"></i> Frequência
+                                                (Aulas)</span>
                                             <span><?php echo $status['aulas']; ?> / <?php echo $status['meta']; ?>
                                                 Aulas</span>
                                         </div>
-                                        <div class="progress mb-4" style="height: 18px; border-radius: 10px;">
+                                        <div class="progress mb-4"
+                                            style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
                                             <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $porcentagem_progresso ?>%">
                                                 <?php echo round($porcentagem_progresso); ?>%
@@ -218,19 +236,26 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         </div>
 
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica</span>
-                                            <span><?php echo $tecnicas_concluidas; ?> Selos</span>
+                                            <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica (Selos
+                                                + Faixa)</span>
+                                            <span><?php echo $tecnicas_concluidas; ?> /
+                                                <?php echo $total_geral_tecnicas; ?> Selos</span>
                                         </div>
-                                        <div class="progress" style="height: 18px; border-radius: 10px;">
+                                        <div class="progress"
+                                            style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
                                             <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $progresso_maestria; ?>%">
                                                 <?php echo round($progresso_maestria); ?>%
                                             </div>
                                         </div>
+
+                                        <small class="text-muted d-block mt-2 text-center">
+                                            <i class="fas fa-info-circle"></i> Complete todas as técnicas e chegue à
+                                            faixa vermelha para atingir 100%.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="card shadow-sm border-0 p-3 mb-4">
                                 <?php if ($status['pode']): ?>
                                     <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
@@ -248,46 +273,110 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card shadow-sm border-0 mb-4">
-                                <div class="card-header bg-primary">
-                                    <h3 class="card-title font-weight-bold text-white"><i
-                                            class="fas fa-book-reader mr-2"></i>Minhas Técnicas de Estudo</h3>
+                                <div class="card-header bg-dark">
+                                    <h3 class="card-title font-weight-bold">
+                                        <i class="fas fa-medal mr-2 text-warning"></i>Meus Selos de Técnica
+                                    </h3>
                                 </div>
-                                <div class="card-body">
-                                    <form method="POST" class="mb-4">
-                                        <div class="input-group">
-                                            <input type="text" name="nova_tecnica_estudo" class="form-control"
-                                                placeholder="O que você deseja aprender hoje?" required>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-primary" type="submit"><i
-                                                        class="fas fa-plus mr-1"></i> Adicionar</button>
-                                            </div>
-                                        </div>
-                                    </form>
+                                <div class="card-body bg-light p-3">
+                                    <?php
+                                    // 1. Busca unificada mantendo a ordem de posição
+                                    $query_hab = $pdo->prepare("SELECT * FROM habilidades WHERE usuario_id = :id ORDER BY posicao ASC, tecnica ASC");
+                                    $query_hab->bindValue(":id", $id_usuario);
+                                    $query_hab->execute();
+                                    $res_hab = $query_hab->fetchAll(PDO::FETCH_ASSOC);
 
-                                    <div class="row">
-                                        <?php
-                                        $query_estudo = $pdo->prepare("SELECT * FROM tecnicas_estudo WHERE usuario_id = :id ORDER BY status ASC, id DESC");
-                                        $query_estudo->bindValue(":id", $id_usuario);
-                                        $query_estudo->execute();
-                                        $res_estudo = $query_estudo->fetchAll(PDO::FETCH_ASSOC);
+                                    if (count($res_hab) > 0) {
+                                        // 2. Agrupamento em array para separar os blocos visualmente
+                                        $grupos = [];
+                                        foreach ($res_hab as $hab) {
+                                            $posicao_label = (!empty($hab['posicao'])) ? $hab['posicao'] : 'OUTRAS TÉCNICAS';
+                                            $grupos[$posicao_label][] = $hab;
+                                        }
 
-                                        foreach ($res_estudo as $item_e) {
-                                            $cor_bg = ($item_e['status'] == 'Dominado') ? 'bg-success' : 'bg-warning';
-                                        ?>
-                                            <div class="col-6 col-md-3">
-                                                <div class="info-box shadow-none border">
-                                                    <span class="info-box-icon <?php echo $cor_bg; ?> elevation-1"><i
-                                                            class="fas fa-graduation-cap"></i></span>
-                                                    <div class="info-box-content">
-                                                        <span class="info-box-text text-uppercase font-weight-bold"
-                                                            style="font-size:10px;"><?php echo $item_e['nome_tecnica']; ?></span>
-                                                        <span
-                                                            class="badge <?php echo ($item_e['status'] == 'Dominado') ? 'badge-success' : 'badge-warning'; ?>"><?php echo strtoupper($item_e['status']); ?></span>
-                                                    </div>
+                                        // 3. Loop por cada Categoria/Posição
+                                        foreach ($grupos as $posicao_titulo => $tecnicas) {
+                                    ?>
+                                            <div class="row mt-3 mb-2">
+                                                <div class="col-12">
+                                                    <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1"
+                                                        style="letter-spacing: 1px; font-size: 0.85rem;">
+                                                        <i class="fas fa-tags mr-2 text-primary shadow-sm"></i>
+                                                        <?php echo $posicao_titulo; ?>
+                                                        <span class="badge badge-pill badge-secondary ml-2"
+                                                            style="font-size: 0.65rem;"><?php echo count($tecnicas); ?></span>
+                                                    </h6>
                                                 </div>
                                             </div>
-                                        <?php } ?>
-                                    </div>
+
+                                            <div class="row">
+                                                <?php
+                                                foreach ($tecnicas as $hab) {
+                                                    // Mantida a lógica original de cor do selo
+                                                    $status_nome = mb_strtolower($hab['status']);
+                                                    if ($status_nome == 'dominado' || $status_nome == 'concluído') {
+                                                        $cor_selo = 'badge-success';
+                                                        $borda_card = 'border-success';
+                                                    } elseif ($status_nome == 'revisão' || $status_nome == 'aprendido') {
+                                                        $cor_selo = 'badge-info';
+                                                        $borda_card = 'border-info';
+                                                    } else {
+                                                        $cor_selo = 'badge-warning';
+                                                        $borda_card = 'border-warning';
+                                                    }
+                                                ?>
+                                                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                                        <div class="card h-100 shadow-sm <?php echo $borda_card; ?>"
+                                                            style="border-width: 2px; border-radius: 10px;">
+                                                            <div
+                                                                class="card-body p-2 text-center d-flex flex-column justify-content-between">
+                                                                <div>
+                                                                    <strong class="d-block text-uppercase mb-2"
+                                                                        style="font-size: 0.75rem; line-height: 1.1; min-height: 2.2em;">
+                                                                        <?php echo $hab['tecnica']; ?>
+                                                                    </strong>
+
+                                                                    <div class="progress progress-xxs mb-2"
+                                                                        style="background-color: #eee;">
+                                                                        <div class="progress-bar bg-dark"
+                                                                            style="width: <?php echo $hab['nivel']; ?>%"></div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <span
+                                                                        class="badge <?php echo $cor_selo; ?> shadow-sm w-100 py-1 mb-1"
+                                                                        style="font-size: 0.65rem;">
+                                                                        <?php echo strtoupper($hab['status']); ?>
+                                                                    </span>
+
+                                                                    <div class="mt-1">
+                                                                        <?php if ($status_nome != 'dominado' && $status_nome != 'concluído'): ?>
+                                                                            <button class="btn btn-xs btn-primary btn-block shadow-sm"
+                                                                                style="font-size: 0.6rem;"
+                                                                                onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')">
+                                                                                <i class="fas fa-qrcode mr-1"></i> VALIDAR
+                                                                            </button>
+                                                                        <?php else: ?>
+                                                                            <small class="text-success font-weight-bold"
+                                                                                style="font-size: 0.65rem;">
+                                                                                <i class="fas fa-check-double"></i> VALIDADO
+                                                                            </small>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <?php } // Fim do foreach técnicas 
+                                                ?>
+                                            </div>
+                                    <?php
+                                        } // Fim do foreach grupos
+                                    } else {
+                                        echo '<div class="col-12 text-center text-muted p-4"><p>Nenhum selo de técnica lançado até o momento.</p></div>';
+                                    }
+                                    ?>
                                 </div>
                             </div>
                         </div>
@@ -295,62 +384,46 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="card shadow-sm border-0 mb-4">
+                            <div class="card shadow-sm border-0">
                                 <div class="card-header bg-dark">
-                                    <h3 class="card-title font-weight-bold"><i
-                                            class="fas fa-medal mr-2 text-warning"></i>Meus Selos de Técnica</h3>
+                                    <h3 class="card-title font-weight-bold"><i class="fas fa-history mr-2"></i>Aulas
+                                        Particulares (Aprovadas)</h3>
                                 </div>
-                                <div class="card-body bg-light p-3">
-                                    <?php
-                                    $query_hab = $pdo->prepare("SELECT * FROM habilidades WHERE usuario_id = :id ORDER BY posicao ASC, tecnica ASC");
-                                    $query_hab->bindValue(":id", $id_usuario);
-                                    $query_hab->execute();
-                                    $res_hab = $query_hab->fetchAll(PDO::FETCH_ASSOC);
+                                <div class="card-body">
+                                    <div class="row">
+                                        <?php
+                                        // ALTERAÇÃO: Busca unindo a tabela pedidos_aulas com usuarios para pegar o nome do professor
+                                        $query_ap = $pdo->prepare("SELECT p.*, u.nome as nome_professor FROM pedidos_aulas p INNER JOIN usuarios u ON p.id_professor = u.id WHERE p.id_aluno = :id AND p.status = 'Aprovado' ORDER BY p.data_aula DESC");
+                                        $query_ap->bindValue(":id", $id_usuario);
+                                        $query_ap->execute();
+                                        $res_ap = $query_ap->fetchAll(PDO::FETCH_ASSOC);
 
-                                    if (count($res_hab) > 0) {
-                                        $grupos = [];
-                                        foreach ($res_hab as $hab) {
-                                            $posicao_label = (!empty($hab['posicao'])) ? $hab['posicao'] : 'OUTRAS TÉCNICAS';
-                                            $grupos[$posicao_label][] = $hab;
-                                        }
-
-                                        foreach ($grupos as $posicao_titulo => $tecnicas) {
-                                    ?>
-                                            <div class="row mt-3 mb-2">
-                                                <div class="col-12">
-                                                    <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1">
-                                                        <?php echo $posicao_titulo; ?></h6>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <?php foreach ($tecnicas as $hab) {
-                                                    $status_nome = mb_strtolower($hab['status']);
-                                                    $cor_selo = ($status_nome == 'dominado' || $status_nome == 'concluído') ? 'badge-success' : (($status_nome == 'revisão') ? 'badge-info' : 'badge-warning');
-                                                ?>
-                                                    <div class="col-6 col-md-4 col-lg-3 mb-3">
-                                                        <div class="card h-100 shadow-sm border-light" style="border-radius: 10px;">
-                                                            <div
-                                                                class="card-body p-2 text-center d-flex flex-column justify-content-between">
-                                                                <strong class="d-block text-uppercase mb-2"
-                                                                    style="font-size: 0.75rem;"><?php echo $hab['tecnica']; ?></strong>
-                                                                <div>
-                                                                    <span
-                                                                        class="badge <?php echo $cor_selo; ?> w-100 mb-1"><?php echo strtoupper($hab['status']); ?></span>
-                                                                    <?php if ($status_nome != 'dominado' && $status_nome != 'concluído'): ?>
-                                                                        <button class="btn btn-xs btn-primary btn-block"
-                                                                            onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')">VALIDAR</button>
-                                                                    <?php else: ?>
-                                                                        <small class="text-success font-weight-bold"><i
-                                                                                class="fas fa-check-double"></i> VALIDADO</small>
-                                                                    <?php endif; ?>
-                                                                </div>
-                                                            </div>
+                                        if (count($res_ap) > 0) {
+                                            foreach ($res_ap as $aula) {
+                                                $data_f = date('d/m/Y', strtotime($aula['data_aula']));
+                                                $tema_exibir = (!empty($aula['tema'])) ? $aula['tema'] : 'Aula Particular';
+                                        ?>
+                                                <div class="col-6 col-md-3">
+                                                    <div class="info-box shadow-none border">
+                                                        <span class="info-box-icon bg-success elevation-1"><i
+                                                                class="fas fa-user-check"></i></span>
+                                                        <div class="info-box-content">
+                                                            <span class="info-box-text text-uppercase font-weight-bold"
+                                                                style="font-size:10px;"><?php echo $tema_exibir; ?></span>
+                                                            <span
+                                                                class="info-box-number small text-muted"><?php echo $data_f; ?></span>
+                                                            <span class="small text-primary">Prof.
+                                                                <?php echo explode(' ', $aula['nome_professor'])[0]; ?></span>
                                                         </div>
                                                     </div>
-                                                <?php } ?>
-                                            </div>
-                                    <?php }
-                                    } ?>
+                                                </div>
+                                        <?php
+                                            }
+                                        } else {
+                                            echo '<div class="col-12 text-center text-muted p-4"><p>Nenhuma aula particular aprovada até o momento.</p></div>';
+                                        }
+                                        ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -358,68 +431,62 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                 </div>
             </section>
         </div>
+    </div>
 
-        <div class="modal fade" id="modalPerfil" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header bg-dark text-white">
-                        <h5 class="modal-title">Editar Meus Dados</h5>
-                        <button type="button" class="close text-white"
-                            data-dismiss="modal"><span>&times;</span></button>
-                    </div>
-                    <form id="form-perfil-completo" enctype="multipart/form-data">
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-8">
-                                    <div class="form-group"><label>Nome Completo</label>
-                                        <input type="text" class="form-control" name="nome"
-                                            value="<?php echo $nome_usuario ?>" required>
-                                    </div>
-                                    <div class="form-group"><label>Telefone</label>
-                                        <input type="text" class="form-control" name="telefone" id="telefone"
-                                            value="<?php echo $telefone_usuario ?>">
-                                    </div>
+    <div class="modal fade" id="modalPerfil" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Editar Meus Dados</h5><button type="button" class="close text-white"
+                        data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="form-perfil-completo" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-8 col-md-8">
+                                <div class="form-group"><label>Nome Completo</label><input type="text"
+                                        class="form-control" name="nome" value="<?php echo $nome_usuario ?>" required>
                                 </div>
-                                <div class="col-4 text-center">
-                                    <img src="../images/perfil/<?php echo $foto_usuario; ?>" id="target-perfil"
-                                        class="img-fluid rounded-circle border shadow-sm"
-                                        style="width:100px; height:100px; object-fit:cover;">
-                                    <input type="file" name="foto" id="foto-perfil" onChange="carregarImgPerfil();"
-                                        style="display:none;">
-                                    <button type="button" class="btn btn-xs btn-outline-dark mt-2"
-                                        onclick="$('#foto-perfil').click();">Alterar</button>
-                                </div>
+                                <div class="form-group"><label>Telefone / WhatsApp</label><input type="text"
+                                        class="form-control" name="telefone" id="telefone"
+                                        value="<?php echo $telefone_usuario ?>"></div>
                             </div>
-                            <div class="form-group"><label>E-mail (Login)</label>
-                                <input type="email" class="form-control" name="email"
-                                    value="<?php echo $email_usuario ?>" required>
+                            <div class="col-4 col-md-4 text-center">
+                                <label>Foto</label>
+                                <img src="../images/perfil/<?php echo $foto_usuario; ?>" id="target-perfil"
+                                    class="img-fluid rounded-circle border shadow-sm mb-2"
+                                    style="width:100px; height:100px; object-fit:cover;">
+                                <input type="file" name="foto" id="foto-perfil" onChange="carregarImgPerfil();"
+                                    style="display:none;">
+                                <button type="button" class="btn btn-xs btn-outline-dark"
+                                    onclick="$('#foto-perfil').click();">Alterar</button>
                             </div>
-                            <div id="mensagem-perfil"></div>
                         </div>
-                        <div class="modal-footer"><button type="submit" class="btn btn-dark w-100">SALVAR
-                                ALTERAÇÕES</button></div>
-                    </form>
+                        <div class="form-group"><label>E-mail (Login)</label><input type="email" class="form-control"
+                                name="email" value="<?php echo $email_usuario ?>" required></div>
+                        <div id="mensagem-perfil"></div>
+                    </div>
+                    <div class="modal-footer"><button type="submit" class="btn btn-dark w-100 shadow">SALVAR
+                            ALTERAÇÕES</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalQR" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Validar com o Professor</h5><button type="button" class="close text-white"
+                        data-dismiss="modal" onclick="pararCamera()"><span>&times;</span></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="reader" style="width:100%" class="border"></div>
+                    <input type="hidden" id="tipo_v"><input type="hidden" id="id_v">
+                    <p class="mt-2 text-muted font-weight-bold text-uppercase" id="nome_v"></p>
                 </div>
             </div>
         </div>
-
-        <div class="modal fade" id="modalQR" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">Validar com o Professor</h5>
-                        <button type="button" class="close text-white" data-dismiss="modal"
-                            onclick="pararCamera()"><span>&times;</span></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <div id="reader" style="width:100%" class="border"></div>
-                        <input type="hidden" id="tipo_v"><input type="hidden" id="id_v">
-                        <p class="mt-2 text-muted font-weight-bold" id="nome_v"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <script src="plugins/jquery/jquery.min.js"></script>
@@ -429,7 +496,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script>
         let html5QrCode;
 
-        // SCRIPT PERFIL
         function carregarImgPerfil() {
             var target = document.getElementById('target-perfil');
             var file = document.querySelector('#foto-perfil').files[0];
@@ -441,7 +507,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                 reader.readAsDataURL(file);
             }
         }
-
         $("#form-perfil-completo").submit(function(e) {
             e.preventDefault();
             var formData = new FormData(this);
@@ -453,7 +518,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                     if (mensagem.trim() == "Salvo com Sucesso") {
                         location.reload();
                     } else {
-                        $('#mensagem-perfil').addClass('text-danger').text(mensagem);
+                        $('#mensagem-perfil').removeClass().addClass(
+                            'text-danger mt-2 font-weight-bold').text(mensagem);
                     }
                 },
                 cache: false,
@@ -462,7 +528,16 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             });
         });
 
-        // SCRIPT QR CODE
+        function pesquisarEvolucao() {
+            var nome = $('#buscar_aluno').val();
+            if (nome.length < 2) return;
+            $.post("buscar_evolucao.php", {
+                nome: nome
+            }, function(data) {
+                $('#resultado_pesquisa').fadeIn().html(data);
+            });
+        }
+
         function abrirLeitorQR(tipo, nome, id = 0) {
             $('#tipo_v').val(tipo);
             $('#id_v').val(id);
@@ -500,17 +575,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
         function pararCamera() {
             if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
-        }
-
-        // SCRIPT BUSCA
-        function pesquisarEvolucao() {
-            var nome = $('#buscar_aluno').val();
-            if (nome.length < 2) return;
-            $.post("buscar_evolucao.php", {
-                nome: nome
-            }, function(data) {
-                $('#resultado_pesquisa').fadeIn().html(data);
-            });
         }
         $("#buscar_aluno").keypress(function(e) {
             if (e.which == 13) pesquisarEvolucao();
