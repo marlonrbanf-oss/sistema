@@ -2,7 +2,7 @@
 require_once("../conexao.php");
 @session_start();
 
-// 1. Validação de Segurança (Apenas Admin pode excluir, ou ajuste conforme sua regra)
+// 1. Validação de Segurança
 if (@$_SESSION['nivel_usuario'] != 'Admin') {
     echo "Acesso Negado! Somente administradores podem excluir registros.";
     exit();
@@ -20,11 +20,19 @@ if ($id != "") {
         $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
         $nome_excluido = ($dados_u) ? $dados_u['nome'] : "ID: " . $id;
 
-        // B. Exclui primeiro as referências em outras tabelas (Graduações)
-        // Isso evita erros de chave estrangeira se houver
+        // B. LIMPEZA DE DEPENDÊNCIAS (IMPORTANTE)
+        // Apagamos primeiro os registros onde esse ID é usado como chave estrangeira
+
+        // Apaga aulas particulares vinculadas a este aluno
+        $pdo->query("DELETE FROM aulas_particulares WHERE aluno_id = '$id'");
+
+        // Apaga graduações vinculadas
         $pdo->query("DELETE FROM graduacoes WHERE usuario_id = '$id'");
 
-        // C. Exclui o usuário
+        // Se houver outras tabelas como 'mensalidades' ou 'frequencias', adicione aqui:
+        // $pdo->query("DELETE FROM mensalidades WHERE usuario_id = '$id'");
+
+        // C. Agora sim, exclui o usuário principal
         $pdo->query("DELETE FROM usuarios WHERE id = '$id'");
 
         // D. Registra no Log de Atividades
@@ -34,10 +42,12 @@ if ($id != "") {
         $res_log->bindValue(":acao", $acao);
         $res_log->execute();
 
-        echo "<script>alert('Removido com sucesso!'); window.location='usuarios.php';</script>";
+        echo "<script>alert('Removido com sucesso!'); window.location='index.php?pag=usuarios';</script>";
     } catch (Exception $e) {
-        echo "Erro ao excluir: " . $e->getMessage();
+        // Exibe uma mensagem mais amigável em caso de erro
+        echo "Erro ao excluir: Verifique se existem outros registros vinculados a este usuário.";
+        // echo " Erro técnico: " . $e->getMessage(); // Use para debugar se necessário
     }
 } else {
-    echo "<script>window.location='usuarios.php';</script>";
+    echo "<script>window.location='index.php?pag=usuarios';</script>";
 }
