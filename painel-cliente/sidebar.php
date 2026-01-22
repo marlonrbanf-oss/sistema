@@ -35,6 +35,13 @@ $pagina_atual = basename($_SERVER['PHP_SELF']);
                 </li>
 
                 <li class="nav-item">
+                    <a href="index.php#minhas-tecnicas" class="nav-link">
+                        <i class="nav-icon fas fa-book-open text-primary"></i>
+                        <p>Minhas Técnicas</p>
+                    </a>
+                </li>
+
+                <li class="nav-item">
                     <a href="horarios.php"
                         class="nav-link <?php echo ($pagina_atual == 'horarios.php') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-calendar-alt"></i>
