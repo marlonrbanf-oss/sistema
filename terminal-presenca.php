@@ -1,145 +1,47 @@
-<?php require_once("conexao.php"); ?>
-<!DOCTYPE html>
-<html lang="pt-br">
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
-<head>
-    <title>Terminal de Presença - Nova Arte</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/bootstrap.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-    <style>
-    body {
-        background: #111;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        font-family: sans-serif;
-        overflow: hidden;
-    }
-
-    .teclado-num {
-        width: 350px;
-        padding: 25px;
-        background: #222;
-        border-radius: 20px;
-        border: 1px solid #333;
-    }
-
-    .visor {
-        font-size: 2.5rem;
-        text-align: center;
-        margin-bottom: 20px;
-        background: #000 !important;
-        color: #00ff00 !important;
-        border: 2px solid #444;
-        height: 70px;
-        letter-spacing: 8px;
-        font-weight: bold;
-    }
-
-    .btn-num {
-        height: 75px;
-        font-size: 1.8rem;
-        font-weight: bold;
-        background: #333;
-        color: white;
-        border: 1px solid #444;
-        border-radius: 12px;
-        margin-bottom: 8px;
-        width: 100%;
-        cursor: pointer;
-    }
-
-    .btn-num:active {
-        background: #555;
-        transform: scale(0.95);
-    }
-
-    .btn-success {
-        background: #198754 !important;
-    }
-
-    .btn-danger {
-        background: #dc3545 !important;
-    }
-    </style>
-</head>
-
-<body>
-
-    <div class="teclado-num text-center">
-        <div class="mb-3">
-            <h4 class="text-white">DIGITE SUA SENHA</h4>
-            <small class="text-muted">Acesso exclusivo para alunos</small>
-        </div>
-
-        <input type="password" id="senha_aluno" class="form-control visor" readonly placeholder="******">
-
-        <div class="row no-gutters">
-            <?php for($i=1; $i<=9; $i++): ?>
-            <div class="col-4 p-1">
-                <button type="button" class="btn btn-num" onclick="addNum('<?php echo $i ?>')"><?php echo $i ?></button>
-            </div>
-            <?php endfor; ?>
-
-            <div class="col-4 p-1"><button type="button" class="btn btn-num btn-danger" onclick="limpar()">C</button>
-            </div>
-            <div class="col-4 p-1"><button type="button" class="btn btn-num" onclick="addNum('0')">0</button></div>
-            <div class="col-4 p-1"><button type="button" class="btn btn-num btn-success"
-                    onclick="confirmar()">OK</button></div>
-        </div>
-        <div id="mensagem_retorno" class="mt-3" style="min-height: 50px;"></div>
+<div id="modo-facial">
+    <div id="area-camera" style="position: relative;">
+        <video id="video" autoplay muted style="width: 100%; height: 250px; object-fit: cover;"></video>
+        <canvas id="overlay" style="position: absolute; top: 0; left: 0;"></canvas>
     </div>
+    <div id="status-facial" class="small text-muted mb-2">Iniciando Biometria...</div>
+    <button class="btn-alternar" onclick="alternarModo('senha')">Usar senha manual</button>
+</div>
 
-    <script>
-    // JS PURO - NÃO DEPENDE DE JQUERY
-    function addNum(n) {
-        const visor = document.getElementById('senha_aluno');
-        if (visor.value.length < 10) visor.value += n;
+<script>
+    // Lógica para carregar as fotos de perfil e comparar
+    async function iniciarBiometria() {
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+        // 1. Aqui você buscaria via AJAX uma lista com {ID, NOME, FOTO_URL} dos alunos
+        // Para este exemplo, vamos focar na lógica de detecção
+        const video = document.getElementById('video');
+
+        video.addEventListener('play', () => {
+            const canvas = document.getElementById('overlay');
+            const displaySize = {
+                width: video.clientWidth,
+                height: video.clientHeight
+            };
+            faceapi.matchDimensions(canvas, displaySize);
+
+            setInterval(async () => {
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
+                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                faceapi.draw.drawDetections(canvas, resizedDetections);
+
+                if (detections.length > 0) {
+                    // Ao detectar um rosto, ele tira o "print" e envia para o PHP
+                    // Para não sobrecarregar, você pode colocar um botão de "Confirmar Rosto"
+                    document.getElementById('status-facial').innerHTML = "<span class='text-success'>ROSTO IDENTIFICADO!</span>";
+                }
+            }, 500);
+        });
     }
-
-    function limpar() {
-        document.getElementById('senha_aluno').value = "";
-        document.getElementById('mensagem_retorno').innerHTML = "";
-    }
-
-    async function confirmar() {
-        const senhaInput = document.getElementById('senha_aluno');
-        const retorno = document.getElementById('mensagem_retorno');
-        const senha = senhaInput.value;
-
-        if (!senha) {
-            retorno.innerHTML = "<span class='text-warning'>Digite a senha!</span>";
-            return;
-        }
-
-        retorno.innerHTML = "<div class='spinner-border text-light' role='status'></div>";
-
-        try {
-            // Enviando dados via Fetch (Substitui o $.ajax do jQuery)
-            const formData = new FormData();
-            formData.append('senha', senha);
-
-            const response = await fetch('processar-checkin.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const texto = await response.text();
-            retorno.innerHTML = texto;
-
-            // Limpa o visor se tiver sucesso
-            if (texto.includes('alert-success')) {
-                setTimeout(limpar, 4000);
-            }
-        } catch (error) {
-            retorno.innerHTML = "<span class='text-danger'>Erro ao processar.</span>";
-        }
-    }
-    </script>
-</body>
-
-</html>
+</script>
