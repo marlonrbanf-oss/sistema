@@ -249,7 +249,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                         </thead>
                         <tbody>
                             <?php foreach ($res as $usu) {
-                                // ... (Lógica da Tabela mantida idêntica à anterior) ...
                                 $id = $usu['id'];
                                 $data_venc = $usu['data_venc'];
                                 $tel = preg_replace('/[^0-9]/', '', $usu['telefone'] ?? '');
@@ -347,7 +346,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
-                <form action="cadastrar-usuario.php" method="POST">
+                <form id="form-usuarios" method="POST">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 form-group">
@@ -414,9 +413,12 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                 </label>
                             </div>
                         </div>
+
+                        <div id="mensagem-erro" class="mt-2 text-danger"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success btn-block">SALVAR NOVO USUÁRIO</button>
+                        <button type="submit" id="btn-salvar" class="btn btn-success btn-block">SALVAR NOVO
+                            USUÁRIO</button>
                     </div>
                 </form>
             </div>
@@ -440,7 +442,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                         <div class="form-group text-left">
                             <label class="font-weight-bold">Selecione o arquivo preenchido:</label>
                             <input type="file" name="arquivo_excel" class="form-control-file border p-2 w-100"
-                                accept=".xlsx, .xls" required>
+                                accept=".xlsx, .xls, .csv" required>
                         </div>
                         <button type="submit" class="btn btn-info btn-block mt-3 font-weight-bold">PROCESSAR
                             IMPORTAÇÃO</button>
@@ -452,12 +454,45 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         $(document).ready(function() {
+            // BUSCA NA TABELA
             $("#inputBusca").on("keyup", function() {
                 var value = $(this).val().toLowerCase();
                 $("#tabelaUsuarios tbody tr").each(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // AJAX PARA SALVAR USUÁRIO
+            $("#form-usuarios").submit(function(event) {
+                event.preventDefault();
+
+                $('#btn-salvar').text('Salvando...');
+                $('#btn-salvar').attr('disabled', true);
+
+                $.ajax({
+                    url: "salvar-usuario.php",
+                    method: "POST",
+                    data: $(this).serialize(),
+
+                    success: function(mensagem) {
+                        if (mensagem.trim() === "Salvo com Sucesso") {
+                            alert(mensagem);
+                            window.location = "usuarios.php";
+                        } else {
+                            // Se houver erro (E-mail duplicado, etc), mostra o alerta e libera o botão
+                            alert(mensagem);
+                            $('#btn-salvar').text('SALVAR NOVO USUÁRIO');
+                            $('#btn-salvar').attr('disabled', false);
+                        }
+                    },
+                    error: function() {
+                        alert("Erro ao processar a requisição no servidor.");
+                        $('#btn-salvar').text('SALVAR NOVO USUÁRIO');
+                        $('#btn-salvar').attr('disabled', false);
+                    }
                 });
             });
         });
