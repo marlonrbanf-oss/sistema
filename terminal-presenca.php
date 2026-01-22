@@ -1,47 +1,200 @@
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<?php require_once("conexao.php"); ?>
+<!DOCTYPE html>
+<html lang="pt-br">
 
-<div id="modo-facial">
-    <div id="area-camera" style="position: relative;">
-        <video id="video" autoplay muted style="width: 100%; height: 250px; object-fit: cover;"></video>
-        <canvas id="overlay" style="position: absolute; top: 0; left: 0;"></canvas>
+<head>
+    <title>Terminal Nova Arte</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <style>
+        body {
+            background: #111;
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+        }
+
+        .teclado-num {
+            width: 350px;
+            padding: 20px;
+            background: #222;
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+
+        #area-camera {
+            width: 100%;
+            height: 250px;
+            background: #000;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 2px solid #444;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .visor {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 15px;
+            background: #000 !important;
+            color: #00ff00 !important;
+            border: 2px solid #444;
+            height: 60px;
+            letter-spacing: 5px;
+        }
+
+        .btn-num {
+            height: 65px;
+            font-size: 1.5rem;
+            background: #333;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .btn-alternar {
+            background: none;
+            border: none;
+            color: #888;
+            text-decoration: underline;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="teclado-num text-center">
+        <h4 id="titulo">CHECK-IN FACIAL</h4>
+
+        <div id="modo-facial">
+            <div id="area-camera">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display:none;"></canvas>
+            </div>
+            <button class="btn btn-success btn-lg btn-block mb-3" onclick="capturarEEnviar()">
+                <i class="fas fa-camera"></i> RECONHECER AGORA
+            </button>
+            <button class="btn-alternar" onclick="alternarModo('senha')">Usar senha manual</button>
+        </div>
+
+        <div id="modo-senha" style="display:none;">
+            <input type="password" id="senha_aluno" class="form-control visor" readonly placeholder="******">
+            <div class="row no-gutters">
+                <?php for ($i = 1; $i <= 9; $i++): ?>
+                    <div class="col-4 p-1"><button class="btn btn-num"
+                            onclick="addNum('<?php echo $i ?>')"><?php echo $i ?></button></div>
+                <?php endfor; ?>
+                <div class="col-4 p-1"><button class="btn btn-num btn-danger" onclick="limpar()">C</button></div>
+                <div class="col-4 p-1"><button class="btn btn-num" onclick="addNum('0')">0</button></div>
+                <div class="col-4 p-1"><button class="btn btn-num btn-success" onclick="confirmarSenha()">OK</button>
+                </div>
+            </div>
+            <button class="btn-alternar mt-2" onclick="alternarModo('facial')">Voltar para Câmera</button>
+        </div>
+
+        <div id="mensagem_retorno" class="mt-3" style="min-height: 50px;"></div>
     </div>
-    <div id="status-facial" class="small text-muted mb-2">Iniciando Biometria...</div>
-    <button class="btn-alternar" onclick="alternarModo('senha')">Usar senha manual</button>
-</div>
 
-<script>
-    // Lógica para carregar as fotos de perfil e comparar
-    async function iniciarBiometria() {
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-
-        // 1. Aqui você buscaria via AJAX uma lista com {ID, NOME, FOTO_URL} dos alunos
-        // Para este exemplo, vamos focar na lógica de detecção
+    <script>
         const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
 
-        video.addEventListener('play', () => {
-            const canvas = document.getElementById('overlay');
-            const displaySize = {
-                width: video.clientWidth,
-                height: video.clientHeight
-            };
-            faceapi.matchDimensions(canvas, displaySize);
+        // Inicia a câmera automaticamente
+        async function iniciarCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "user"
+                    }
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Erro ao acessar câmera: ", err);
+                alternarModo('senha');
+            }
+        }
 
-            setInterval(async () => {
-                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
-                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+        function alternarModo(modo) {
+            if (modo === 'senha') {
+                document.getElementById('modo-facial').style.display = 'none';
+                document.getElementById('modo-senha').style.display = 'block';
+                document.getElementById('titulo').innerText = 'DIGITE SUA SENHA';
+            } else {
+                document.getElementById('modo-facial').style.display = 'block';
+                document.getElementById('modo-senha').style.display = 'none';
+                document.getElementById('titulo').innerText = 'CHECK-IN FACIAL';
+            }
+        }
 
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-                faceapi.draw.drawDetections(canvas, resizedDetections);
+        function addNum(n) {
+            document.getElementById('senha_aluno').value += n;
+        }
 
-                if (detections.length > 0) {
-                    // Ao detectar um rosto, ele tira o "print" e envia para o PHP
-                    // Para não sobrecarregar, você pode colocar um botão de "Confirmar Rosto"
-                    document.getElementById('status-facial').innerHTML = "<span class='text-success'>ROSTO IDENTIFICADO!</span>";
-                }
-            }, 500);
-        });
-    }
-</script>
+        function limpar() {
+            document.getElementById('senha_aluno').value = "";
+        }
+
+        async function capturarEEnviar() {
+            const retorno = document.getElementById('mensagem_retorno');
+            retorno.innerHTML = "<div class='spinner-border text-light'></div>";
+
+            // Tira o print do vídeo
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const fotoBase64 = canvas.toDataURL('image/jpeg');
+
+            const formData = new FormData();
+            formData.append('foto', fotoBase64);
+            formData.append('modo', 'facial');
+
+            fetch('processar-checkin.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.text())
+                .then(t => {
+                    retorno.innerHTML = t;
+                })
+                .catch(() => {
+                    retorno.innerHTML = "Erro ao processar.";
+                });
+        }
+
+        async function confirmarSenha() {
+            const senha = document.getElementById('senha_aluno').value;
+            const formData = new FormData();
+            formData.append('senha', senha);
+            formData.append('modo', 'senha');
+
+            fetch('processar-checkin.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.text())
+                .then(t => {
+                    document.getElementById('mensagem_retorno').innerHTML = t;
+                });
+        }
+
+        iniciarCamera();
+    </script>
+</body>
+
+</html>
