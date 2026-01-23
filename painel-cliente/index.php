@@ -81,7 +81,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Portal do Atleta - Nova Arte BJJ</title>
     <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
@@ -117,6 +117,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             justify-content: center;
         }
 
+        /* Ajuste na Faixa BJJ */
         .bjj-belt {
             width: 100%;
             max-width: 400px;
@@ -153,6 +154,25 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             height: 40px;
             background-color: #fff;
             border-radius: 1px;
+        }
+
+        /* Estilos do Leitor QR Corrigidos */
+        #reader {
+            width: 100% !important;
+            border: none !important;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
+
+        #reader__dashboard {
+            display: none !important;
         }
 
         .pulse {
@@ -228,8 +248,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                 <?php echo round($porcentagem_progresso); ?>%</div>
                                         </div>
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica (Selos
-                                                + Faixa)</span>
+                                            <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica</span>
                                             <span><?php echo $tecnicas_concluidas; ?> /
                                                 <?php echo $total_geral_tecnicas; ?> Selos</span>
                                         </div>
@@ -369,7 +388,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                             <div class="card shadow-sm border-0">
                                 <div class="card-header bg-dark">
                                     <h3 class="card-title font-weight-bold"><i class="fas fa-history mr-2"></i>Aulas
-                                        Particulares (Aprovadas)</h3>
+                                        Particulares</h3>
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
@@ -380,8 +399,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         $res_ap = $query_ap->fetchAll(PDO::FETCH_ASSOC);
                                         if (count($res_ap) > 0) {
                                             foreach ($res_ap as $aula) {
-                                                $data_f = date('d/m/Y', strtotime($aula['data_aula']));
-                                        ?>
+                                                $data_f = date('d/m/Y', strtotime($aula['data_aula'])); ?>
                                                 <div class="col-6 col-md-3">
                                                     <div class="info-box shadow-none border">
                                                         <span class="info-box-icon bg-success elevation-1"><i
@@ -432,7 +450,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                     onclick="$('#foto-perfil').click();">Alterar</button>
                             </div>
                         </div>
-                        <div id="mensagem-perfil"></div>
                     </div>
                     <div class="modal-footer"><button type="submit" class="btn btn-dark w-100">SALVAR</button></div>
                 </form>
@@ -441,16 +458,23 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     </div>
 
     <div class="modal fade" id="modalQR" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Validar QR Code</h5><button type="button" class="close text-white"
-                        data-dismiss="modal" onclick="pararCamera()"><span>&times;</span></button>
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-qrcode mr-2"></i>Validar Técnica</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"
+                        onclick="pararCamera()"><span>&times;</span></button>
                 </div>
-                <div class="modal-body text-center">
-                    <div id="reader" style="width:100%" class="border"></div><input type="hidden" id="tipo_v"><input
-                        type="hidden" id="id_v">
-                    <p class="mt-2 text-muted font-weight-bold" id="nome_v"></p>
+                <div class="modal-body p-3">
+                    <div style="overflow: hidden; border-radius: 15px; position: relative; background: #000;">
+                        <div id="reader"></div>
+                    </div>
+                    <input type="hidden" id="tipo_v">
+                    <input type="hidden" id="id_v">
+                    <div class="text-center mt-3">
+                        <h6 class="font-weight-bold text-uppercase mb-1" id="nome_v"></h6>
+                        <p class="small text-muted mb-0">Aproxime do QR Code do seu Professor</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -477,33 +501,50 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             $('#id_v').val(id);
             $('#nome_v').text(nome);
             $('#modalQR').modal('show');
+
+            // Cálculo dinâmico do box de leitura para não estourar em telas pequenas
+            let larguraModal = document.getElementById('reader').clientWidth;
+            let qrBoxSize = Math.floor(larguraModal * 0.7);
+
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({
-                facingMode: "environment"
-            }, {
-                fps: 10,
-                qrbox: 250
-            }, (txt) => {
-                pararCamera();
-                let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
-                    "validar-estudo.php" : "validar-tecnica.php");
-                $.post(url, {
-                    token_professor: txt,
-                    id: id
-                }, function(res) {
-                    if (res.trim() == "Sucesso") {
-                        confetti();
-                        setTimeout(() => location.reload(), 1200);
-                    } else {
-                        alert(res);
-                        $('#modalQR').modal('hide');
-                    }
-                });
+                    facingMode: "environment"
+                }, {
+                    fps: 10,
+                    qrbox: {
+                        width: qrBoxSize,
+                        height: qrBoxSize
+                    },
+                    aspectRatio: 1.0
+                },
+                (txt) => {
+                    pararCamera();
+                    let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
+                        "validar-estudo.php" : "validar-tecnica.php");
+                    $.post(url, {
+                        token_professor: txt,
+                        id: id
+                    }, function(res) {
+                        if (res.trim() == "Sucesso") {
+                            confetti();
+                            setTimeout(() => location.reload(), 1200);
+                        } else {
+                            alert(res);
+                            $('#modalQR').modal('hide');
+                        }
+                    });
+                }
+            ).catch(err => {
+                console.error("Erro ao iniciar câmera", err);
             });
         }
 
         function pararCamera() {
-            if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop();
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                });
+            }
         }
 
         function pesquisarEvolucao() {
@@ -515,6 +556,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                 $('#resultado_pesquisa').fadeIn().html(data);
             });
         }
+
         $("#buscar_aluno").keypress(function(e) {
             if (e.which == 13) pesquisarEvolucao();
         });
