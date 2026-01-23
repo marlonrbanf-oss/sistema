@@ -1,8 +1,11 @@
 <?php
 require_once("../conexao.php");
+// 1. IMPORTAÇÃO DA FUNÇÃO DE NOTIFICAÇÃO
+require_once("../enviar-notificacao.php");
+
 @session_start();
 
-// CORREÇÃO: Adicionado o nível 'Professor' na validação de segurança
+// Validação de segurança para níveis permitidos
 if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "Acesso Negado!";
     exit();
@@ -31,6 +34,12 @@ if ($id_aluno != "") {
         $res_log->bindValue(":usuario_logado", $usuario_logado);
         $res_log->bindValue(":acao", $acao);
         $res_log->execute();
+
+        // 4. DISPARO DA NOTIFICAÇÃO PUSH (NOVIDADE)
+        // Notifica o aluno que o professor confirmou a aula dele
+        $titulo_push = "Presença Confirmada! 🥋";
+        $msg_push = "Olá, sua presença na aula de hoje foi registrada com sucesso. Oss!";
+        enviarPush($id_aluno, $titulo_push, $msg_push, "painel-cliente/index.php");
 
         echo "<script>alert('Presença confirmada para $nome_aluno!'); window.location='usuarios.php';</script>";
     } catch (Exception $e) {

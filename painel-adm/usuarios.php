@@ -359,11 +359,11 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                             <div class="col-md-4 form-group">
                                 <label>CPF</label>
-                                <input type="text" name="cpf" class="form-control" id="cpf_cad">
+                                <input type="text" name="cpf" class="form-control cpf" id="cpf_cad">
                             </div>
                             <div class="col-md-4 form-group">
                                 <label>Telefone</label>
-                                <input type="text" name="telefone" class="form-control">
+                                <input type="text" name="telefone" class="form-control telefone">
                             </div>
                             <div class="col-md-4 form-group">
                                 <label>Senha</label>
@@ -524,6 +524,27 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
             $('.cpf').mask('000.000.000-00');
 
             // Máscara de Telefone Dinâmica (ajusta para 8 ou 9 dígitos)
+            var SPMaskBehavior = function(val) {
+                    return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+                },
+                spOptions = {
+                    onKeyPress: function(val, e, field, options) {
+                        field.mask(SPMaskBehavior.apply({}, arguments), options);
+                    }
+                };
+            $('.telefone').mask(SPMaskBehavior, spOptions);
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Máscara de CPF
+            $('.cpf').mask('000.000.000-00', {
+                reverse: true
+            });
+
+            // Máscara de Telefone Dinâmica (ajusta entre 10 e 11 dígitos para Celular/Fixo)
             var SPMaskBehavior = function(val) {
                     return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
                 },

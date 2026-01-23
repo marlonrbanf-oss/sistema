@@ -1,5 +1,8 @@
 <?php
 require_once("../conexao.php");
+// 1. IMPORTAÇÃO DA FUNÇÃO DE NOTIFICAÇÃO
+require_once("../enviar-notificacao.php");
+
 @session_start();
 
 // 1. VALIDAÇÃO DE SEGURANÇA
@@ -52,14 +55,22 @@ try {
 
     $query->execute();
 
-    // 4. REGISTRA NO LOG (Opcional, mas recomendado)
+    // 4. DISPARO DA NOTIFICAÇÃO PUSH (NOVIDADE)
+    // Personaliza a mensagem de acordo com o status
+    $titulo_push = "Novo Selo de Técnica! 🥋";
+    $msg_push = "OSS! Você recebeu o selo: $tecnica ($status).";
+
+    // Enviamos para o OneSignal
+    enviarPush($id_aluno, $titulo_push, $msg_push, "painel-cliente/index.php");
+
+    // 5. REGISTRA NO LOG
     $acao = "Lançou selo: $tecnica ($status) para o aluno ID $id_aluno";
     $ins_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:user, :acao, NOW())");
     $ins_log->execute([':user' => $nome_prof, ':acao' => $acao]);
 
-    // 5. FEEDBACK E RETORNO
+    // 6. FEEDBACK E RETORNO
     echo "<script language='javascript'>
-            alert('Selo de técnica gravado com sucesso!');
+            alert('Selo de técnica gravado e aluno notificado!');
             window.location='usuarios.php';
           </script>";
 } catch (PDOException $e) {

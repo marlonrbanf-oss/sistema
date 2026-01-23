@@ -8,7 +8,14 @@ function verificarRequisitos($pdo, $id_usuario)
     $grad = $query->fetch(PDO::FETCH_ASSOC);
 
     if (!$grad) {
-        return ['faixa' => 'branca', 'grau' => 0, 'aulas' => 0, 'meta' => 30, 'pode' => false];
+        return [
+            'faixa' => 'branca',
+            'grau' => 0,
+            'aulas' => 0,
+            'meta' => 30,
+            'pode' => false,
+            'mensagem' => ''
+        ];
     }
 
     // Normaliza a faixa: tira espaços, converte para minúsculo e traduz cores básicas
@@ -47,11 +54,20 @@ function verificarRequisitos($pdo, $id_usuario)
         $meta = 100;
     }
 
+    $pode_graduar = ($aulas_concluidas >= $meta);
+    $mensagem = "";
+
+    // 3. LÓGICA DE AVISO DE VALIDAÇÃO
+    if ($pode_graduar) {
+        $mensagem = "Parabéns! Você atingiu a meta de $meta aulas. Procure seu professor para validar sua próxima graduação! OSS.";
+    }
+
     return [
-        'faixa' => $faixa, // Retorna sempre o nome padronizado para o CSS do index.php
+        'faixa' => $faixa,
         'grau'  => $grau_atual,
         'aulas' => $aulas_concluidas,
         'meta'  => $meta,
-        'pode'  => ($aulas_concluidas >= $meta)
+        'pode'  => $pode_graduar,
+        'mensagem' => $mensagem
     ];
 }

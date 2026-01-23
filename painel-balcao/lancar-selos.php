@@ -1,6 +1,8 @@
 <?php
 @session_start();
 require_once("../conexao.php");
+// 1. IMPORTAÇÃO DA FUNÇÃO DE NOTIFICAÇÃO
+require_once("../enviar-notificacao.php");
 
 // Validação de acesso
 if (@$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Admin') {
@@ -15,7 +17,6 @@ $status_selecionado = isset($_POST['status']) ? $_POST['status'] : 'Em Estudo';
 
 $id_prof = $_SESSION['id_usuario'];
 $nome_prof = $_SESSION['nome_usuario'];
-
 // Mapeamento Completo das 50 Lições
 $licoes_array = [
     1 => [
@@ -292,7 +293,7 @@ if (!empty($alunos) && isset($licoes_array[$licao_id])) {
     $tecnicas_da_aula = $licoes_array[$licao_id];
 
     foreach ($alunos as $aluno_id) {
-        // Busca nome do aluno para o Log
+        // Busca nome do aluno para o Log e Notificação
         $query_u = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
         $query_u->execute([':id' => $aluno_id]);
         $dados_aluno = $query_u->fetch(PDO::FETCH_ASSOC);
@@ -326,13 +327,18 @@ if (!empty($alunos) && isset($licoes_array[$licao_id])) {
             }
         }
 
+        // 2. DISPARO DA NOTIFICAÇÃO PUSH PARA CADA ALUNO
+        $titulo_push = "Nova Lição Registrada! 🥋";
+        $msg_push = "OSS " . explode(' ', $nome_aluno)[0] . ", o professor lançou a Lição $licao_id como: $status_selecionado.";
+        enviarPush($aluno_id, $titulo_push, $msg_push, "painel-cliente/index.php");
+
         // REGISTRA NO LOG DO SISTEMA
         $acao = "Lançou Lição $licao_id (Status: $status_selecionado) para o aluno $nome_aluno";
         $ins_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:user, :acao, NOW())");
         $ins_log->execute([':user' => $nome_prof, ':acao' => $acao]);
     }
 
-    echo "<script>alert('Sucesso! Lição aplicada com status: $status_selecionado.'); window.location='index.php';</script>";
+    echo "<script>alert('Sucesso! Lição aplicada e alunos notificados via Push.'); window.location='index.php';</script>";
 } else {
     echo "<script>alert('Erro: Selecione a lição e ao menos um aluno.'); window.history.back();</script>";
 }
