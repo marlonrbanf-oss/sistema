@@ -10,9 +10,8 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
 <html lang="pt-br">
 
 <head>
-
     <title>Academia Nova Arte - Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <link rel="manifest" href="manifest_aluno.json">
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
@@ -110,9 +109,10 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
             text-decoration: none;
         }
 
-        /* ESTILO DO BOTÃO DE INSTALAÇÃO */
+        /* AJUSTE BOTÃO DE INSTALAÇÃO */
         .btn-install-app {
-            display: inline-block;
+            display: none;
+            /* Só aparece via JS se não estiver instalado */
             margin-top: 15px;
             padding: 8px 20px;
             border: 1px solid #ddd;
@@ -122,6 +122,8 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
             font-weight: bold;
             transition: 0.3s;
             text-transform: uppercase;
+            background: #fff;
+            cursor: pointer;
         }
 
         .btn-install-app:hover {
@@ -129,6 +131,24 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
             color: #fff;
             text-decoration: none;
             border-color: #000;
+        }
+
+        /* BALÃO iOS */
+        #ios-advice-aluno {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 320px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            border: 2px solid #000;
+            font-size: 13px;
         }
 
         .modal-header {
@@ -188,9 +208,9 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                             Equipe</a>
 
                         <div class="text-center">
-                            <a href="apps.php" class="btn-install-app">
+                            <button id="btn-instalar-pwa" class="btn-install-app" onclick="dispararInstalacao()">
                                 <i class="fas fa-mobile-alt mr-2"></i> Instalar Aplicativo
-                            </a>
+                            </button>
                         </div>
                     </div>
 
@@ -200,6 +220,13 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                 </div>
             </div>
         </section>
+    </div>
+
+    <div id="ios-advice-aluno" class="text-center">
+        <p class="mb-2"><strong>Instalar no iPhone</strong></p>
+        <p class="small">Toque em <strong>Compartilhar</strong> <i class="fas fa-external-link-alt text-primary"></i> e
+            depois em <strong>"Adicionar à Tela de Início"</strong> <i class="far fa-plus-square"></i>.</p>
+        <button class="btn btn-sm btn-dark mt-2" onclick="this.parentElement.style.display='none'">Entendi</button>
     </div>
 
     <div class="modal fade" id="modal-login" tabindex="-1" role="dialog">
@@ -255,9 +282,6 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                                     Desejo uma aula experimental
                                 </label>
                             </div>
-                            <small class="text-muted d-block" style="font-size: 11px; margin-left: 25px;">
-                                Somente para pessoas que nunca fizeram jiu-jítsu.
-                            </small>
                         </div>
 
                         <div class="form-group">
@@ -305,13 +329,31 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
     <script src="js/mascaras.js"></script>
 
     <script type="text/javascript">
+        let installPrompt;
+        const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+        const isStandalone = () => window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
         $(document).ready(function() {
-            // REGISTRO DO SERVICE WORKER (NECESSÁRIO PARA O PWA FUNCIONAR)
+            // REGISTRO DO SERVICE WORKER
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js');
             }
 
-            // SCRIPT CADASTRO
+            // DETECÇÃO DE INSTALAÇÃO (ANDROID/CHROME)
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                installPrompt = e;
+                if (!isStandalone()) {
+                    $('#btn-instalar-pwa').fadeIn();
+                }
+            });
+
+            // SE FOR IOS E NÃO ESTIVER INSTALADO, MOSTRA BOTÃO
+            if (isIos() && !isStandalone()) {
+                $('#btn-instalar-pwa').fadeIn();
+            }
+
+            // CADASTRO AJAX
             $('#btn-cadastro').click(function(event) {
                 event.preventDefault();
                 $.ajax({
@@ -324,21 +366,18 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                         if (mensagem.trim() == 'Cadastrado com Sucesso!!' || mensagem.trim() ==
                             'Cadastrado com Sucesso!') {
                             $('#mensagem').addClass('text-success')
-                            document.getElementById('username').value = document.getElementById(
-                                'email').value;
-                            document.getElementById('pass').value = document.getElementById(
-                                'senha').value;
+                            $('#username').val($('#email').val());
+                            $('#pass').val($('#senha').val());
                             alert("Cadastro realizado! Você já pode entrar.");
                             $('#modal-login').modal('hide');
                         } else {
-                            $('#mensagem').addClass('text-danger')
-                            $('#mensagem').text(mensagem)
+                            $('#mensagem').addClass('text-danger').text(mensagem);
                         }
                     },
                 })
-            })
+            });
 
-            // SCRIPT RECUPERAR SENHA
+            // RECUPERAR SENHA AJAX
             $('#btn-rec').click(function(event) {
                 event.preventDefault();
                 $.ajax({
@@ -349,16 +388,30 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
                     success: function(mensagem) {
                         $('#mensagem2').removeClass()
                         if (mensagem.trim() == 'Senha enviada para o seu Email!') {
-                            $('#mensagem2').addClass('text-success')
-                            $('#email-recuperar').val('')
+                            $('#mensagem2').addClass('text-success');
+                            $('#email-recuperar').val('');
                         } else {
-                            $('#mensagem2').addClass('text-danger')
+                            $('#mensagem2').addClass('text-danger');
                         }
-                        $('#mensagem2').text(mensagem)
+                        $('#mensagem2').text(mensagem);
                     },
                 })
-            })
-        })
+            });
+        });
+
+        function dispararInstalacao() {
+            if (isIos()) {
+                $('#ios-advice-aluno').fadeIn();
+            } else if (installPrompt) {
+                installPrompt.prompt();
+                installPrompt.userChoice.then((result) => {
+                    installPrompt = null;
+                    $('#btn-instalar-pwa').fadeOut();
+                });
+            } else {
+                alert("Para instalar: Clique nos 3 pontos do navegador e selecione 'Adicionar à tela inicial'.");
+            }
+        }
     </script>
 </body>
 

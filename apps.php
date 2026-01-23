@@ -53,12 +53,14 @@ include_once("conexao.php");
             border: none;
             width: 100%;
             transition: 0.3s;
+            cursor: pointer;
         }
 
-        .btn-install:active {
+        .btn-install:hover {
             background: #333;
         }
 
+        /* Balão de Instrução iOS */
         #ios-ready-advice {
             display: none;
             position: fixed;
@@ -98,21 +100,21 @@ include_once("conexao.php");
         </div>
 
         <div class="row justify-content-center">
-            <div class="col-md-5 col-lg-4">
+            <div class="col-md-5 col-lg-4 mb-4">
                 <div class="app-card">
                     <img src="images/logo_aluno.png" class="app-icon" onerror="this.src='images/icon-512.png'">
                     <h5>Portal do Aluno</h5>
                     <p class="small text-muted">Acesso a treinos, selos e frequência.</p>
-                    <button class="btn-install" onclick="iniciarInstalacao('manifest_aluno.json')">Instalar App</button>
+                    <button class="btn-install" onclick="iniciarInstalacao('manifest_aluno.json', 'Aluno')">Instalar App</button>
                 </div>
             </div>
 
-            <div class="col-md-5 col-lg-4">
+            <div class="col-md-5 col-lg-4 mb-4">
                 <div class="app-card">
                     <img src="images/logo_adm.png" class="app-icon" onerror="this.src='images/icon-512.png'">
                     <h5>Painel Administrativo</h5>
                     <p class="small text-muted">Gestão de alunos e staff da academia.</p>
-                    <button class="btn-install" onclick="iniciarInstalacao('manifest_adm.json')">Instalar App</button>
+                    <button class="btn-install" onclick="iniciarInstalacao('manifest_adm.json', 'Administrativo')">Instalar App</button>
                 </div>
             </div>
         </div>
@@ -124,29 +126,33 @@ include_once("conexao.php");
 
     <div id="ios-ready-advice">
         <div class="text-right">
-            <button class="close"
-                onclick="document.getElementById('ios-ready-advice').style.display='none'">&times;</button>
+            <button class="close" onclick="document.getElementById('ios-ready-advice').style.display='none'">&times;</button>
         </div>
         <div class="text-center">
-            <p class="mb-2"><strong>Instalar no iPhone</strong></p>
-            <p class="small">1. Toque no ícone de <strong>Compartilhar</strong> <i
-                    class="fas fa-external-link-alt text-primary"></i>.</p>
-            <p class="small">2. Toque em <strong>"Adicionar à Tela de Início"</strong> <i
-                    class="far fa-plus-square"></i>.</p>
+            <p class="mb-2"><strong>Instalar no iPhone (<span id="ios-app-name">App</span>)</strong></p>
+            <p class="small">1. Toque no ícone de <strong>Compartilhar</strong> <i class="fas fa-external-link-alt text-primary"></i> (na barra inferior do Safari).</p>
+            <p class="small">2. Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong> <i class="far fa-plus-square"></i>.</p>
         </div>
     </div>
 
     <script>
         let deferredPrompt;
-        const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+        const isIos = () => {
+            return /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+        };
+
         const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
 
+        // Captura o evento de instalação para Android/Chrome
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+            console.log("Evento 'beforeinstallprompt' capturado.");
         });
 
-        function iniciarInstalacao(manifestFile) {
+        function iniciarInstalacao(manifestFile, appName) {
+            // Atualiza o link do manifest dinamicamente
             let link = document.querySelector("link[rel*='manifest']") || document.createElement('link');
             link.rel = 'manifest';
             link.href = manifestFile;
@@ -154,22 +160,35 @@ include_once("conexao.php");
 
             if (isIos()) {
                 if (!isInStandaloneMode()) {
+                    document.getElementById('ios-app-name').innerText = appName;
                     document.getElementById('ios-ready-advice').style.display = 'block';
                 } else {
-                    alert("O App já está instalado!");
+                    alert("O App " + appName + " já está instalado e em uso!");
                 }
             } else if (deferredPrompt) {
+                // Dispara o prompt de instalação (Android/Windows/macOS Chrome)
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    deferredPrompt = null;
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('Usuário aceitou a instalação de ' + appName);
+                    }
+                    deferredPrompt = null; // Limpa para não disparar reuso sem novo evento
                 });
             } else {
-                alert("Para instalar:\n1. Clique nos 3 pontos do navegador.\n2. Escolha 'Adicionar à tela inicial'.");
+                // Fallback para navegadores que não suportam prompt automático ou se o evento ainda não disparou
+                alert("Para instalar o App " + appName + ":\n1. Clique nos 3 pontos (ou menu) do navegador.\n2. Escolha 'Instalar Aplicativo' ou 'Adicionar à tela inicial'.");
             }
         }
 
+        // Registrar o Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('Service Worker registrado com sucesso:', reg.scope);
+                }).catch(err => {
+                    console.log('Falha ao registrar Service Worker:', err);
+                });
+            });
         }
     </script>
 </body>

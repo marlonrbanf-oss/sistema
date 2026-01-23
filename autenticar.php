@@ -1,8 +1,9 @@
 <?php
-require_once("conexao.php");
+// 1. Inicia a sessão ANTES de qualquer saída de código
 @session_start();
+require_once("conexao.php");
 
-// 1. Verifica se os campos não estão vazios
+// 2. Verifica se os campos não estão vazios para evitar erro de variável indefinida
 if (empty($_POST['username']) || empty($_POST['pass'])) {
 	echo "<script language='javascript'>window.location='login.php'; </script>";
 	exit();
@@ -11,38 +12,53 @@ if (empty($_POST['username']) || empty($_POST['pass'])) {
 $usuario = $_POST['username'];
 $senha = $_POST['pass'];
 
-// 2. Consulta usando as colunas reais: usuario e senha
-$res = $pdo->prepare("SELECT * FROM usuarios WHERE usuario = :usuario AND senha = :senha");
-$res->bindValue(":usuario", $usuario);
-$res->bindValue(":senha", $senha);
-$res->execute();
+// 3. Consulta usando PDO Prepare para evitar SQL Injection
+try {
+	// Busca o usuário pelo e-mail/usuário
+	$res = $pdo->prepare("SELECT * FROM usuarios WHERE usuario = :usuario AND senha = :senha");
+	$res->bindValue(":usuario", $usuario);
+	$res->bindValue(":senha", $senha);
+	$res->execute();
 
-$dados = $res->fetchAll(PDO::FETCH_ASSOC);
-$linhas = count($dados);
+	$dados = $res->fetchAll(PDO::FETCH_ASSOC);
+	$linhas = count($dados);
 
-if ($linhas > 0) {
-	// 3. Define as variáveis de sessão
-	$_SESSION['id_usuario'] = $dados[0]['id'];
-	$_SESSION['nome_usuario'] = $dados[0]['nome'];
-	$_SESSION['email_usuario'] = $dados[0]['usuario'];
-	$_SESSION['nivel_usuario'] = $dados[0]['nivel'];
+	if ($linhas > 0) {
+		// Verifica se o usuário está ativo (Opcional, mas recomendado)
+		// Se sua tabela tiver campo 'ativo', adicione a verificação aqui.
 
-	$nivel = $dados[0]['nivel'];
+		// 4. Define as variáveis de sessão essenciais
+		$_SESSION['id_usuario'] = $dados[0]['id'];
+		$_SESSION['nome_usuario'] = $dados[0]['nome'];
+		$_SESSION['email_usuario'] = $dados[0]['usuario'];
+		$_SESSION['nivel_usuario'] = $dados[0]['nivel'];
 
-	// 4. Redirecionamento baseado no nível (Professor entra no Balcão)
-	if ($nivel == 'Admin') {
-		echo "<script language='javascript'>window.location='painel-adm/index.php'; </script>";
-		exit();
-	} else if ($nivel == 'Balconista' || $nivel == 'Professor') {
-		// Redireciona ambos para a mesma pasta painel-balcao
-		echo "<script language='javascript'>window.location='painel-balcao/index.php'; </script>";
-		exit();
+		$nivel = $dados[0]['nivel'];
+
+		// 5. Redirecionamento baseado no nível (Mantendo sua lógica original)
+		if ($nivel == 'Admin') {
+			echo "<script language='javascript'>window.location='painel-adm/index.php'; </script>";
+			exit();
+		} else if ($nivel == 'Balconista' || $nivel == 'Professor') {
+			// Ambos os níveis acessam a mesma estrutura de balcão/gestão
+			echo "<script language='javascript'>window.location='painel-balcao/index.php'; </script>";
+			exit();
+		} else if ($nivel == 'Cliente') {
+			// Nível 'Cliente' (Atleta) acessa seu portal específico
+			echo "<script language='javascript'>window.location='painel-cliente/index.php'; </script>";
+			exit();
+		} else {
+			// Caso exista um nível não mapeado, volta ao login por segurança
+			echo "<script language='javascript'>window.location='login.php'; </script>";
+			exit();
+		}
 	} else {
-		// Redireciona nível 'Cliente' para a pasta painel-cliente
-		echo "<script language='javascript'>window.location='painel-cliente/index.php'; </script>";
+		// 6. Caso os dados estejam incorretos ou não encontrados
+		echo "<script language='javascript'>window.alert('Dados Incorretos ou Usuário Inativo!'); window.location='login.php'; </script>";
 		exit();
 	}
-} else {
-	// 5. Caso os dados estejam incorretos
-	echo "<script language='javascript'>window.alert('Dados Incorretos!!'); window.location='login.php'; </script>";
+} catch (PDOException $e) {
+	// Tratamento de erro de conexão com o banco
+	echo "Erro no banco de dados: " . $e->getMessage();
+	exit();
 }

@@ -1,27 +1,45 @@
-const CACHE_NAME = 'nova-arte-v1';
+const CACHE_NAME = 'nova-arte-v2';
 
-// Arquivos básicos para o App abrir mesmo se a rede oscilar
+// Cache de arquivos que raramente mudam (Assets)
 const PRE_CACHE = [
     'images/logo_app.png',
-    'css/bootstrap.css'
+    'css/bootstrap.css',
+    'manifest_aluno.json',
+    'manifest_adm.json',
+    'manifest_terminal.json'
 ];
 
 self.addEventListener('install', (e) => {
     e.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(PRE_CACHE))
+        caches.open(CACHE_NAME).then(cache => {
+            console.log('Arquivos pré-cacheados com sucesso.');
+            return cache.addAll(PRE_CACHE);
+        })
     );
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(clients.claim());
+    // Limpa caches antigos se você mudar o CACHE_NAME
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cache => {
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
+                })
+            );
+        })
+    );
+    return self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-    // Responde com o cache, se houver, ou busca na rede
+    // Estratégia: Tenta Rede, se falhar (offline), busca no Cache
     event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request);
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
         })
     );
 });
