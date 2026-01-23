@@ -1,7 +1,13 @@
+const CACHE_NAME = 'nova-arte-v1';
+
 self.addEventListener('install', (e) => {
     self.skipWaiting();
 });
 
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+});
+
 self.addEventListener('fetch', (event) => {
-    // Apenas para cumprir o requisito do PWA
+    // Necessário para permitir a instalação no Android
 });
