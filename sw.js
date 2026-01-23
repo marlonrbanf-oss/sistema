@@ -1,10 +1,7 @@
-// Este arquivo é necessário para o Chrome habilitar a instalação do PWA
-self.addEventListener('install', function (e) {
-    e.waitUntil(
-        caches.open('nova-arte-v1').then(function (cache) {
-            return cache.addAll(['./']);
-        })
-    );
+self.addEventListener('install', (e) => {
+    self.skipWaiting();
 });
 
-self.addEventListener('fetch', function (event) { });
+self.addEventListener('fetch', (event) => {
+    // Apenas para cumprir o requisito do PWA
+});
