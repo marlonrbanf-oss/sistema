@@ -18,6 +18,10 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
     <title>Gestão Facial - Nova Arte</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="../manifest_terminal.json">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
 
@@ -49,15 +53,24 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
             font-weight: bold;
         }
 
-        .btn-testar {
+        /* Botões Flutuantes */
+        .area-botoes-fixos {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            border-radius: 50px;
-            padding: 15px 25px;
-            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
             z-index: 1000;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-acao-fixo {
+            border-radius: 50px;
+            padding: 12px 25px;
+            font-weight: bold;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 10px;
+            transition: 0.3s;
         }
 
         .header-top {
@@ -104,9 +117,15 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
         </div>
     </div>
 
-    <a href="../terminal-presenca.php" target="_blank" class="btn btn-warning btn-testar">
-        <i class="fas fa-external-link-alt mr-2"></i> IR PARA O TERMINAL
-    </a>
+    <div class="area-botoes-fixos">
+        <button id="btn-instalar-terminal" class="btn btn-success btn-acao-fixo" style="display:none;">
+            <i class="fas fa-download mr-2"></i> INSTALAR TERMINAL NO TABLET
+        </button>
+
+        <a href="../terminal-presenca.php" target="_blank" class="btn btn-warning btn-acao-fixo">
+            <i class="fas fa-external-link-alt mr-2"></i> IR PARA O TERMINAL
+        </a>
+    </div>
 
     <?php include_once("modal-biometria.php"); ?>
 
@@ -114,7 +133,36 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Lógica de Instalação do PWA Terminal
+        let promptTerminal;
+        const btnInstalar = document.getElementById('btn-instalar-terminal');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            promptTerminal = e;
+            // Mostra o botão de instalação
+            btnInstalar.style.display = 'block';
+        });
+
+        btnInstalar.addEventListener('click', async () => {
+            if (promptTerminal) {
+                promptTerminal.prompt();
+                const {
+                    outcome
+                } = await promptTerminal.userChoice;
+                if (outcome === 'accepted') {
+                    btnInstalar.style.display = 'none';
+                }
+                promptTerminal = null;
+            }
+        });
+
         $(document).ready(function() {
+            // Registro do Service Worker para permitir a instalação
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('../sw.js');
+            }
+
             // Busca dinâmica ao digitar
             $('#busca_aluno').on('keyup', function() {
                 let busca = $(this).val();
@@ -142,16 +190,11 @@ $nome_usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuari
             });
         });
 
-        // Função que é chamada pelo botão gerado no buscar_alunos_facial.php
         function abrirModalBio(id, nome) {
-            // Preenche os dados no modal
             $('#id-aluno-bio').val(id);
             $('#nome-aluno-bio').text(nome);
-
-            // Abre o modal
             $('#modalBiometria').modal('show');
 
-            // Timeout de 500ms para garantir que o modal terminou de abrir antes de iniciar a câmera
             setTimeout(function() {
                 if (typeof iniciarCameraBio === "function") {
                     iniciarCameraBio();
