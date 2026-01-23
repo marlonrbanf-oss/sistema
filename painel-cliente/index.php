@@ -75,6 +75,23 @@ $cor_css = tratarCorFaixa($status['faixa']);
 $porcentagem_progresso = ($status['meta'] > 0) ? ($status['aulas'] / $status['meta']) * 100 : 0;
 if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 ?>
+<?php
+// Carrega os dados
+$dados_graduacao = verificarRequisitos($pdo, $id_usuario);
+
+if ($dados_graduacao['pode']):
+?>
+    <div class="alert alert-success shadow border-0 mt-3"
+        style="background-color: #d4edda; border-left: 5px solid #28a745 !important;">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-medal fa-2x mr-3 text-success"></i>
+            <div>
+                <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
+                <small><?php echo $dados_graduacao['mensagem']; ?></small>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <!DOCTYPE html>
 <html lang="pt-br">

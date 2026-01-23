@@ -1,19 +1,22 @@
 <?php
 @session_start();
-require_once("../conexao.php"); // Caminho correto para a raiz
+require_once("../conexao.php");
 
 // 1. CAPTURA DE VARIÁVEIS E LIMPEZA DE MÁSCARAS
 $id = isset($_POST['id']) ? $_POST['id'] : '';
 $nome = isset($_POST['nome']) ? $_POST['nome'] : '';
-$email = isset($_POST['email']) ? $_POST['email'] : ''; // Campo 'email' do formulário
+$email = isset($_POST['email']) ? $_POST['email'] : '';
 $senha = isset($_POST['senha']) ? $_POST['senha'] : '';
 $nivel = isset($_POST['nivel']) ? $_POST['nivel'] : 'Cliente';
+
+// Captura se é aula experimental (ajuste o nome do campo se for diferente no seu HTML)
+$aula_experimental = isset($_POST['aula_experimental']) ? $_POST['aula_experimental'] : 'Não';
 
 // Limpeza de CPF e Telefone para evitar o erro "Data too long"
 $cpf = isset($_POST['cpf']) ? preg_replace('/[^0-9]/', '', $_POST['cpf']) : '';
 $telefone = isset($_POST['telefone']) ? preg_replace('/[^0-9]/', '', $_POST['telefone']) : '';
 
-// CAMPOS DE GRADUAÇÃO (Vindos do Painel ADM)
+// CAMPOS DE GRADUAÇÃO
 $cor_faixa = isset($_POST['cor_faixa']) ? $_POST['cor_faixa'] : 'Branca';
 $graus = isset($_POST['graus']) ? $_POST['graus'] : 0;
 $total_aulas = isset($_POST['total_aulas']) ? $_POST['total_aulas'] : 0;
@@ -60,11 +63,11 @@ $res->bindValue(":nivel", $nivel);
 $res->bindValue(":telefone", $telefone);
 $res->execute();
 
+// Pega o ID do aluno (seja novo ou editado)
 $ultimo_id = ($id == "") ? $pdo->lastInsertId() : $id;
 
 // 4. ATUALIZAR TABELA GRADUAÇÕES (Apenas para Clientes)
 if ($nivel == 'Cliente') {
-    // Verifica se já existe registro de graduação
     $query_g = $pdo->prepare("SELECT id FROM graduacoes WHERE usuario_id = :id");
     $query_g->bindValue(":id", $ultimo_id);
     $query_g->execute();
@@ -88,6 +91,18 @@ if ($nivel == 'Cliente') {
     $res_grad->bindValue(":graus", $graus);
     $res_grad->bindValue(":aulas", $total_aulas);
     $res_grad->execute();
+}
+
+// 5. LÓGICA PARA AULA EXPERIMENTAL (Aparecer no painel aulas_experimentais.php)
+if ($id == "" && $aula_experimental == 'Sim') {
+    // Apenas cria o registro se for um NOVO cadastro (id vazio)
+    $res_exp = $pdo->prepare("INSERT INTO aulas_particulares SET 
+        aluno_id = :aluno, 
+        professor_id = '0', 
+        data = curDate(), 
+        observacoes = 'EXPERIMENTAL'");
+    $res_exp->bindValue(":aluno", $ultimo_id);
+    $res_exp->execute();
 }
 
 echo 'Salvo com Sucesso';

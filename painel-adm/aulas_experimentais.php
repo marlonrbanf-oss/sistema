@@ -10,18 +10,16 @@ if (@$_SESSION['nivel_usuario'] != 'Admin') {
 
 $hoje = date('Y-m-d');
 
-// Lógica para Salvar o Agendamento
+// Lógica para Salvar o Agendamento (Quando o Admin define Professor e Data)
 if (isset($_POST['id_aula'])) {
     $id_aula = $_POST['id_aula'];
     $id_professor = $_POST['professor'];
     $data_aula = $_POST['data_aula'];
-    $horario = $_POST['horario']; // Pegamos o valor do formulário
+    $horario = $_POST['horario'];
 
-    // CORREÇÃO: Como não existe a coluna 'horario', vamos salvar a hora junto com a observação
-    // para você não perder a informação de que horas será a aula.
-    $obs_final = "EXPERIMENTAL - Hora: " . $horario;
+    // CORREÇÃO: Mantendo a lógica de salvar a hora na observação para não dar erro de coluna inexistente
+    $obs_final = "EXPERIMENTAL - Agendado para as: " . $horario;
 
-    // Removemos o campo 'horario' da query abaixo para evitar o erro Fatal
     $res = $pdo->prepare("UPDATE aulas_particulares SET 
         professor_id = :prof, 
         data = :data, 
@@ -34,7 +32,7 @@ if (isset($_POST['id_aula'])) {
     $res->bindValue(":id", $id_aula);
     $res->execute();
 
-    echo "<script>alert('Aula agendada com sucesso!'); window.location='aulas_experimentais.php';</script>";
+    echo "<script>alert('Aula experimental agendada com sucesso!'); window.location='aulas_experimentais.php';</script>";
 }
 ?>
 
@@ -61,19 +59,17 @@ if (isset($_POST['id_aula'])) {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
         .btn-whatsapp {
             background-color: #25d366;
             color: white !important;
             border-radius: 5px;
             padding: 4px 8px;
             font-size: 0.8rem;
+        }
+
+        .thead-dark th {
+            background-color: #343a40;
+            color: white;
         }
     </style>
 </head>
@@ -91,23 +87,33 @@ if (isset($_POST['id_aula'])) {
                 <div class="card shadow-sm">
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
-                            <thead class="thead-light">
+                            <thead class="thead-dark">
                                 <tr>
                                     <th>Aluno</th>
                                     <th>WhatsApp</th>
-                                    <th>Data Pedido</th>
+                                    <th>Data do Pedido</th>
+                                    <th>Observação Atual</th>
                                     <th class="text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php
-                                // Busca apenas as que ainda não tem professor (pendentes)
+                                // BUSCA CORRIGIDA: 
+                                // 1. Garante que o professor_id seja 0 (ainda não agendado)
+                                // 2. Filtra por 'EXPERIMENTAL' na observação
+                                // 3. Se não aparecer nada aqui, o erro está no arquivo 'inserir-aluno.php' 
+                                // que não está criando o registro nesta tabela.
                                 $query = $pdo->query("SELECT a.*, u.nome as nome_aluno, u.telefone 
                                                       FROM aulas_particulares a 
                                                       INNER JOIN usuarios u ON a.aluno_id = u.id 
-                                                      WHERE a.professor_id = '0' AND a.observacoes LIKE '%EXPERIMENTAL%' 
+                                                      WHERE a.professor_id = '0' 
+                                                      AND a.observacoes LIKE '%EXPERIMENTAL%' 
                                                       ORDER BY a.id DESC");
                                 $res = $query->fetchAll(PDO::FETCH_ASSOC);
+
+                                if (count($res) == 0) {
+                                    echo "<tr><td colspan='5' class='text-center p-4 text-muted'>Nenhuma solicitação experimental pendente.</td></tr>";
+                                }
 
                                 foreach ($res as $row) {
                                     $whatsapp_num = preg_replace('/[^0-9]/', '', $row['telefone']);
@@ -121,10 +127,11 @@ if (isset($_POST['id_aula'])) {
                                             </a>
                                         </td>
                                         <td><?php echo date('d/m/Y', strtotime($row['data'])); ?></td>
+                                        <td><small><?php echo $row['observacoes']; ?></small></td>
                                         <td class="text-center">
                                             <button class="btn btn-primary btn-sm"
                                                 onclick="agendar('<?php echo $row['id']; ?>', '<?php echo $row['nome_aluno']; ?>')">
-                                                <i class="fas fa-calendar-alt"></i> Agendar
+                                                <i class="fas fa-calendar-alt"></i> Agendar Aula
                                             </button>
                                         </td>
                                     </tr>
@@ -150,9 +157,9 @@ if (isset($_POST['id_aula'])) {
                         <p>Aluno: <b id="nome_aluno_modal"></b></p>
 
                         <div class="form-group">
-                            <label>Professor</label>
+                            <label>Professor Responsável</label>
                             <select class="form-control" name="professor" required>
-                                <option value="">Escolha...</option>
+                                <option value="">Escolha um Professor...</option>
                                 <?php
                                 $profs = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Professor' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
                                 foreach ($profs as $p) {
@@ -164,7 +171,7 @@ if (isset($_POST['id_aula'])) {
 
                         <div class="row">
                             <div class="col-6">
-                                <label>Data</label>
+                                <label>Data da Aula</label>
                                 <input type="date" class="form-control" name="data_aula" value="<?php echo $hoje; ?>"
                                     required>
                             </div>
@@ -175,6 +182,7 @@ if (isset($_POST['id_aula'])) {
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-success">Salvar Agendamento</button>
                     </div>
                 </form>
