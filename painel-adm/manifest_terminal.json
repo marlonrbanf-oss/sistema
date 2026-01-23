@@ -1,0 +1,16 @@
+{
+    "name": "Nova Arte BJJ - Terminal",
+    "short_name": "Check-in",
+    "start_url": "terminal-presenca.php",
+    "display": "fullscreen",
+    "orientation": "portrait",
+    "background_color": "#111111",
+    "theme_color": "#000000",
+    "icons": [
+        {
+            "src": "images/logo_app.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

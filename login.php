@@ -10,10 +10,11 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
 <html lang="pt-br">
 
 <head>
+
     <title>Academia Nova Arte - Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="utf-8">
-
+    <link rel="manifest" href="manifest_aluno.json">
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" href="images/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">

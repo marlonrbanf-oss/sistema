@@ -12,7 +12,7 @@ include_once("conexao.php");
 
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" href="images/favicon.ico" type="image/x-icon">
-
+    <link rel="manifest" href="../manifest_adm.json">
     <style>
         body {
             background-color: #1a1a1a;
