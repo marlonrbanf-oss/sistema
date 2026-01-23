@@ -91,103 +91,103 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
     <style>
-        .card-body strong {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+    .card-body strong {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        transition: all 0.3s ease;
+    }
+
+    body {
+        background-color: #f4f6f9;
+    }
+
+    .main-sidebar {
+        background-color: #1a1a1a !important;
+    }
+
+    .navbar-search-mobile {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Ajuste na Faixa BJJ */
+    .bjj-belt {
+        width: 100%;
+        max-width: 400px;
+        height: 54px;
+        background: <?php echo $cor_css;
+        ?>;
+        border: 2px solid #333;
+        position: relative;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        margin: 15px auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .belt-bar {
+        width: 110px;
+        height: 100%;
+        background-color: <?php echo (mb_strtolower($status['faixa'])=='preta') ? '#d31b1b': '#000';
+        ?>;
+        position: absolute;
+        right: 30px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0 10px;
+        border-left: 1px solid rgba(0, 0, 0, 0.3);
+        border-right: 1px solid rgba(0, 0, 0, 0.3);
+    }
+
+    .belt-stripe {
+        width: 7px;
+        height: 40px;
+        background-color: #fff;
+        border-radius: 1px;
+    }
+
+    /* Estilos do Leitor QR Corrigidos */
+    #reader {
+        width: 100% !important;
+        border: none !important;
+        background-color: #000;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    #reader video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    #reader__dashboard {
+        display: none !important;
+    }
+
+    .pulse {
+        animation: pulse-animation 2s infinite;
+    }
+
+    @keyframes pulse-animation {
+        0% {
+            box-shadow: 0 0 0 0px rgba(40, 167, 69, 0.7);
         }
 
-        .card:hover {
-            transform: translateY(-3px);
-            transition: all 0.3s ease;
+        100% {
+            box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
         }
-
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .main-sidebar {
-            background-color: #1a1a1a !important;
-        }
-
-        .navbar-search-mobile {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* Ajuste na Faixa BJJ */
-        .bjj-belt {
-            width: 100%;
-            max-width: 400px;
-            height: 54px;
-            background: <?php echo $cor_css;
-                        ?>;
-            border: 2px solid #333;
-            position: relative;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            margin: 15px auto;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .belt-bar {
-            width: 110px;
-            height: 100%;
-            background-color: <?php echo (mb_strtolower($status['faixa']) == 'preta') ? '#d31b1b' : '#000';
-                                ?>;
-            position: absolute;
-            right: 30px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 10px;
-            border-left: 1px solid rgba(0, 0, 0, 0.3);
-            border-right: 1px solid rgba(0, 0, 0, 0.3);
-        }
-
-        .belt-stripe {
-            width: 7px;
-            height: 40px;
-            background-color: #fff;
-            border-radius: 1px;
-        }
-
-        /* Estilos do Leitor QR Corrigidos */
-        #reader {
-            width: 100% !important;
-            border: none !important;
-            background-color: #000;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        #reader video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-        }
-
-        #reader__dashboard {
-            display: none !important;
-        }
-
-        .pulse {
-            animation: pulse-animation 2s infinite;
-        }
-
-        @keyframes pulse-animation {
-            0% {
-                box-shadow: 0 0 0 0px rgba(40, 167, 69, 0.7);
-            }
-
-            100% {
-                box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
-            }
-        }
+    }
     </style>
 </head>
 
@@ -232,7 +232,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             class="text-dark"><?php echo strtoupper($status['faixa']); ?></b></h5>
                                     <div class="bjj-belt">
                                         <div class="belt-bar"><?php for ($i = 0; $i < $status['grau']; $i++): ?><div
-                                                    class="belt-stripe"></div><?php endfor; ?></div>
+                                                class="belt-stripe"></div><?php endfor; ?></div>
                                     </div>
                                     <div class="mt-5 text-left px-md-4">
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
@@ -263,13 +263,13 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                             </div>
                             <div class="card shadow-sm border-0 p-3 mb-4">
                                 <?php if ($status['pode']): ?>
-                                    <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
-                                        class="btn btn-success btn-lg btn-block pulse shadow"><i
-                                            class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU / FAIXA</button>
+                                <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
+                                    class="btn btn-success btn-lg btn-block pulse shadow"><i
+                                        class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU / FAIXA</button>
                                 <?php else: ?>
-                                    <button class="btn btn-secondary btn-block disabled" disabled><i
-                                            class="fas fa-lock mr-2"></i> FALTA
-                                        <?php echo ($status['meta'] - $status['aulas']); ?> AULAS</button>
+                                <button class="btn btn-secondary btn-block disabled" disabled><i
+                                        class="fas fa-lock mr-2"></i> FALTA
+                                    <?php echo ($status['meta'] - $status['aulas']); ?> AULAS</button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -298,20 +298,20 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             $q_estudo->bindValue(":id", $id_usuario);
                                             $q_estudo->execute();
                                             while ($row = $q_estudo->fetch(PDO::FETCH_ASSOC)) { ?>
-                                                <div class="col-6 col-md-3">
-                                                    <div class="info-box shadow-none border p-2">
-                                                        <div class="info-box-content">
-                                                            <span class="info-box-text text-uppercase font-weight-bold"
-                                                                style="font-size:10px;"><?php echo $row['nome_tecnica']; ?></span>
-                                                            <?php if ($row['status'] == 'Em Estudo'): ?>
-                                                                <button class="btn btn-xs btn-outline-primary btn-block mt-1"
-                                                                    onclick="abrirLeitorQR('estudo', '<?php echo $row['nome_tecnica']; ?>', '<?php echo $row['id']; ?>')">VALIDAR</button>
-                                                            <?php else: ?>
-                                                                <span class="badge badge-success w-100">DOMINADO</span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="info-box shadow-none border p-2">
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text text-uppercase font-weight-bold"
+                                                        style="font-size:10px;"><?php echo $row['nome_tecnica']; ?></span>
+                                                    <?php if ($row['status'] == 'Em Estudo'): ?>
+                                                    <button class="btn btn-xs btn-outline-primary btn-block mt-1"
+                                                        onclick="abrirLeitorQR('estudo', '<?php echo $row['nome_tecnica']; ?>', '<?php echo $row['id']; ?>')">VALIDAR</button>
+                                                    <?php else: ?>
+                                                    <span class="badge badge-success w-100">DOMINADO</span>
+                                                    <?php endif; ?>
                                                 </div>
+                                            </div>
+                                        </div>
                                         <?php }
                                         } catch (Exception $e) {
                                         } ?>
@@ -343,39 +343,39 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         }
 
                                         foreach ($grupos as $posicao_titulo => $tecnicas) { ?>
-                                            <div class="row mt-3 mb-2">
-                                                <div class="col-12">
-                                                    <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1">
-                                                        <?php echo $posicao_titulo; ?></h6>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <?php foreach ($tecnicas as $hab) {
+                                    <div class="row mt-3 mb-2">
+                                        <div class="col-12">
+                                            <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1">
+                                                <?php echo $posicao_titulo; ?></h6>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <?php foreach ($tecnicas as $hab) {
                                                     $status_nome = mb_strtolower($hab['status']);
                                                     $cor_selo = ($status_nome == 'dominado' || $status_nome == 'concluído') ? 'badge-success' : 'badge-warning';
                                                 ?>
-                                                    <div class="col-6 col-md-4 col-lg-3 mb-3">
-                                                        <div class="card h-100 shadow-sm border" style="border-radius: 10px;">
-                                                            <div
-                                                                class="card-body p-2 text-center d-flex flex-column justify-content-between">
-                                                                <strong class="d-block text-uppercase mb-2"
-                                                                    style="font-size: 0.75rem;"><?php echo $hab['tecnica']; ?></strong>
-                                                                <div>
-                                                                    <span
-                                                                        class="badge <?php echo $cor_selo; ?> w-100 mb-1"><?php echo strtoupper($hab['status']); ?></span>
-                                                                    <?php if ($status_nome != 'dominado' && $status_nome != 'concluído'): ?>
-                                                                        <button class="btn btn-xs btn-primary btn-block"
-                                                                            onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')">VALIDAR</button>
-                                                                    <?php else: ?>
-                                                                        <small class="text-success font-weight-bold"><i
-                                                                                class="fas fa-check-double"></i> VALIDADO</small>
-                                                                    <?php endif; ?>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                        <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                            <div class="card h-100 shadow-sm border" style="border-radius: 10px;">
+                                                <div
+                                                    class="card-body p-2 text-center d-flex flex-column justify-content-between">
+                                                    <strong class="d-block text-uppercase mb-2"
+                                                        style="font-size: 0.75rem;"><?php echo $hab['tecnica']; ?></strong>
+                                                    <div>
+                                                        <span
+                                                            class="badge <?php echo $cor_selo; ?> w-100 mb-1"><?php echo strtoupper($hab['status']); ?></span>
+                                                        <?php if ($status_nome != 'dominado' && $status_nome != 'concluído'): ?>
+                                                        <button class="btn btn-xs btn-primary btn-block"
+                                                            onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')">VALIDAR</button>
+                                                        <?php else: ?>
+                                                        <small class="text-success font-weight-bold"><i
+                                                                class="fas fa-check-double"></i> VALIDADO</small>
+                                                        <?php endif; ?>
                                                     </div>
-                                                <?php } ?>
+                                                </div>
                                             </div>
+                                        </div>
+                                        <?php } ?>
+                                    </div>
                                     <?php }
                                     } ?>
                                 </div>
@@ -400,18 +400,18 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         if (count($res_ap) > 0) {
                                             foreach ($res_ap as $aula) {
                                                 $data_f = date('d/m/Y', strtotime($aula['data_aula'])); ?>
-                                                <div class="col-6 col-md-3">
-                                                    <div class="info-box shadow-none border">
-                                                        <span class="info-box-icon bg-success elevation-1"><i
-                                                                class="fas fa-user-check"></i></span>
-                                                        <div class="info-box-content">
-                                                            <span class="info-box-text text-uppercase font-weight-bold"
-                                                                style="font-size:10px;"><?php echo $aula['tema'] ?: 'Particular'; ?></span>
-                                                            <span
-                                                                class="info-box-number small text-muted"><?php echo $data_f; ?></span>
-                                                        </div>
-                                                    </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="info-box shadow-none border">
+                                                <span class="info-box-icon bg-success elevation-1"><i
+                                                        class="fas fa-user-check"></i></span>
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text text-uppercase font-weight-bold"
+                                                        style="font-size:10px;"><?php echo $aula['tema'] ?: 'Particular'; ?></span>
+                                                    <span
+                                                        class="info-box-number small text-muted"><?php echo $data_f; ?></span>
                                                 </div>
+                                            </div>
+                                        </div>
                                         <?php }
                                         } ?>
                                     </div>
@@ -484,82 +484,125 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="dist/js/adminlte.js"></script>
     <script>
-        let html5QrCode;
+    let html5QrCode;
 
-        function carregarImgPerfil() {
-            var target = document.getElementById('target-perfil');
-            var file = document.querySelector('#foto-perfil').files[0];
-            var reader = new FileReader();
-            reader.onloadend = function() {
-                target.src = reader.result;
-            };
-            if (file) reader.readAsDataURL(file);
-        }
+    function carregarImgPerfil() {
+        var target = document.getElementById('target-perfil');
+        var file = document.querySelector('#foto-perfil').files[0];
+        var reader = new FileReader();
+        reader.onloadend = function() {
+            target.src = reader.result;
+        };
+        if (file) reader.readAsDataURL(file);
+    }
 
-        function abrirLeitorQR(tipo, nome, id = 0) {
-            $('#tipo_v').val(tipo);
-            $('#id_v').val(id);
-            $('#nome_v').text(nome);
-            $('#modalQR').modal('show');
+    function abrirLeitorQR(tipo, nome, id = 0) {
+        $('#tipo_v').val(tipo);
+        $('#id_v').val(id);
+        $('#nome_v').text(nome);
+        $('#modalQR').modal('show');
 
-            // Cálculo dinâmico do box de leitura para não estourar em telas pequenas
-            let larguraModal = document.getElementById('reader').clientWidth;
-            let qrBoxSize = Math.floor(larguraModal * 0.7);
+        // Cálculo dinâmico do box de leitura para não estourar em telas pequenas
+        let larguraModal = document.getElementById('reader').clientWidth;
+        let qrBoxSize = Math.floor(larguraModal * 0.7);
 
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({
-                    facingMode: "environment"
-                }, {
-                    fps: 10,
-                    qrbox: {
-                        width: qrBoxSize,
-                        height: qrBoxSize
-                    },
-                    aspectRatio: 1.0
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({
+                facingMode: "environment"
+            }, {
+                fps: 10,
+                qrbox: {
+                    width: qrBoxSize,
+                    height: qrBoxSize
                 },
-                (txt) => {
-                    pararCamera();
-                    let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
-                        "validar-estudo.php" : "validar-tecnica.php");
-                    $.post(url, {
-                        token_professor: txt,
-                        id: id
-                    }, function(res) {
-                        if (res.trim() == "Sucesso") {
-                            confetti();
-                            setTimeout(() => location.reload(), 1200);
-                        } else {
-                            alert(res);
-                            $('#modalQR').modal('hide');
-                        }
-                    });
-                }
-            ).catch(err => {
-                console.error("Erro ao iniciar câmera", err);
+                aspectRatio: 1.0
+            },
+            (txt) => {
+                pararCamera();
+                let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
+                    "validar-estudo.php" : "validar-tecnica.php");
+                $.post(url, {
+                    token_professor: txt,
+                    id: id
+                }, function(res) {
+                    if (res.trim() == "Sucesso") {
+                        confetti();
+                        setTimeout(() => location.reload(), 1200);
+                    } else {
+                        alert(res);
+                        $('#modalQR').modal('hide');
+                    }
+                });
+            }
+        ).catch(err => {
+            console.error("Erro ao iniciar câmera", err);
+        });
+    }
+
+    function pararCamera() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
             });
         }
+    }
 
-        function pararCamera() {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
+    function pesquisarEvolucao() {
+        var nome = $('#buscar_aluno').val();
+        if (nome.length < 2) return;
+        $.post("buscar_evolucao.php", {
+            nome: nome
+        }, function(data) {
+            $('#resultado_pesquisa').fadeIn().html(data);
+        });
+    }
+
+    $("#buscar_aluno").keypress(function(e) {
+        if (e.which == 13) pesquisarEvolucao();
+    });
+    </script>
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+    <script>
+    window.OneSignal = window.OneSignal || [];
+    OneSignal.push(function() {
+        OneSignal.init({
+            appId: "SEU_APP_ID_REAL_AQUI", // SUBSTITUA PELO SEU ID
+            safari_web_id: "SUA_SAFARI_ID_SE_TIVER",
+            notifyButton: {
+                enable: false
+            },
+        });
+
+        // Função para enviar o ID ao banco de dados
+        function salvarIdNoBanco(userId) {
+            if (userId) {
+                // Ajuste o caminho ../ conforme a localização do seu arquivo salvar-onesignal.php
+                fetch('../salvar-onesignal.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'onesignal_id': userId
+                    })
                 });
             }
         }
 
-        function pesquisarEvolucao() {
-            var nome = $('#buscar_aluno').val();
-            if (nome.length < 2) return;
-            $.post("buscar_evolucao.php", {
-                nome: nome
-            }, function(data) {
-                $('#resultado_pesquisa').fadeIn().html(data);
-            });
-        }
-
-        $("#buscar_aluno").keypress(function(e) {
-            if (e.which == 13) pesquisarEvolucao();
+        // Caso 1: Usuário acabou de se inscrever agora
+        OneSignal.on('subscriptionChange', function(isSubscribed) {
+            if (isSubscribed) {
+                OneSignal.getUserId(function(userId) {
+                    salvarIdNoBanco(userId);
+                });
+            }
         });
+
+        // Caso 2: Usuário já estava inscrito (garante que o ID esteja sempre no banco)
+        OneSignal.getUserId(function(userId) {
+            salvarIdNoBanco(userId);
+        });
+    });
     </script>
 </body>
 
