@@ -176,10 +176,37 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
             transition: 0.3s;
         }
 
-        .btn-importar:hover {
-            background-color: #138496;
+        .radio-group label {
+            border: 1px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-right: 5px;
+            display: inline-block;
+        }
+
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+
+        .radio-group input[type="radio"]:checked+label {
+            background-color: #343a40;
             color: white;
-            transform: scale(1.05);
+            border-color: #343a40;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .faixa-radio label {
+            border-width: 2px;
+            font-weight: bold;
+            text-shadow: 0px 0px 2px rgba(255, 255, 255, 0.5);
+        }
+
+        .faixa-radio input[type="radio"]:checked+label {
+            transform: scale(1.1);
+            border-color: #ffc107;
+            color: inherit;
         }
 
         @media (max-width: 768px) {
@@ -207,7 +234,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 <button class="btn btn-sm btn-importar shadow-sm mr-2" data-toggle="modal" data-target="#modalImportar">
                     <i class="fas fa-file-excel mr-1"></i> IMPORTAR EXCEL
                 </button>
-
                 <a href="relatorio-atrasados.php" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm mr-2">
                     <i class="fas fa-file-pdf mr-1"></i> Lista de Atrasados
                 </a>
@@ -251,7 +277,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             <?php foreach ($res as $usu) {
                                 $id = $usu['id'];
                                 $data_venc = $usu['data_venc'];
-                                $tel = preg_replace('/[^0-9]/', '', $usu['telefone'] ?? '');
                                 $total_aulas = $usu['total_aulas'] ?? 0;
                                 $cor_exibicao = converterCorFaixa($usu['cor_faixa'] ?? 'white');
 
@@ -349,77 +374,65 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 <form id="form-usuarios" method="POST">
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6 form-group">
-                                <label>Nome Completo</label>
-                                <input type="text" name="nome" class="form-control" required>
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>E-mail / Usuário</label>
-                                <input type="email" name="email" class="form-control" required>
-                            </div>
-                            <div class="col-md-4 form-group">
-                                <label>CPF</label>
-                                <input type="text" name="cpf" class="form-control cpf" id="cpf_cad">
-                            </div>
-                            <div class="col-md-4 form-group">
-                                <label>Telefone</label>
-                                <input type="text" name="telefone" class="form-control telefone">
-                            </div>
-                            <div class="col-md-4 form-group">
-                                <label>Senha</label>
-                                <input type="password" name="senha" class="form-control" required>
-                            </div>
+                            <div class="col-md-6 form-group"><label>Nome Completo</label><input type="text" name="nome"
+                                    class="form-control" required></div>
+                            <div class="col-md-6 form-group"><label>E-mail / Usuário</label><input type="email"
+                                    name="email" class="form-control" required></div>
+                            <div class="col-md-4 form-group"><label>CPF</label><input type="text" name="cpf"
+                                    class="form-control cpf"></div>
+                            <div class="col-md-4 form-group"><label>Telefone</label><input type="text" name="telefone"
+                                    class="form-control telefone"></div>
+                            <div class="col-md-4 form-group"><label>Senha</label><input type="password" name="senha"
+                                    class="form-control" required></div>
                         </div>
-
                         <hr>
-                        <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-medal mr-2"></i> Dados de
-                            Treino e Graduação</h6>
-
+                        <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-medal mr-2"></i> Nível de
+                            Acesso</h6>
                         <div class="row">
-                            <div class="col-md-4 form-group">
-                                <label>Nível de Acesso</label>
-                                <select name="nivel" id="nivel_cad" class="form-control" onchange="toggleGraduacao()">
-                                    <option value="Cliente">Cliente (Aluno)</option>
-                                    <option value="Professor">Professor / Balconista</option>
-                                    <option value="Admin">Administrador</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3 form-group div-grad">
-                                <label>Cor da Faixa</label>
-                                <select name="cor_faixa" class="form-control">
-                                    <option value="Branca">Branca</option>
-                                    <option value="Azul">Azul</option>
-                                    <option value="Roxa">Roxa</option>
-                                    <option value="Marrom">Marrom</option>
-                                    <option value="Preta">Preta</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2 form-group div-grad">
-                                <label>Graus</label>
-                                <input type="number" name="graus" class="form-control" value="0" min="0" max="4">
-                            </div>
-                            <div class="col-md-3 form-group div-grad">
-                                <label>Aulas Realizadas</label>
-                                <input type="number" name="total_aulas" class="form-control" value="0" min="0">
+                            <div class="col-md-12 form-group">
+                                <div class="radio-group">
+                                    <input type="radio" name="nivel" value="Cliente" id="nivel_cliente" checked
+                                        onclick="toggleGraduacao('Cliente')">
+                                    <label for="nivel_cliente"><i class="fas fa-user-graduate mr-1"></i> ALUNO
+                                        (CLIENTE)</label>
+                                    <input type="radio" name="nivel" value="Professor" id="nivel_prof"
+                                        onclick="toggleGraduacao('Professor')">
+                                    <label for="nivel_prof"><i class="fas fa-user-tie mr-1"></i> PROFESSOR</label>
+                                    <input type="radio" name="nivel" value="Admin" id="nivel_admin"
+                                        onclick="toggleGraduacao('Admin')">
+                                    <label for="nivel_admin"><i class="fas fa-user-shield mr-1"></i> ADMIN</label>
+                                </div>
                             </div>
                         </div>
-
-                        <!--<div class="row mt-2">
-                            <div class="col-md-12">
-                                <label class="text-primary font-weight-bold">
-                                    <input type="checkbox" name="experimental" value="Sim"> Ativar como Aula
-                                    Experimental
-                                </label>
+                        <div class="div-grad">
+                            <hr>
+                            <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-layer-group mr-2"></i>
+                                Dados de Graduação</h6>
+                            <div class="row">
+                                <div class="col-md-12 form-group">
+                                    <label>Cor da Faixa</label><br>
+                                    <div class="radio-group faixa-radio">
+                                        <input type="radio" name="cor_faixa" value="Branca" id="f_branca" checked><label
+                                            for="f_branca" style="background: white; color: black;">BRANCA</label>
+                                        <input type="radio" name="cor_faixa" value="Azul" id="f_azul"><label
+                                            for="f_azul" style="background: blue; color: white;">AZUL</label>
+                                        <input type="radio" name="cor_faixa" value="Roxa" id="f_roxa"><label
+                                            for="f_roxa" style="background: purple; color: white;">ROXA</label>
+                                        <input type="radio" name="cor_faixa" value="Marrom" id="f_marrom"><label
+                                            for="f_marrom" style="background: #8B4513; color: white;">MARROM</label>
+                                        <input type="radio" name="cor_faixa" value="Preta" id="f_preta"><label
+                                            for="f_preta" style="background: black; color: white;">PRETA</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 form-group"><label>Graus</label><input type="number" name="graus"
+                                        class="form-control" value="0" min="0" max="4"></div>
+                                <div class="col-md-3 form-group"><label>Aulas Realizadas</label><input type="number"
+                                        name="total_aulas" class="form-control" value="0" min="0"></div>
                             </div>
-                        </div>-->
-
-                        <div id="mensagem-erro" class="mt-2 text-danger"></div>
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" id="btn-salvar" class="btn btn-success btn-block">SALVAR NOVO
-                            USUÁRIO</button>
-                    </div>
+                    <div class="modal-footer"><button type="submit" id="btn-salvar"
+                            class="btn btn-success btn-block">SALVAR NOVO USUÁRIO</button></div>
                 </form>
             </div>
         </div>
@@ -434,9 +447,8 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 <div class="modal-body text-center">
                     <p class="text-muted small">Use nossa planilha padrão para evitar erros no banco de dados.</p>
-                    <a href="modelo-importacao.xlsx" class="btn btn-sm btn-outline-secondary mb-3">
-                        <i class="fas fa-download mr-1"></i> Baixar Tabela Padrão (Modelo)
-                    </a>
+                    <a href="modelo-importacao.xlsx" class="btn btn-sm btn-outline-secondary mb-3"><i
+                            class="fas fa-download mr-1"></i> Baixar Tabela Padrão (Modelo)</a>
                     <hr>
                     <form action="importar-excel.php" method="POST" enctype="multipart/form-data">
                         <div class="form-group text-left">
@@ -454,10 +466,25 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
     <script>
         $(document).ready(function() {
-            // BUSCA NA TABELA
+            // Máscaras
+            $('.cpf').mask('000.000.000-00', {
+                reverse: true
+            });
+            var SPMaskBehavior = function(val) {
+                return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+            };
+            var spOptions = {
+                onKeyPress: function(val, e, field, options) {
+                    field.mask(SPMaskBehavior.apply({}, arguments), options);
+                }
+            };
+            $('.telefone').mask(SPMaskBehavior, spOptions);
+
+            // Busca na tabela
             $("#inputBusca").on("keyup", function() {
                 var value = $(this).val().toLowerCase();
                 $("#tabelaUsuarios tbody tr").each(function() {
@@ -465,10 +492,9 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 });
             });
 
-            // AJAX PARA SALVAR USUÁRIO
+            // AJAX para salvar
             $("#form-usuarios").submit(function(event) {
                 event.preventDefault();
-
                 $('#btn-salvar').text('Salvando...');
                 $('#btn-salvar').attr('disabled', true);
 
@@ -476,85 +502,60 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     url: "salvar-usuario.php",
                     method: "POST",
                     data: $(this).serialize(),
-
                     success: function(mensagem) {
                         if (mensagem.trim() === "Salvo com Sucesso") {
-                            alert(mensagem);
+                            let nomeAluno = $("input[name='nome']").val();
+                            let emailAluno = $("input[name='email']").val();
+                            let senhaAluno = $("input[name='senha']").val();
+                            let telefoneAluno = $("input[name='telefone']").val().replace(/\D/g,
+                                '');
+                            let nivelAcesso = $("input[name='nivel']:checked").val();
+
+                            if (nivelAcesso === 'Cliente' && telefoneAluno !== "") {
+                                let texto = "Olá *" + nomeAluno +
+                                    "*! 👋\n\nSeja muito bem-vindo(a) à *Nova Arte BJJ*! 🥋\nSeu cadastro foi realizado com sucesso.\n\n📍 *DADOS DE ACESSO AO PAINEL:*\n🔗 Link de Acesso: https://sistema-production-e48b.up.railway.app/login.php\n📧 Usuário: `" +
+                                    emailAluno + "`\n🔑 Senha: `" + senhaAluno +
+                                    "`\n\nNo painel você poderá acompanhar suas aulas e progresso! \n\n*OSS!*";
+                                let linkZap = "https://api.whatsapp.com/send?phone=55" +
+                                    telefoneAluno + "&text=" + encodeURIComponent(texto);
+                                alert(
+                                    "Usuário salvo! Clique em OK para enviar os dados de acesso via WhatsApp."
+                                );
+                                window.open(linkZap, '_blank');
+                            } else {
+                                alert(mensagem);
+                            }
                             window.location = "usuarios.php";
                         } else {
-                            // Se houver erro (E-mail duplicado, etc), mostra o alerta e libera o botão
                             alert(mensagem);
-                            $('#btn-salvar').text('SALVAR NOVO USUÁRIO');
-                            $('#btn-salvar').attr('disabled', false);
+                            $('#btn-salvar').text('SALVAR NOVO USUÁRIO').attr('disabled',
+                                false);
                         }
-                    },
+                    }, // VÍRGULA ADICIONADA AQUI (CORREÇÃO)
                     error: function() {
                         alert("Erro ao processar a requisição no servidor.");
-                        $('#btn-salvar').text('SALVAR NOVO USUÁRIO');
-                        $('#btn-salvar').attr('disabled', false);
+                        $('#btn-salvar').text('SALVAR NOVO USUÁRIO').attr('disabled', false);
                     }
                 });
             });
         });
 
-        // Função para esconder campos de graduação se não for aluno
-        function toggleGraduacao() {
-            let nivel = $('#nivel_cad').val();
+        function toggleGraduacao(nivel) {
             if (nivel === 'Cliente') {
-                $('.div-grad').show();
+                $('.div-grad').slideDown();
             } else {
-                $('.div-grad').hide();
+                $('.div-grad').slideUp();
             }
         }
 
         function darPresenca(id, nome) {
             let quantidade = prompt("Quantas presenças deseja atribuir para " + nome + "?", "1");
-            if (quantidade !== null) {
-                if (isNaN(quantidade) || quantidade <= 0 || quantidade === "") {
-                    alert("Por favor, insira um número válido.");
-                    return;
-                }
+            if (quantidade !== null && quantidade !== "" && !isNaN(quantidade) && quantidade > 0) {
                 window.location.href = "dar-presenca.php?id=" + id + "&quantidade=" + quantidade;
+            } else if (quantidade !== null) {
+                alert("Por favor, insira um número válido.");
             }
         }
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('.cpf').mask('000.000.000-00');
-
-            // Máscara de Telefone Dinâmica (ajusta para 8 ou 9 dígitos)
-            var SPMaskBehavior = function(val) {
-                    return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
-                },
-                spOptions = {
-                    onKeyPress: function(val, e, field, options) {
-                        field.mask(SPMaskBehavior.apply({}, arguments), options);
-                    }
-                };
-            $('.telefone').mask(SPMaskBehavior, spOptions);
-        });
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-
-    <script>
-        $(document).ready(function() {
-            // Máscara de CPF
-            $('.cpf').mask('000.000.000-00', {
-                reverse: true
-            });
-
-            // Máscara de Telefone Dinâmica (ajusta entre 10 e 11 dígitos para Celular/Fixo)
-            var SPMaskBehavior = function(val) {
-                    return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
-                },
-                spOptions = {
-                    onKeyPress: function(val, e, field, options) {
-                        field.mask(SPMaskBehavior.apply({}, arguments), options);
-                    }
-                };
-            $('.telefone').mask(SPMaskBehavior, spOptions);
-        });
     </script>
 </body>
 
