@@ -3,6 +3,7 @@
     "short_name": "Check-in",
     "start_url": "terminal-presenca.php",
     "display": "standalone",
+    "scope": "/",
     "orientation": "portrait",
     "background_color": "#111111",
     "theme_color": "#000000",
@@ -11,13 +12,13 @@
             "src": "images/logo_app.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
             "src": "images/logo_app.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "maskable"
         }
     ]
 }
