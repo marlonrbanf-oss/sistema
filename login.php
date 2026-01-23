@@ -110,6 +110,27 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
             text-decoration: none;
         }
 
+        /* ESTILO DO BOTÃO DE INSTALAÇÃO */
+        .btn-install-app {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 20px;
+            border: 1px solid #ddd;
+            border-radius: 50px;
+            font-size: 12px;
+            color: #555;
+            font-weight: bold;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-install-app:hover {
+            background: #000;
+            color: #fff;
+            text-decoration: none;
+            border-color: #000;
+        }
+
         .modal-header {
             background: #000;
             color: #fff;
@@ -165,6 +186,12 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
 
                         <a href="login_staff.php" class="link-staff"><i class="fas fa-user-shield"></i> Área da
                             Equipe</a>
+
+                        <div class="text-center">
+                            <a href="apps.php" class="btn-install-app">
+                                <i class="fas fa-mobile-alt mr-2"></i> Instalar Aplicativo
+                            </a>
+                        </div>
                     </div>
 
                     <div class="col-md-8 banner-sec d-none d-md-flex">
@@ -279,6 +306,11 @@ if (isset($_POST['email2']) and $_POST['email2'] != '') {
 
     <script type="text/javascript">
         $(document).ready(function() {
+            // REGISTRO DO SERVICE WORKER (NECESSÁRIO PARA O PWA FUNCIONAR)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js');
+            }
+
             // SCRIPT CADASTRO
             $('#btn-cadastro').click(function(event) {
                 event.preventDefault();
