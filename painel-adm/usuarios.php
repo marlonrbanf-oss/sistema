@@ -405,11 +405,13 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
 
-                        <div class="row mt-2">
-                            <div class="col-md-12">
-                                <label class="text-primary font-weight-bold">
-                                    <input type="checkbox" name="experimental" value="Sim"> Ativar como Aula
-                                    Experimental
+                        <div class="form-group mb-3">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="experimental"
+                                    name="experimental" value="Sim">
+                                <label class="custom-control-label text-dark font-weight-bold" for="experimental"
+                                    style="cursor:pointer; font-size: 13px;">
+                                    Desejo uma aula experimental
                                 </label>
                             </div>
                         </div>
