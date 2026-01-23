@@ -5,10 +5,20 @@
 <head>
     <title>Terminal de Presença - Nova Arte</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="manifest" href="manifest_terminal.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#111111">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Check-in BJJ">
+    <link rel="apple-touch-icon" href="images/logo_app.png">
+
     <link rel="stylesheet" href="css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-    <link rel="manifest" href="manifest_terminal.json">
+
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <style>
@@ -21,6 +31,7 @@
             justify-content: center;
             font-family: sans-serif;
             overflow: hidden;
+            margin: 0;
         }
 
         .teclado-num {
@@ -133,6 +144,13 @@
     </div>
 
     <script>
+        // Registro do Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registrado!'))
+                .catch(err => console.log('Erro no Service Worker', err));
+        }
+
         const video = document.getElementById('video');
         const canvas = document.getElementById('overlay');
         const statusIA = document.getElementById('status-ia');
@@ -140,18 +158,14 @@
         let scanAtivo = true;
 
         async function iniciarTerminal() {
-            // Caminho para a pasta local onde você colocou os arquivos baixados
             const MODEL_URL = 'models';
 
             try {
                 statusIA.innerText = "Sincronizando modelos...";
-
-                // 1. Carrega Modelos locais
                 await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
-                // 2. Busca Biometrias
                 statusIA.innerText = "Buscando dados...";
                 const res = await fetch('listar-biometrias.php');
                 const dadosAlunos = await res.json();
