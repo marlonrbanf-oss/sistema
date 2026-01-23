@@ -26,6 +26,7 @@ include_once("conexao.php");
             text-align: center;
             transition: 0.3s;
             position: relative;
+            height: 100%;
         }
 
         .app-card:hover {
@@ -58,7 +59,6 @@ include_once("conexao.php");
             background: #333;
         }
 
-        /* Balão de Instrução iOS */
         #ios-ready-advice {
             display: none;
             position: fixed;
@@ -98,61 +98,55 @@ include_once("conexao.php");
         </div>
 
         <div class="row justify-content-center">
-            <div class="col-md-4">
+            <div class="col-md-5 col-lg-4">
                 <div class="app-card">
                     <img src="images/logo_aluno.png" class="app-icon" onerror="this.src='images/icon-512.png'">
                     <h5>Portal do Aluno</h5>
+                    <p class="small text-muted">Acesso a treinos, selos e frequência.</p>
                     <button class="btn-install" onclick="iniciarInstalacao('manifest_aluno.json')">Instalar App</button>
                 </div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-5 col-lg-4">
                 <div class="app-card">
                     <img src="images/logo_adm.png" class="app-icon" onerror="this.src='images/icon-512.png'">
                     <h5>Painel Administrativo</h5>
+                    <p class="small text-muted">Gestão de alunos e staff da academia.</p>
                     <button class="btn-install" onclick="iniciarInstalacao('manifest_adm.json')">Instalar App</button>
                 </div>
             </div>
+        </div>
 
-            <div class="col-md-4">
-                <div class="app-card">
-                    <img src="images/logo_terminal.png" class="app-icon" onerror="this.src='images/icon-512.png'">
-                    <h5>Terminal Check-in</h5>
-                    <button class="btn-install" onclick="iniciarInstalacao('manifest_terminal.json')">Instalar App</button>
-                </div>
-            </div>
+        <div class="text-center mt-5">
+            <a href="login.php" class="text-dark"><i class="fas fa-arrow-left"></i> Voltar para o Login</a>
         </div>
     </div>
 
     <div id="ios-ready-advice">
         <div class="text-right">
-            <button class="close" onclick="document.getElementById('ios-ready-advice').style.display='none'">&times;</button>
+            <button class="close"
+                onclick="document.getElementById('ios-ready-advice').style.display='none'">&times;</button>
         </div>
         <div class="text-center">
             <p class="mb-2"><strong>Instalar no iPhone</strong></p>
-            <p class="small">1. Toque no ícone de <strong>Compartilhar</strong> <i class="fas fa-external-link-alt text-primary"></i> (na barra inferior).</p>
-            <p class="small">2. Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong> <i class="far fa-plus-square"></i>.</p>
+            <p class="small">1. Toque no ícone de <strong>Compartilhar</strong> <i
+                    class="fas fa-external-link-alt text-primary"></i>.</p>
+            <p class="small">2. Toque em <strong>"Adicionar à Tela de Início"</strong> <i
+                    class="far fa-plus-square"></i>.</p>
         </div>
     </div>
 
-
-
     <script>
         let deferredPrompt;
-        const isIos = () => {
-            const userAgent = window.navigator.userAgent.toLowerCase();
-            return /iphone|ipad|ipod/.test(userAgent);
-        }
+        const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
         const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
 
-        // Captura evento no Android/Chrome
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
         });
 
         function iniciarInstalacao(manifestFile) {
-            // Troca o manifest para o selecionado
             let link = document.querySelector("link[rel*='manifest']") || document.createElement('link');
             link.rel = 'manifest';
             link.href = manifestFile;
@@ -167,13 +161,10 @@ include_once("conexao.php");
             } else if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('Usuário aceitou a instalação');
-                    }
                     deferredPrompt = null;
                 });
             } else {
-                alert("Para instalar:\n1. Clique nos 3 pontos do navegador.\n2. Escolha 'Adicionar à tela inicial' ou 'Instalar Aplicativo'.");
+                alert("Para instalar:\n1. Clique nos 3 pontos do navegador.\n2. Escolha 'Adicionar à tela inicial'.");
             }
         }
 
@@ -181,7 +172,6 @@ include_once("conexao.php");
             navigator.serviceWorker.register('sw.js');
         }
     </script>
-
 </body>
 
 </html>
