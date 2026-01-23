@@ -2,14 +2,16 @@
 @session_start();
 require_once("../conexao.php"); // Caminho correto para a raiz
 
-// 1. CAPTURA DE VARIÁVEIS
+// 1. CAPTURA DE VARIÁVEIS E LIMPEZA DE MÁSCARAS
 $id = isset($_POST['id']) ? $_POST['id'] : '';
 $nome = isset($_POST['nome']) ? $_POST['nome'] : '';
-$cpf = isset($_POST['cpf']) ? $_POST['cpf'] : '';
 $email = isset($_POST['email']) ? $_POST['email'] : ''; // Campo 'email' do formulário
 $senha = isset($_POST['senha']) ? $_POST['senha'] : '';
 $nivel = isset($_POST['nivel']) ? $_POST['nivel'] : 'Cliente';
-$telefone = isset($_POST['telefone']) ? $_POST['telefone'] : '';
+
+// Limpeza de CPF e Telefone para evitar o erro "Data too long"
+$cpf = isset($_POST['cpf']) ? preg_replace('/[^0-9]/', '', $_POST['cpf']) : '';
+$telefone = isset($_POST['telefone']) ? preg_replace('/[^0-9]/', '', $_POST['telefone']) : '';
 
 // CAMPOS DE GRADUAÇÃO (Vindos do Painel ADM)
 $cor_faixa = isset($_POST['cor_faixa']) ? $_POST['cor_faixa'] : 'Branca';
