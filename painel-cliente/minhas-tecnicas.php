@@ -2,7 +2,20 @@
 @session_start();
 require_once("../conexao.php");
 
-// Verificação de Acesso - Padronizada com autenticar.php
+// --- BLOCO DE AUTO-CORREÇÃO DO BANCO (RAILWAY) ---
+// Este código verifica se as colunas existem e as cria se necessário para evitar o erro 1054
+try {
+    $pdo->query("SELECT repeticoes FROM tecnicas_estudo LIMIT 1");
+} catch (Exception $e) {
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN repeticoes INT DEFAULT 0");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN ultimo_parceiro VARCHAR(255) NULL");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN ultimo_parceiro_id INT NULL");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN parceiro_confirmado ENUM('Sim', 'Não') DEFAULT 'Não'");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN data_inicio DATE NULL");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN data_ultima_pratica DATE NULL");
+}
+
+// Verificação de Acesso
 if (!isset($_SESSION['nivel_usuario']) || ($_SESSION['nivel_usuario'] != 'Cliente' && $_SESSION['nivel_usuario'] != 'Atleta')) {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
@@ -24,19 +37,18 @@ if (isset($_GET['acao']) && $_GET['acao'] == 'aprovar' && isset($_GET['id_log'])
 if (isset($_POST['nome_tecnica']) && !isset($_POST['id_log'])) {
     $nome_tecnica = trim($_POST['nome_tecnica']);
     if (!empty($nome_tecnica)) {
+        // Verifica se já existe para evitar duplicidade
         $query_check = $pdo->prepare("SELECT id FROM tecnicas_estudo WHERE usuario_id = :id AND nome_tecnica = :nome AND status = 'Em Estudo'");
         $query_check->bindValue(":id", $id_usuario);
         $query_check->bindValue(":nome", $nome_tecnica);
         $query_check->execute();
 
         if ($query_check->rowCount() == 0) {
-            $res = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo', repeticoes = 0, data_inicio = CURDATE()");
+            $res = $pdo->prepare("INSERT INTO tecnicas_estudo (usuario_id, nome_tecnica, status, repeticoes, data_inicio) VALUES (:id, :nome, 'Em Estudo', 0, CURDATE())");
             $res->bindValue(":id", $id_usuario);
             $res->bindValue(":nome", $nome_tecnica);
             $res->execute();
             echo "<script>alert('Técnica adicionada!'); window.location='minhas-tecnicas.php'</script>";
-        } else {
-            echo "<script>alert('Você já está estudando esta técnica!'); window.location='minhas-tecnicas.php'</script>";
         }
     }
 }
@@ -110,6 +122,7 @@ if (isset($_POST['id_log'])) {
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             max-height: 200px;
             overflow-y: auto;
+            background: white;
         }
     </style>
 </head>
@@ -122,27 +135,30 @@ if (isset($_POST['id_log'])) {
                 <div class="container-fluid">
 
                     <?php
-                    $query_solic = $pdo->prepare("SELECT t.*, u.nome as aluno FROM tecnicas_estudo t INNER JOIN usuarios u ON t.usuario_id = u.id WHERE t.ultimo_parceiro_id = :id AND t.parceiro_confirmado = 'Não'");
-                    $query_solic->bindValue(":id", $id_usuario);
-                    $query_solic->execute();
-                    $solics = $query_solic->fetchAll(PDO::FETCH_ASSOC);
+                    try {
+                        $query_solic = $pdo->prepare("SELECT t.*, u.nome as aluno FROM tecnicas_estudo t INNER JOIN usuarios u ON t.usuario_id = u.id WHERE t.ultimo_parceiro_id = :id AND t.parceiro_confirmado = 'Não'");
+                        $query_solic->bindValue(":id", $id_usuario);
+                        $query_solic->execute();
+                        $solics = $query_solic->fetchAll(PDO::FETCH_ASSOC);
 
-                    if (count($solics) > 0): ?>
-                        <div class="alert alert-warning shadow-sm">
-                            <h5><i class="fas fa-users mr-2"></i> Solicitações de Parceiro</h5>
-                            <ul class="list-unstyled mb-0">
-                                <?php foreach ($solics as $s): ?>
-                                    <li class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                        <span><strong><?php echo htmlspecialchars($s['aluno']); ?></strong> treinou
-                                            <strong><?php echo htmlspecialchars($s['nome_tecnica']); ?></strong> com
-                                            você.</span>
-                                        <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
-                                            class="btn btn-xs btn-success shadow-sm">Confirmar</a>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
+                        if (count($solics) > 0): ?>
+                            <div class="alert alert-warning shadow-sm">
+                                <h5><i class="fas fa-users mr-2"></i> Solicitações de Parceiro</h5>
+                                <ul class="list-unstyled mb-0">
+                                    <?php foreach ($solics as $s): ?>
+                                        <li class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                            <span><strong><?php echo htmlspecialchars($s['aluno']); ?></strong> registrou um treino
+                                                com você.</span>
+                                            <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
+                                                class="btn btn-xs btn-success shadow-sm">Confirmar</a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                    <?php endif;
+                    } catch (Exception $e) { /* Silencia se a coluna ainda não existir no primeiro load */
+                    }
+                    ?>
 
                     <div class="card card-primary card-outline shadow-sm mb-4">
                         <div class="card-header">
@@ -170,50 +186,44 @@ if (isset($_POST['id_log'])) {
                         $query_progresso->execute();
                         $res_prog = $query_progresso->fetchAll(PDO::FETCH_ASSOC);
 
-                        if (count($res_prog) > 0) {
-                            foreach ($res_prog as $t) {
-                                $reps = isset($t['repeticoes']) ? $t['repeticoes'] : 0;
-                                $parceiro = !empty($t['ultimo_parceiro']) ? $t['ultimo_parceiro'] : 'Não registrado';
+                        foreach ($res_prog as $t) {
+                            $reps = $t['repeticoes'] ?? 0;
+                            $parceiro = !empty($t['ultimo_parceiro']) ? $t['ultimo_parceiro'] : 'Não registrado';
                         ?>
-                                <div class="col-md-4 mb-3">
-                                    <div class="card card-tecnica shadow-sm">
-                                        <div class="card-body">
-                                            <h6 class="mb-2">
-                                                <strong><?php echo htmlspecialchars($t['nome_tecnica'] ?? 'Técnica'); ?></strong>
-                                            </h6>
-                                            <div class="stats-diario">
-                                                <i class="fas fa-redo-alt mr-1"></i> Total: <span
-                                                    class="badge-repeticoes"><?php echo $reps; ?></span><br>
-                                                <small class="text-muted"><i class="fas fa-user mr-1"></i> Parceiro:
-                                                    <?php echo htmlspecialchars($parceiro); ?></small>
-                                            </div>
-
-                                            <form method="POST" class="mt-2 p-2 border rounded bg-light">
-                                                <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
-                                                <div class="row no-gutters">
-                                                    <div class="col-3">
-                                                        <input type="number" name="quantidade_reps"
-                                                            class="form-control form-control-sm" placeholder="Reps" required
-                                                            min="1">
-                                                    </div>
-                                                    <div class="col-9 pl-1 position-relative">
-                                                        <input type="text" name="parceiro"
-                                                            class="form-control form-control-sm input-busca-aluno"
-                                                            placeholder="Quem treinou?" autocomplete="off">
-                                                        <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
-                                                        <div class="list-group lista-busca d-none"></div>
-                                                    </div>
-                                                </div>
-                                                <button type="submit" class="btn btn-xs btn-block btn-success mt-2"><i
-                                                        class="fas fa-check mr-1"></i> Salvar Prática</button>
-                                            </form>
+                            <div class="col-md-4 mb-3">
+                                <div class="card card-tecnica shadow-sm">
+                                    <div class="card-body">
+                                        <h6><strong><?php echo htmlspecialchars($t['nome_tecnica']); ?></strong></h6>
+                                        <div class="stats-diario">
+                                            <i class="fas fa-redo-alt mr-1"></i> Total: <span
+                                                class="badge-repeticoes"><?php echo $reps; ?></span><br>
+                                            <small class="text-muted"><i class="fas fa-user mr-1"></i> Parceiro:
+                                                <?php echo htmlspecialchars($parceiro); ?></small>
                                         </div>
+
+                                        <form method="POST" class="mt-2 p-2 border rounded bg-light">
+                                            <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
+                                            <div class="row no-gutters">
+                                                <div class="col-3">
+                                                    <input type="number" name="quantidade_reps"
+                                                        class="form-control form-control-sm" placeholder="Reps" required
+                                                        min="1">
+                                                </div>
+                                                <div class="col-9 pl-1 position-relative">
+                                                    <input type="text" name="parceiro"
+                                                        class="form-control form-control-sm input-busca-aluno"
+                                                        placeholder="Buscar parceiro..." autocomplete="off">
+                                                    <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
+                                                    <div class="list-group lista-busca d-none"></div>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-xs btn-block btn-success mt-2"><i
+                                                    class="fas fa-check mr-1"></i> Salvar Prática</button>
+                                        </form>
                                     </div>
                                 </div>
-                        <?php }
-                        } else {
-                            echo "<div class='col-12'><p class='text-muted'>Nenhuma técnica em estudo no momento.</p></div>";
-                        } ?>
+                            </div>
+                        <?php } ?>
                     </div>
                 </div>
             </section>
@@ -253,12 +263,6 @@ if (isset($_POST['id_log'])) {
                 form_div.find('.input-busca-aluno').val(nome);
                 form_div.find('.aluno-id-hidden').val(id);
                 form_div.find('.lista-busca').addClass('d-none');
-            });
-
-            $(document).click(function(e) {
-                if (!$(e.target).closest('.position-relative').length) {
-                    $('.lista-busca').addClass('d-none');
-                }
             });
         });
     </script>
