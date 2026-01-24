@@ -45,16 +45,16 @@ $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <style>
-    .card-mensalidade {
-        border-radius: 15px;
-        border: none;
-    }
+        .card-mensalidade {
+            border-radius: 15px;
+            border: none;
+        }
 
-    .status-badge {
-        border-radius: 50px;
-        padding: 5px 15px;
-        font-size: 0.75rem;
-    }
+        .status-badge {
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 
@@ -103,28 +103,28 @@ $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
                                             </thead>
                                             <tbody>
                                                 <?php if (count($res_m) > 0): ?>
-                                                <?php foreach ($res_m as $m):
+                                                    <?php foreach ($res_m as $m):
                                                         $st = $m['status'];
                                                         $classe_st = ($st == 'Pago') ? 'badge-success' : 'badge-warning';
                                                     ?>
-                                                <tr>
-                                                    <td class="font-weight-bold">
-                                                        <?php echo date('d/m/Y', strtotime($m['data_vencimento'])); ?>
-                                                    </td>
-                                                    <td>R$ <?php echo number_format($m['valor'], 2, ',', '.'); ?></td>
-                                                    <td class="text-center">
-                                                        <span class="badge status-badge <?php echo $classe_st; ?>">
-                                                            <?php echo strtoupper($st); ?>
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                                <?php endforeach; ?>
+                                                        <tr>
+                                                            <td class="font-weight-bold">
+                                                                <?php echo date('d/m/Y', strtotime($m['data_vencimento'])); ?>
+                                                            </td>
+                                                            <td>R$ <?php echo number_format($m['valor'], 2, ',', '.'); ?></td>
+                                                            <td class="text-center">
+                                                                <span class="badge status-badge <?php echo $classe_st; ?>">
+                                                                    <?php echo strtoupper($st); ?>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
                                                 <?php else: ?>
-                                                <tr>
-                                                    <td colspan="3" class="text-center py-5 text-muted">
-                                                        Nenhum registro de mensalidade encontrado.
-                                                    </td>
-                                                </tr>
+                                                    <tr>
+                                                        <td colspan="3" class="text-center py-5 text-muted">
+                                                            Nenhum registro de mensalidade encontrado.
+                                                        </td>
+                                                    </tr>
                                                 <?php endif; ?>
                                             </tbody>
                                         </table>
