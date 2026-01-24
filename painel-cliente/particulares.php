@@ -49,8 +49,10 @@ $id_aluno = $_SESSION['id_usuario'];
 
         <div class="row">
             <?php
-            // Busca usuários que podem dar aulas (Balconistas/Professores e Admins)
-            $query = $pdo->query("SELECT * FROM usuarios WHERE nivel = 'Balconista' OR nivel = 'Admin' OR nivel = 'Professor' ORDER BY nome ASC");
+            /** * QUERY CORRIGIDA: 
+             * Removido 'Admin' para exibir apenas quem é Professor ou Balconista.
+             */
+            $query = $pdo->query("SELECT * FROM usuarios WHERE nivel = 'Professor' OR nivel = 'Balconista' ORDER BY nome ASC");
             $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
             if (count($res) > 0) {
@@ -97,7 +99,7 @@ $id_aluno = $_SESSION['id_usuario'];
             <?php
                 }
             } else {
-                echo '<div class="col-12 text-center text-muted">Nenhum instrutor disponível no momento.</div>';
+                echo '<div class="col-12 text-center text-muted p-5">Nenhum professor disponível para agendamento no momento.</div>';
             }
             ?>
         </div>
@@ -143,7 +145,7 @@ $id_aluno = $_SESSION['id_usuario'];
         function abrirModalPedido(id, nome) {
             $('#id_prof_modal').val(id);
             $('#nome_prof_modal').text(nome);
-            $('#mensagem-pedido').html(''); // Limpa mensagens anteriores
+            $('#mensagem-pedido').html('');
             $('#modalAgendar').modal('show');
         }
 
