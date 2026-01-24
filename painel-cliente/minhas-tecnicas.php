@@ -2,20 +2,21 @@
 @session_start();
 require_once("../conexao.php");
 
-// --- BLOCO DE AUTO-CORREÇÃO DO BANCO (RAILWAY) ---
-// Este código verifica se as colunas existem e as cria se necessário para evitar o erro 1054
+// --- REPARADOR AUTOMÁTICO DE BANCO (RAILWAY) ---
+// Tenta rodar um comando simples. Se falhar, ele cria as colunas faltantes.
 try {
     $pdo->query("SELECT repeticoes FROM tecnicas_estudo LIMIT 1");
 } catch (Exception $e) {
-    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN repeticoes INT DEFAULT 0");
-    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN ultimo_parceiro VARCHAR(255) NULL");
-    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN ultimo_parceiro_id INT NULL");
-    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN parceiro_confirmado ENUM('Sim', 'Não') DEFAULT 'Não'");
-    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN data_inicio DATE NULL");
-    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN data_ultima_pratica DATE NULL");
+    // Cria as colunas que estão causando os erros nas suas imagens
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS repeticoes INT DEFAULT 0");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS ultimo_parceiro VARCHAR(255) NULL");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS ultimo_parceiro_id INT NULL");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS parceiro_confirmado ENUM('Sim', 'Não') DEFAULT 'Não'");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS data_inicio DATE NULL");
+    $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS data_ultima_pratica DATE NULL");
 }
 
-// Verificação de Acesso
+// Verificação de Acesso - Aceita Cliente ou Atleta
 if (!isset($_SESSION['nivel_usuario']) || ($_SESSION['nivel_usuario'] != 'Cliente' && $_SESSION['nivel_usuario'] != 'Atleta')) {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
@@ -37,13 +38,13 @@ if (isset($_GET['acao']) && $_GET['acao'] == 'aprovar' && isset($_GET['id_log'])
 if (isset($_POST['nome_tecnica']) && !isset($_POST['id_log'])) {
     $nome_tecnica = trim($_POST['nome_tecnica']);
     if (!empty($nome_tecnica)) {
-        // Verifica se já existe para evitar duplicidade
         $query_check = $pdo->prepare("SELECT id FROM tecnicas_estudo WHERE usuario_id = :id AND nome_tecnica = :nome AND status = 'Em Estudo'");
         $query_check->bindValue(":id", $id_usuario);
         $query_check->bindValue(":nome", $nome_tecnica);
         $query_check->execute();
 
         if ($query_check->rowCount() == 0) {
+            // INSERT corrigido para incluir todos os campos necessários
             $res = $pdo->prepare("INSERT INTO tecnicas_estudo (usuario_id, nome_tecnica, status, repeticoes, data_inicio) VALUES (:id, :nome, 'Em Estudo', 0, CURDATE())");
             $res->bindValue(":id", $id_usuario);
             $res->bindValue(":nome", $nome_tecnica);
@@ -83,51 +84,32 @@ if (isset($_POST['id_log'])) {
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <style>
-        .posicao-header {
-            background: #343a40;
-            color: #fff;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-
         .card-tecnica {
-            transition: 0.3s;
             border-left: 4px solid #007bff;
-            height: 100%;
+            transition: 0.3s;
         }
 
-        .stats-diario {
-            background: #f4f6f9;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-        }
-
-        .badge-repeticoes {
-            font-size: 0.9rem;
-            background-color: #28a745;
+        .badge-reps {
+            background: #28a745;
             color: white;
-            padding: 3px 8px;
+            padding: 2px 8px;
             border-radius: 10px;
+            font-weight: bold;
         }
 
         .lista-busca {
             position: absolute;
             z-index: 1000;
             width: 100%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-height: 200px;
-            overflow-y: auto;
             background: white;
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
         }
     </style>
 </head>
 
-<body class="hold-transition sidebar-mini layout-fixed text-sm">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
         <?php include_once("sidebar.php"); ?>
         <div class="content-wrapper">
@@ -135,90 +117,62 @@ if (isset($_POST['id_log'])) {
                 <div class="container-fluid">
 
                     <?php
-                    try {
-                        $query_solic = $pdo->prepare("SELECT t.*, u.nome as aluno FROM tecnicas_estudo t INNER JOIN usuarios u ON t.usuario_id = u.id WHERE t.ultimo_parceiro_id = :id AND t.parceiro_confirmado = 'Não'");
-                        $query_solic->bindValue(":id", $id_usuario);
-                        $query_solic->execute();
-                        $solics = $query_solic->fetchAll(PDO::FETCH_ASSOC);
-
-                        if (count($solics) > 0): ?>
-                            <div class="alert alert-warning shadow-sm">
-                                <h5><i class="fas fa-users mr-2"></i> Solicitações de Parceiro</h5>
-                                <ul class="list-unstyled mb-0">
-                                    <?php foreach ($solics as $s): ?>
-                                        <li class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                            <span><strong><?php echo htmlspecialchars($s['aluno']); ?></strong> registrou um treino
-                                                com você.</span>
-                                            <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
-                                                class="btn btn-xs btn-success shadow-sm">Confirmar</a>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                    <?php endif;
-                    } catch (Exception $e) { /* Silencia se a coluna ainda não existir no primeiro load */
-                    }
-                    ?>
+                    $query_solic = $pdo->prepare("SELECT t.*, u.nome FROM tecnicas_estudo t INNER JOIN usuarios u ON t.usuario_id = u.id WHERE t.ultimo_parceiro_id = :id AND t.parceiro_confirmado = 'Não'");
+                    $query_solic->bindValue(":id", $id_usuario);
+                    $query_solic->execute();
+                    while ($s = $query_solic->fetch(PDO::FETCH_ASSOC)) { ?>
+                        <div class="alert alert-info">
+                            <strong><?php echo $s['nome']; ?></strong> treinou com você.
+                            <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
+                                class="btn btn-sm btn-light ml-2">Confirmar</a>
+                        </div>
+                    <?php } ?>
 
                     <div class="card card-primary card-outline shadow-sm mb-4">
                         <div class="card-header">
-                            <h3 class="card-title"><b>O que deseja aprender hoje?</b></h3>
+                            <h3 class="card-title"><b>O que deseja aprender?</b></h3>
                         </div>
                         <div class="card-body">
                             <form method="POST">
                                 <div class="input-group">
                                     <input type="text" name="nome_tecnica" class="form-control"
-                                        placeholder="Ex: De la Riva invertida..." required>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-primary" type="submit"><i class="fas fa-plus mr-1"></i>
-                                            ADICIONAR</button>
-                                    </div>
+                                        placeholder="Ex: Armlock da guarda..." required>
+                                    <div class="input-group-append"><button class="btn btn-primary"
+                                            type="submit">ADICIONAR</button></div>
                                 </div>
                             </form>
                         </div>
                     </div>
 
-                    <h5 class="mb-3 text-primary"><b><i class="fas fa-history mr-2"></i>Progresso de Repetições</b></h5>
                     <div class="row">
                         <?php
-                        $query_progresso = $pdo->prepare("SELECT * FROM tecnicas_estudo WHERE usuario_id = :id AND status = 'Em Estudo' ORDER BY id DESC");
-                        $query_progresso->bindValue(":id", $id_usuario);
-                        $query_progresso->execute();
-                        $res_prog = $query_progresso->fetchAll(PDO::FETCH_ASSOC);
-
-                        foreach ($res_prog as $t) {
-                            $reps = $t['repeticoes'] ?? 0;
-                            $parceiro = !empty($t['ultimo_parceiro']) ? $t['ultimo_parceiro'] : 'Não registrado';
-                        ?>
+                        $query = $pdo->prepare("SELECT * FROM tecnicas_estudo WHERE usuario_id = :id AND status = 'Em Estudo' ORDER BY id DESC");
+                        $query->bindValue(":id", $id_usuario);
+                        $query->execute();
+                        while ($t = $query->fetch(PDO::FETCH_ASSOC)) { ?>
                             <div class="col-md-4 mb-3">
                                 <div class="card card-tecnica shadow-sm">
                                     <div class="card-body">
                                         <h6><strong><?php echo htmlspecialchars($t['nome_tecnica']); ?></strong></h6>
-                                        <div class="stats-diario">
-                                            <i class="fas fa-redo-alt mr-1"></i> Total: <span
-                                                class="badge-repeticoes"><?php echo $reps; ?></span><br>
-                                            <small class="text-muted"><i class="fas fa-user mr-1"></i> Parceiro:
-                                                <?php echo htmlspecialchars($parceiro); ?></small>
-                                        </div>
+                                        <p class="small text-muted mb-2">Total: <span
+                                                class="badge-reps"><?php echo $t['repeticoes']; ?></span></p>
 
-                                        <form method="POST" class="mt-2 p-2 border rounded bg-light">
+                                        <form method="POST" class="bg-light p-2 rounded">
                                             <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
                                             <div class="row no-gutters">
-                                                <div class="col-3">
-                                                    <input type="number" name="quantidade_reps"
-                                                        class="form-control form-control-sm" placeholder="Reps" required
-                                                        min="1">
+                                                <div class="col-4"><input type="number" name="quantidade_reps"
+                                                        class="form-control form-control-sm" placeholder="Reps" required>
                                                 </div>
-                                                <div class="col-9 pl-1 position-relative">
+                                                <div class="col-8 pl-1 position-relative">
                                                     <input type="text" name="parceiro"
                                                         class="form-control form-control-sm input-busca-aluno"
-                                                        placeholder="Buscar parceiro..." autocomplete="off">
+                                                        placeholder="Parceiro..." autocomplete="off">
                                                     <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
-                                                    <div class="list-group lista-busca d-none"></div>
+                                                    <div class="lista-busca d-none"></div>
                                                 </div>
                                             </div>
-                                            <button type="submit" class="btn btn-xs btn-block btn-success mt-2"><i
-                                                    class="fas fa-check mr-1"></i> Salvar Prática</button>
+                                            <button type="submit" class="btn btn-success btn-xs btn-block mt-2">Salvar
+                                                Treino</button>
                                         </form>
                                     </div>
                                 </div>
@@ -233,37 +187,25 @@ if (isset($_POST['id_log'])) {
     <script src="plugins/jquery/jquery.min.js"></script>
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="dist/js/adminlte.js"></script>
-
     <script>
-        $(document).ready(function() {
-            $('.input-busca-aluno').on('keyup', function() {
-                let query = $(this).val();
-                let lista = $(this).siblings('.lista-busca');
-                if (query.length > 2) {
-                    $.ajax({
-                        url: 'buscar_alunos.php',
-                        method: 'POST',
-                        data: {
-                            query: query
-                        },
-                        success: function(data) {
-                            lista.removeClass('d-none').html(data);
-                        }
-                    });
-                } else {
-                    lista.addClass('d-none');
-                }
-            });
-
-            $(document).on('click', '.item-aluno', function(e) {
-                e.preventDefault();
-                let nome = $(this).data('nome');
-                let id = $(this).data('id');
-                let form_div = $(this).closest('.position-relative');
-                form_div.find('.input-busca-aluno').val(nome);
-                form_div.find('.aluno-id-hidden').val(id);
-                form_div.find('.lista-busca').addClass('d-none');
-            });
+        $(document).on('keyup', '.input-busca-aluno', function() {
+            let query = $(this).val();
+            let lista = $(this).siblings('.lista-busca');
+            if (query.length > 2) {
+                $.post('buscar_alunos.php', {
+                    query: query
+                }, function(data) {
+                    lista.removeClass('d-none').html(data);
+                });
+            } else {
+                lista.addClass('d-none');
+            }
+        });
+        $(document).on('click', '.item-aluno', function(e) {
+            e.preventDefault();
+            $(this).closest('.position-relative').find('.input-busca-aluno').val($(this).data('nome'));
+            $(this).closest('.position-relative').find('.aluno-id-hidden').val($(this).data('id'));
+            $('.lista-busca').addClass('d-none');
         });
     </script>
 </body>
