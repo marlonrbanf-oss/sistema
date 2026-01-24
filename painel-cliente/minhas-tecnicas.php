@@ -150,24 +150,30 @@ if (isset($_POST['id_log'])) {
                         $res_prog = $query_progresso->fetchAll(PDO::FETCH_ASSOC);
 
                         if (count($res_prog) > 0) {
-                            foreach ($res_prog as $t) { ?>
+                            foreach ($res_prog as $t) {
+                                // CORREÇÃO: Tratamento para evitar erro de Array Key Undefined
+                                $nome_exibir = $t['nome_tecnica'] ?? 'Técnica sem nome';
+                                $reps_exibir = $t['repeticoes'] ?? 0;
+                                $parceiro_exibir = $t['ultimo_parceiro'] ?? 'Não registrado';
+                                $id_tec = $t['id'] ?? 0;
+                        ?>
                                 <div class="col-md-4 mb-3">
                                     <div class="card card-tecnica shadow-sm">
                                         <div class="card-body">
                                             <h6 class="mb-2">
-                                                <strong><?php echo htmlspecialchars($t['nome_tecnica']); ?></strong>
+                                                <strong><?php echo htmlspecialchars($nome_exibir); ?></strong>
                                             </h6>
                                             <div class="stats-diario">
                                                 <i class="fas fa-redo-alt mr-1"></i> Total: <span
-                                                    class="badge-repeticoes"><?php echo $t['repeticoes']; ?></span><br>
+                                                    class="badge-repeticoes"><?php echo $reps_exibir; ?></span><br>
                                                 <small class="text-muted">
                                                     <i class="fas fa-user mr-1"></i> Parceiro:
-                                                    <?php echo htmlspecialchars($t['ultimo_parceiro'] ?? 'Não registrado'); ?>
+                                                    <?php echo htmlspecialchars($parceiro_exibir); ?>
                                                 </small>
                                             </div>
 
                                             <form method="POST" class="mt-2 p-2 border rounded bg-light">
-                                                <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
+                                                <input type="hidden" name="id_log" value="<?php echo $id_tec; ?>">
                                                 <div class="row no-gutters">
                                                     <div class="col-4">
                                                         <input type="number" name="quantidade_reps"
@@ -217,6 +223,7 @@ if (isset($_POST['id_log'])) {
                                 <?php foreach ($tecnicas as $hab) {
                                     $status_nome = mb_strtolower($hab['status'] ?? '');
                                     $ja_dominado = ($status_nome == 'dominado' || $status_nome == 'concluído');
+                                    $nome_hab = $hab['tecnica'] ?? 'Técnica';
                                 ?>
                                     <div class="col-md-4 col-sm-6 mb-2">
                                         <div
@@ -224,7 +231,7 @@ if (isset($_POST['id_log'])) {
                                             <div class="card-body p-3 d-flex justify-content-between align-items-center">
                                                 <div>
                                                     <strong
-                                                        class="text-dark d-block"><?php echo htmlspecialchars($hab['tecnica']); ?></strong>
+                                                        class="text-dark d-block"><?php echo htmlspecialchars($nome_hab); ?></strong>
                                                     <?php if ($ja_dominado): ?>
                                                         <span class="badge badge-success"><i class="fas fa-check"></i> Dominado</span>
                                                     <?php endif; ?>
@@ -233,7 +240,7 @@ if (isset($_POST['id_log'])) {
                                                 <?php if (!$ja_dominado): ?>
                                                     <form method="POST">
                                                         <input type="hidden" name="nome_tecnica"
-                                                            value="<?php echo htmlspecialchars($hab['tecnica']); ?>">
+                                                            value="<?php echo htmlspecialchars($nome_hab); ?>">
                                                         <button type="submit" class="btn btn-sm btn-outline-primary">
                                                             <i class="fas fa-book-open"></i> Estudar
                                                         </button>
