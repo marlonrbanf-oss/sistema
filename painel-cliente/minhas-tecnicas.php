@@ -2,7 +2,7 @@
 @session_start();
 require_once("../conexao.php");
 
-// --- REPARADOR DE EMERGÊNCIA ---
+// --- REPARADOR DE EMERGÊNCIA (Mantém a integridade do banco) ---
 $tabela = 'tecnicas_estudo';
 $colunas_necessarias = [
     'usuario_id' => "INT NOT NULL",
@@ -193,9 +193,8 @@ if (isset($_POST['id_log'])) {
                             <div class="text-primary small">RAS: <b id="meu-ras">0</b></div>
                             <div class="text-info small">PAS: <b id="meu-pas">0</b></div>
                         </div>
-                        <div class="col-2 d-flex align-items-center justify-content-center p-0">
-                            <i class="fas fa-exchange-alt text-muted"></i>
-                        </div>
+                        <div class="col-2 d-flex align-items-center justify-content-center p-0"><i
+                                class="fas fa-exchange-alt text-muted"></i></div>
                         <div class="col-5 border-left">
                             <div class="text-success small">FIN: <b id="dele-fin">0</b></div>
                             <div class="text-primary small">RAS: <b id="dele-ras">0</b></div>
@@ -214,7 +213,7 @@ if (isset($_POST['id_log'])) {
                 "fez uma <b>" . $s['acao_combate'] . "</b> de <b>" . $s['nome_tecnica'] . "</b> em você." :
                 "registrou treino de <b>" . $s['nome_tecnica'] . "</b> com você.";
         ?>
-            <div class="alert alert-warning shadow-sm border-0 animate__animated animate__headShake">
+            <div class="alert alert-warning shadow-sm border-0 animate__animated animate__headShake mb-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <span><i class="fas fa-bell mr-2"></i> <b><?= $s['nome'] ?></b> <?= $texto_notificacao ?></span>
                     <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?= $s['id'] ?>"
@@ -248,7 +247,6 @@ if (isset($_POST['id_log'])) {
                         <a href="minhas-tecnicas.php?delete=<?= $t['id'] ?>" class="btn-delete-x"
                             onclick="return confirm('Deseja excluir este golpe do seu diário?')"><i
                                 class="fas fa-times-circle fa-lg"></i></a>
-
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2 pr-4">
                                 <h6 class="font-weight-bold text-uppercase mb-0"><?= htmlspecialchars($t['nome_tecnica']) ?>
@@ -293,6 +291,64 @@ if (isset($_POST['id_log'])) {
                     </div>
                 </div>
             <?php } ?>
+        </div>
+
+        <hr class="my-5">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h3 class="card-title font-weight-bold"><i class="fas fa-history mr-2"></i> Relatório de
+                            Atividades Recentes</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Técnica</th>
+                                        <th>Tipo</th>
+                                        <th>Ação/Reps</th>
+                                        <th>Parceiro</th>
+                                        <th class="text-center">Confirmado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    // Busca os últimos 15 registros de prática realizados pelo usuário
+                                    $query_rel = $pdo->prepare("SELECT * FROM $tabela WHERE usuario_id = :id AND data_ultima_pratica IS NOT NULL ORDER BY data_ultima_pratica DESC LIMIT 15");
+                                    $query_rel->execute([':id' => $id_usuario]);
+                                    $relatorios = $query_rel->fetchAll(PDO::FETCH_ASSOC);
+
+                                    if (count($relatorios) > 0) {
+                                        foreach ($relatorios as $row) {
+                                            $data_f = date('d/m/Y', strtotime($row['data_ultima_pratica']));
+                                            $badge_tipo = ($row['tipo_registro'] == 'Combate') ? 'badge-danger' : 'badge-primary';
+                                            $confirm_icon = ($row['parceiro_confirmado'] == 'Sim') ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-clock text-warning"></i>';
+                                            $acao_exibir = ($row['tipo_registro'] == 'Combate') ? $row['acao_combate'] : $row['repeticoes'] . ' Reps';
+                                    ?>
+                                            <tr>
+                                                <td><?= $data_f ?></td>
+                                                <td class="font-weight-bold text-uppercase small">
+                                                    <?= htmlspecialchars($row['nome_tecnica']) ?></td>
+                                                <td><span class="badge <?= $badge_tipo ?>"><?= $row['tipo_registro'] ?></span>
+                                                </td>
+                                                <td><?= $acao_exibir ?></td>
+                                                <td><?= htmlspecialchars($row['ultimo_parceiro'] ?? 'N/A') ?></td>
+                                                <td class="text-center"><?= $confirm_icon ?></td>
+                                            </tr>
+                                    <?php }
+                                    } else {
+                                        echo "<tr><td colspan='6' class='text-center text-muted py-4'>Nenhuma atividade registrada ainda.</td></tr>";
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
