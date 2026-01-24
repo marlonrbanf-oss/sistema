@@ -10,18 +10,17 @@ if (empty($nome_input)) {
     exit();
 }
 
-// ID do aluno logado para a comparação
 $id_logado = $_SESSION['id_usuario'] ?? 0;
 
-// 1. Busca meus dados para comparação (usando a função de graduação)
+// 1. Busca meus dados para comparação
 $meu_status = verificarRequisitos($pdo, $id_logado);
 $minhas_aulas = $meu_status['aulas'] ?? 0;
 
 // 2. Busca os dados dos colegas pesquisados
-// Usando 'nivel_usuario' e 'usuario' (que é o email) conforme seu DESCRIBE
-$query = $pdo->prepare("SELECT id, nome, foto, telefone, usuario, nivel_usuario FROM usuarios 
+// AJUSTADO: Voltamos a usar 'nivel' e incluímos 'email' e 'data_cad' conforme seu novo DESCRIBE
+$query = $pdo->prepare("SELECT id, nome, foto, telefone, email, nivel, data_cad FROM usuarios 
                         WHERE nome LIKE :nome 
-                        AND (nivel_usuario = 'Cliente' OR nivel_usuario = 'Atleta') 
+                        AND (nivel = 'Cliente' OR nivel = 'Atleta') 
                         AND id != :meu_id 
                         ORDER BY nome ASC LIMIT 5");
 $query->bindValue(":nome", $nome);
@@ -33,39 +32,36 @@ if (count($usuarios) > 0) {
     echo '<div id="resultado_pesquisa" class="animate__animated animate__fadeIn">';
 
     foreach ($usuarios as $user) {
-        // Busca a graduação e requisitos técnicos do colega pesquisado
         $status = verificarRequisitos($pdo, $user['id']);
         $foto = (!empty($user['foto'])) ? $user['foto'] : 'usuario-icone-claro.png';
 
-        // Cálculo de progresso do colega
+        // Cálculo de progresso
         $aulas_colega = $status['aulas'] ?? 0;
         $meta = $status['meta'] ?? 1;
         $porcentagem = ($aulas_colega / $meta) * 100;
         if ($porcentagem > 100) $porcentagem = 100;
 
-        // Lógica de Comparação de Progresso
+        // Lógica de Comparação
         $diferenca = $aulas_colega - $minhas_aulas;
-
         if ($diferenca > 0) {
             $comp_class = "alert-warning";
             $comp_icon = "fa-arrow-up";
-            $comp_msg = "Faltam <b>$diferenca aulas</b> para você alcançar este colega!";
+            $comp_msg = "Faltam <b>$diferenca aulas</b> para você alcançá-lo!";
         } elseif ($diferenca < 0) {
             $diff_abs = abs($diferenca);
             $comp_class = "alert-success";
             $comp_icon = "fa-medal";
-            $comp_msg = "Você está na frente! Tem <b>$diff_abs aulas</b> a mais que este colega.";
+            $comp_msg = "Você está na frente por <b>$diff_abs aulas</b>!";
         } else {
             $comp_class = "alert-primary";
             $comp_icon = "fa-equals";
-            $comp_msg = "Vocês estão empatados em número de aulas!";
+            $comp_msg = "Vocês estão empatados!";
         }
 
-        // Definição de cores da faixa
+        // Cores da faixa
         $cor_f = mb_strtolower($status['faixa'] ?? 'branca');
         $label_bg = '#007bff';
         $label_txt = '#fff';
-
         if ($cor_f == 'preta') {
             $label_bg = '#000';
         } elseif ($cor_f == 'branca') {
@@ -84,7 +80,7 @@ if (count($usuarios) > 0) {
                     <?php echo htmlspecialchars($user['nome']) ?>
                 </h3>
                 <h5 class="widget-user-desc text-right" style="text-shadow: 1px 1px 3px #000; font-size: 0.85rem;">
-                    <i class="fas fa-envelope mr-1"></i> <?php echo htmlspecialchars($user['usuario']) ?>
+                    <i class="fas fa-envelope mr-1"></i> <?php echo htmlspecialchars($user['email'] ?? 'Sem email') ?>
                 </h5>
             </div>
             <div class="widget-user-image" style="top: 70px;">
@@ -94,8 +90,7 @@ if (count($usuarios) > 0) {
             <div class="card-footer bg-white" style="padding-top: 50px;">
 
                 <div class="alert <?php echo $comp_class; ?> border-0 shadow-sm mb-4 text-center py-2">
-                    <small class="text-uppercase d-block font-weight-bold mb-1" style="opacity: 0.7;">Comparação de
-                        Progresso</small>
+                    <small class="text-uppercase d-block font-weight-bold mb-1" style="opacity: 0.7;">Comparação</small>
                     <i class="fas <?php echo $comp_icon; ?> mr-1"></i> <?php echo $comp_msg; ?>
                 </div>
 
@@ -129,32 +124,18 @@ if (count($usuarios) > 0) {
 
                 <div class="row px-2">
                     <div class="col-12">
-                        <p class="text-muted mb-2 small"><strong><i class="fas fa-award text-warning mr-1"></i> SELOS DE
-                                ESPECIALIDADE:</strong></p>
-                        <div class="d-flex flex-wrap" style="gap: 5px;">
-                            <?php
-                            $query_selos = $pdo->prepare("SELECT tecnica FROM habilidades WHERE usuario_id = :id AND status = 'Dominado'");
-                            $query_selos->bindValue(":id", $user['id']);
-                            $query_selos->execute();
-                            $selos = $query_selos->fetchAll(PDO::FETCH_ASSOC);
-
-                            if (count($selos) > 0) {
-                                foreach ($selos as $selo) {
-                                    echo '<span class="badge badge-info shadow-sm text-uppercase" style="font-size: 10px; padding: 5px 10px;"><i class="fas fa-check-circle mr-1"></i> ' . htmlspecialchars($selo['tecnica']) . '</span>';
-                                }
-                            } else {
-                                echo '<span class="text-muted small italic ml-1">Nenhum selo técnico conquistado.</span>';
-                            }
-                            ?>
-                        </div>
+                        <p class="text-muted mb-2 small text-center">
+                            <i class="fas fa-calendar-alt mr-1"></i> Aluno desde:
+                            <b><?php echo ($user['data_cad']) ? date('d/m/Y', strtotime($user['data_cad'])) : 'Não informada'; ?></b>
+                        </p>
                     </div>
                 </div>
 
                 <?php if (!empty($user['telefone'])): ?>
-                    <div class="text-center mt-3">
+                    <div class="text-center mt-2">
                         <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $user['telefone']) ?>" target="_blank"
                             class="btn btn-sm btn-outline-success rounded-pill px-4">
-                            <i class="fab fa-whatsapp mr-1"></i> Enviar Mensagem
+                            <i class="fab fa-whatsapp mr-1"></i> WhatsApp
                         </a>
                     </div>
                 <?php endif; ?>
@@ -164,9 +145,6 @@ if (count($usuarios) > 0) {
     }
     echo '</div>';
 } else {
-    echo '<div class="alert alert-light border shadow-sm text-center py-4">
-            <i class="fas fa-search text-muted mb-2 fa-2x"></i><br>
-            Nenhum colega encontrado com este nome.
-          </div>';
+    echo '<div class="alert alert-light border shadow-sm text-center py-4">Nenhum colega encontrado.</div>';
 }
 ?>

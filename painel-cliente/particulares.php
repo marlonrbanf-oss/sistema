@@ -2,7 +2,7 @@
 @session_start();
 require_once("../conexao.php");
 
-// Proteção básica para garantir que o ID do aluno exista na sessão
+// Proteção de acesso
 if (!isset($_SESSION['id_usuario'])) {
     echo "<script>window.location='../login.php';</script>";
     exit();
@@ -10,15 +10,11 @@ if (!isset($_SESSION['id_usuario'])) {
 
 $id_aluno = $_SESSION['id_usuario'];
 
-// --- AJUSTE DE COMPATIBILIDADE DE COLUNA ---
-// Verifica se o banco usa 'nivel' ou 'nivel_usuario' para evitar o erro 1054
+/**
+ * Como você restaurou o banco, vamos usar diretamente a coluna 'nivel'.
+ * Mantivemos uma pequena verificação apenas por segurança extrema.
+ */
 $coluna_nivel = 'nivel';
-try {
-    $pdo->query("SELECT nivel_usuario FROM usuarios LIMIT 1");
-    $coluna_nivel = 'nivel_usuario';
-} catch (Exception $e) {
-    $coluna_nivel = 'nivel';
-}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -59,46 +55,46 @@ try {
 
         <div class="row">
             <?php
-            /** * QUERY CORRIGIDA DINAMICAMENTE: 
-             * Usa a variável $coluna_nivel identificada no topo do arquivo.
-             */
-            $query = $pdo->query("SELECT * FROM usuarios WHERE $coluna_nivel = 'Professor' OR $coluna_nivel = 'Balconista' ORDER BY nome ASC");
+            // Busca professores e balconistas usando a coluna 'nivel' restaurada
+            $query = $pdo->query("SELECT * FROM usuarios WHERE nivel = 'Professor' OR nivel = 'Balconista' ORDER BY nome ASC");
             $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
             if (count($res) > 0) {
                 foreach ($res as $prof) {
                     $telefone = preg_replace('/[^0-9]/', '', $prof['telefone'] ?? '');
-                    // Garante o prefixo 55 se não houver
-                    if (strlen($telefone) > 0 && substr($telefone, 0, 2) !== "55") $telefone = "55" . $telefone;
+
+                    // Formatação do link do WhatsApp
+                    if (strlen($telefone) > 0 && substr($telefone, 0, 2) !== "55") {
+                        $telefone = "55" . $telefone;
+                    }
 
                     $foto_prof = (!empty($prof['foto'])) ? $prof['foto'] : 'usuario-icone-claro.png';
             ?>
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card prof-card shadow-sm">
+                        <div class="card prof-card shadow-sm h-100">
                             <div class="card-body text-center">
                                 <img src="../images/perfil/<?php echo $foto_prof; ?>" class="img-prof img-circle mb-3 shadow">
                                 <h5 class="font-weight-bold mb-1"><?php echo mb_strtoupper($prof['nome']); ?></h5>
-                                <p class="text-muted small">Especialista em BJJ & No-Gi</p>
+                                <p class="text-muted small">Especialista Nova Arte</p>
                                 <hr>
 
-                                <div class="row">
+                                <div class="row mt-3">
                                     <div class="col-6">
-                                        <?php if ($telefone != ""): ?>
-                                            <a href="https://wa.me/<?php echo $telefone; ?>?text=Olá Professor, gostaria de agendar uma aula!"
-                                                target="_blank" class="btn btn-outline-success btn-block btn-sm rounded-pill">
+                                        <?php if (!empty($telefone)): ?>
+                                            <a href="https://wa.me/<?php echo $telefone; ?>?text=Olá, gostaria de agendar uma aula!"
+                                                target="_blank" class="btn btn-outline-success btn-sm btn-block rounded-pill">
                                                 <i class="fab fa-whatsapp"></i> WhatsApp
                                             </a>
                                         <?php else: ?>
-                                            <button class="btn btn-outline-secondary btn-block btn-sm rounded-pill" disabled
-                                                title="Sem telefone">
-                                                <i class="fab fa-whatsapp"></i> WhatsApp
+                                            <button class="btn btn-outline-secondary btn-sm btn-block rounded-pill" disabled>
+                                                <i class="fas fa-phone-slash"></i> S/ Tel
                                             </button>
                                         <?php endif; ?>
                                     </div>
                                     <div class="col-6">
                                         <button
                                             onclick="abrirModalPedido('<?php echo $prof['id']; ?>', '<?php echo $prof['nome']; ?>')"
-                                            class="btn btn-primary btn-block btn-sm rounded-pill shadow-sm">
+                                            class="btn btn-primary btn-sm btn-block rounded-pill shadow-sm">
                                             <i class="fas fa-calendar-plus"></i> Agendar
                                         </button>
                                     </div>
@@ -109,7 +105,7 @@ try {
             <?php
                 }
             } else {
-                echo '<div class="col-12 text-center text-muted p-5">Nenhum professor disponível para agendamento no momento.</div>';
+                echo '<div class="col-12 text-center text-muted p-5">Nenhum instrutor disponível para agendamento.</div>';
             }
             ?>
         </div>
@@ -119,29 +115,29 @@ try {
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title font-weight-bold">Solicitar Aula Particular</h5>
+                    <h5 class="modal-title font-weight-bold">Solicitar Aula</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <form id="form-pedido-aula">
                     <div class="modal-body">
-                        <p class="text-muted text-center">Solicitando aula com:<br><strong id="nome_prof_modal"
+                        <p class="text-center text-muted">Solicitando com: <strong id="nome_prof_modal"
                                 class="text-dark"></strong></p>
                         <input type="hidden" name="id_professor" id="id_prof_modal">
 
                         <div class="form-group">
-                            <label><i class="fas fa-calendar-day mr-1"></i> Data Desejada</label>
+                            <label class="small font-weight-bold">DATA DESEJADA</label>
                             <input type="date" name="data_aula" class="form-control" required
                                 min="<?php echo date('Y-m-d'); ?>">
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-clock mr-1"></i> Horário</label>
+                            <label class="small font-weight-bold">HORÁRIO</label>
                             <input type="time" name="horario_aula" class="form-control" required>
                         </div>
                         <div id="mensagem-pedido"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" id="btn-enviar-pedido"
-                            class="btn btn-primary btn-block shadow font-weight-bold">ENVIAR SOLICITAÇÃO</button>
+                        <button type="submit" id="btn-enviar-pedido" class="btn btn-primary btn-block shadow-sm">ENVIAR
+                            SOLICITAÇÃO</button>
                     </div>
                 </form>
             </div>
@@ -161,7 +157,6 @@ try {
 
         $("#form-pedido-aula").submit(function(e) {
             e.preventDefault();
-
             let btn = $('#btn-enviar-pedido');
             btn.text('Processando...').attr('disabled', true);
 
@@ -171,7 +166,7 @@ try {
                 data: $(this).serialize(),
                 success: function(res) {
                     if (res.trim() == "Sucesso") {
-                        alert("Pedido enviado com sucesso! O professor visualizará no painel dele.");
+                        alert("Pedido enviado com sucesso!");
                         $('#modalAgendar').modal('hide');
                         location.reload();
                     } else {
@@ -179,12 +174,6 @@ try {
                             '</div>');
                         btn.text('ENVIAR SOLICITAÇÃO').attr('disabled', false);
                     }
-                },
-                error: function() {
-                    $('#mensagem-pedido').html(
-                        '<div class="alert alert-danger mt-2 small">Erro de conexão com o servidor.</div>'
-                    );
-                    btn.text('ENVIAR SOLICITAÇÃO').attr('disabled', false);
                 }
             });
         });

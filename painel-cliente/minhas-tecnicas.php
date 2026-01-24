@@ -6,7 +6,7 @@ require_once("../conexao.php");
 try {
     $pdo->query("SELECT repeticoes FROM tecnicas_estudo LIMIT 1");
 } catch (Exception $e) {
-    // Cria as colunas necessárias caso a tabela esteja desatualizada
+    // Cria as colunas necessárias caso a tabela esteja desatualizada ou tenha sido resetada
     $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS repeticoes INT DEFAULT 0");
     $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS ultimo_parceiro VARCHAR(255) NULL");
     $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS ultimo_parceiro_id INT NULL");
@@ -15,8 +15,8 @@ try {
     $pdo->query("ALTER TABLE tecnicas_estudo ADD COLUMN IF NOT EXISTS data_ultima_pratica DATE NULL");
 }
 
-// Verificação de Acesso
-if (!isset($_SESSION['nivel_usuario']) || ($_SESSION['nivel_usuario'] != 'Cliente' && $_SESSION['nivel_usuario'] != 'Atleta')) {
+// --- VERIFICAÇÃO DE ACESSO (CORRIGIDO PARA COLUNA 'nivel') ---
+if (!isset($_SESSION['nivel']) || ($_SESSION['nivel'] != 'Cliente' && $_SESSION['nivel'] != 'Atleta')) {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
@@ -134,8 +134,7 @@ if (isset($_POST['id_log'])) {
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h3 class="font-weight-bold">Minhas Técnicas</h3>
-                        <a href="index.php" class="btn btn-dark btn-sm shadow-sm"><i class="fas fa-arrow-left"></i>
-                            Voltar</a>
+                        <a href="index.php" class="btn btn-dark btn-sm shadow-sm"><i class="fas fa-arrow-left"></i> Voltar</a>
                     </div>
 
                     <?php
@@ -145,24 +144,19 @@ if (isset($_POST['id_log'])) {
                     while ($s = $query_solic->fetch(PDO::FETCH_ASSOC)) { ?>
                         <div class="alert alert-info elevation-1">
                             <i class="fas fa-user-friends mr-2"></i>
-                            <strong><?php echo $s['nome']; ?></strong> registrou um treino com você
-                            (<?php echo $s['nome_tecnica']; ?>).
-                            <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
-                                class="btn btn-sm btn-light ml-2">Confirmar</a>
+                            <strong><?php echo htmlspecialchars($s['nome']); ?></strong> registrou um treino com você (<?php echo htmlspecialchars($s['nome_tecnica']); ?>).
+                            <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>" class="btn btn-sm btn-light ml-2">Confirmar</a>
                         </div>
                     <?php } ?>
 
                     <div class="card card-primary card-outline shadow-sm mb-4">
                         <div class="card-body">
                             <form method="POST">
-                                <label class="small font-weight-bold text-muted text-uppercase">O que você está
-                                    estudando hoje?</label>
+                                <label class="small font-weight-bold text-muted text-uppercase">O que você está estudando hoje?</label>
                                 <div class="input-group">
-                                    <input type="text" name="nome_tecnica" class="form-control"
-                                        placeholder="Ex: Raspagem de Meia Guarda..." required>
+                                    <input type="text" name="nome_tecnica" class="form-control" placeholder="Ex: Raspagem de Meia Guarda..." required>
                                     <div class="input-group-append">
-                                        <button class="btn btn-primary" type="submit"><i
-                                                class="fas fa-plus"></i></button>
+                                        <button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
                             </form>
@@ -181,29 +175,22 @@ if (isset($_POST['id_log'])) {
                                 <div class="col-md-4 mb-3">
                                     <div class="card card-tecnica shadow-sm h-100">
                                         <div class="card-body">
-                                            <h6 class="font-weight-bold text-dark">
-                                                <?php echo htmlspecialchars($t['nome_tecnica']); ?></h6>
-                                            <p class="small text-muted mb-3">Repetições Totais: <span
-                                                    class="badge-reps"><?php echo $t['repeticoes']; ?></span></p>
+                                            <h6 class="font-weight-bold text-dark"><?php echo htmlspecialchars($t['nome_tecnica']); ?></h6>
+                                            <p class="small text-muted mb-3">Repetições Totais: <span class="badge-reps"><?php echo $t['repeticoes']; ?></span></p>
 
                                             <form method="POST" class="p-2 border rounded bg-light">
                                                 <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
                                                 <div class="row no-gutters">
                                                     <div class="col-4">
-                                                        <input type="number" name="quantidade_reps"
-                                                            class="form-control form-control-sm" placeholder="Reps" required>
+                                                        <input type="number" name="quantidade_reps" class="form-control form-control-sm" placeholder="Reps" required>
                                                     </div>
                                                     <div class="col-8 pl-1 position-relative">
-                                                        <input type="text" name="parceiro"
-                                                            class="form-control form-control-sm input-busca-aluno"
-                                                            placeholder="Quem foi o parceiro?" autocomplete="off">
+                                                        <input type="text" name="parceiro" class="form-control form-control-sm input-busca-aluno" placeholder="Parceiro..." autocomplete="off">
                                                         <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
                                                         <div class="lista-busca d-none"></div>
                                                     </div>
                                                 </div>
-                                                <button type="submit"
-                                                    class="btn btn-success btn-xs btn-block mt-2 font-weight-bold">REGISTRAR
-                                                    PRÁTICA</button>
+                                                <button type="submit" class="btn btn-success btn-xs btn-block mt-2 font-weight-bold">REGISTRAR PRÁTICA</button>
                                             </form>
                                         </div>
                                     </div>
@@ -222,7 +209,6 @@ if (isset($_POST['id_log'])) {
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="dist/js/adminlte.js"></script>
     <script>
-        // Lógica de busca de alunos (parceiros) em tempo real
         $(document).on('keyup', '.input-busca-aluno', function() {
             let input = $(this);
             let query = input.val();
@@ -238,19 +224,16 @@ if (isset($_POST['id_log'])) {
             }
         });
 
-        // Selecionar o aluno da lista de busca
         $(document).on('click', '.item-aluno', function(e) {
             e.preventDefault();
             let nome = $(this).data('nome');
             let id = $(this).data('id');
             let container = $(this).closest('.position-relative');
-
             container.find('.input-busca-aluno').val(nome);
             container.find('.aluno-id-hidden').val(id);
             $('.lista-busca').addClass('d-none');
         });
 
-        // Fecha a lista ao clicar fora
         $(document).click(function(e) {
             if (!$(e.target).closest('.position-relative').length) {
                 $('.lista-busca').addClass('d-none');

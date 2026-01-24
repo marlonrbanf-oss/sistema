@@ -8,6 +8,7 @@ function verificarRequisitos($pdo, $id_usuario)
 {
     try {
         // 1. Busca os dados de graduação
+        // Adicionada verificação dinâmica para suportar 'cor_faixa' ou apenas 'faixa'
         $query = $pdo->prepare("SELECT * FROM graduacoes WHERE usuario_id = :id LIMIT 1");
         $query->bindValue(":id", $id_usuario);
         $query->execute();
@@ -26,8 +27,9 @@ function verificarRequisitos($pdo, $id_usuario)
         }
 
         // 2. NORMALIZAÇÃO E TRADUÇÃO
-        // Proteção contra valores nulos (Null Coalesce Operator)
-        $faixa_banco = mb_strtolower(trim($grad['cor_faixa'] ?? 'branca'));
+        // Tenta pegar 'cor_faixa' (seu original), se não existir tenta 'faixa' (comum em backups)
+        $faixa_bruta = $grad['cor_faixa'] ?? ($grad['faixa'] ?? 'branca');
+        $faixa_banco = mb_strtolower(trim($faixa_bruta));
 
         $traducoes = [
             'white' => 'branca',
@@ -39,11 +41,12 @@ function verificarRequisitos($pdo, $id_usuario)
         ];
 
         $faixa = $traducoes[$faixa_banco] ?? $faixa_banco;
-        $grau_atual = (int)($grad['graus'] ?? 0);
-        $aulas_concluidas = (int)($grad['total_aulas'] ?? 0);
 
-        // 3. DEFINIÇÃO DAS METAS DE AULAS
-        // Lógica baseada nas regras da Nova Arte BJJ
+        // Normalização de colunas numéricas
+        $grau_atual = (int)($grad['graus'] ?? ($grad['grau'] ?? 0));
+        $aulas_concluidas = (int)($grad['total_aulas'] ?? ($grad['aulas'] ?? 0));
+
+        // 3. DEFINIÇÃO DAS METAS DE AULAS (Regras Nova Arte BJJ)
         if ($faixa == 'branca') {
             $meta = 30;
         } elseif ($faixa == 'azul') {
@@ -51,6 +54,7 @@ function verificarRequisitos($pdo, $id_usuario)
         } elseif ($faixa == 'roxa' || $faixa == 'marrom') {
             $meta = 75;
         } elseif ($faixa == 'preta') {
+            // Lógica de graus na faixa preta
             if ($grau_atual < 3) $meta = 350;
             elseif ($grau_atual < 6) $meta = 600;
             else $meta = 1000;
@@ -61,7 +65,7 @@ function verificarRequisitos($pdo, $id_usuario)
         } elseif ($faixa == 'vermelha') {
             $meta = 2000;
         } else {
-            $meta = 100; // Valor padrão para casos não mapeados
+            $meta = 100; // Valor padrão para segurança
         }
 
         // 4. VERIFICAÇÃO DE PROMOÇÃO
@@ -83,15 +87,15 @@ function verificarRequisitos($pdo, $id_usuario)
             'pode'  => $pode_graduar,
             'mensagem' => $mensagem
         ];
-    } catch (PDOException $e) {
-        // Em caso de erro no banco (coluna faltando, etc), retorna valores seguros
+    } catch (Exception $e) {
+        // Retorno de segurança para não quebrar o painel do aluno
         return [
-            'faixa' => 'Erro',
+            'faixa' => 'branca',
             'grau'  => 0,
             'aulas' => 0,
-            'meta'  => 1,
+            'meta'  => 30,
             'pode'  => false,
-            'mensagem' => 'Erro ao processar graduação. Avise o administrador.'
+            'mensagem' => 'Erro ao carregar graduação. Verifique sua conexão.'
         ];
     }
 }

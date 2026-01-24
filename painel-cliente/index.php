@@ -3,17 +3,18 @@
 require_once("../conexao.php");
 require_once("funcoes-graduacao.php");
 
-// Verificação de autenticação
-if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente') {
+// --- VERIFICAÇÃO DE AUTENTICAÇÃO (Corrigido para usar 'nivel') ---
+if (!isset($_SESSION['nivel']) || ($_SESSION['nivel'] != 'Cliente' && $_SESSION['nivel'] != 'Atleta')) {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
 $id_usuario = $_SESSION['id_usuario'];
-// Busca status de graduação
+
+// Busca status de graduação via função externa
 $status = verificarRequisitos($pdo, $id_usuario);
 
-// Busca dados do usuário
+// Busca dados do usuário (Corrigido para usar a coluna 'email' se necessário ou manter 'usuario')
 $query_u = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id");
 $query_u->bindValue(":id", $id_usuario);
 $query_u->execute();
@@ -21,28 +22,27 @@ $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
 
 $nome_usuario = $dados_u['nome'] ?? 'Usuário';
 $foto_usuario = (!empty($dados_u['foto'])) ? $dados_u['foto'] : 'usuario-icone-claro.png';
-$email_usuario = $dados_u['usuario'] ?? '';
+$email_usuario = $dados_u['email'] ?? ($dados_u['usuario'] ?? ''); // Compatibilidade com ambas as colunas
 $telefone_usuario = $dados_u['telefone'] ?? '';
 
 // Lógica de processamento de nova técnica
 if (isset($_POST['nova_tecnica_estudo'])) {
     $tec_nome = $_POST['nova_tecnica_estudo'];
-    $res_estudo = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo'");
+    $res_estudo = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo', data_inicio = CURDATE()");
     $res_estudo->bindValue(":id", $id_usuario);
     $res_estudo->bindValue(":nome", $tec_nome);
     $res_estudo->execute();
     echo "<script>window.location='index.php'</script>";
 }
 
-// Cálculo de métricas e maestria
+// --- CÁLCULO DE MÉTRICAS E MAESTRIA ---
 $query_total_hab = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id");
 $query_total_hab->bindValue(":id", $id_usuario);
 $query_total_hab->execute();
 $res_total = $query_total_hab->fetch(PDO::FETCH_ASSOC);
 $total_geral_tecnicas = $res_total['total'] ?? 0;
-// Ajuste para evitar divisão por zero
-$total_calculo = ($total_geral_tecnicas > 0) ? $total_geral_tecnicas : 1;
 
+$total_calculo = ($total_geral_tecnicas > 0) ? $total_geral_tecnicas : 1;
 $total_faixas_jornada = 7;
 $meta_maestria = $total_calculo + $total_faixas_jornada;
 
@@ -89,31 +89,15 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Portal do Atleta - Nova Arte BJJ</title>
-    <link rel="icon" href="../images/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        .card-body strong {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
         .card:hover {
             transform: translateY(-3px);
             transition: all 0.3s ease;
-        }
-
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .main-sidebar {
-            background-color: #1a1a1a !important;
         }
 
         .bjj-belt {
@@ -143,8 +127,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             justify-content: space-around;
             align-items: center;
             padding: 0 10px;
-            border-left: 1px solid rgba(0, 0, 0, 0.3);
-            border-right: 1px solid rgba(0, 0, 0, 0.3);
         }
 
         .belt-stripe {
@@ -156,16 +138,9 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
         #reader {
             width: 100% !important;
-            border: none !important;
-            background-color: #000;
             border-radius: 12px;
             overflow: hidden;
-        }
-
-        #reader video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
+            background: #000;
         }
 
         .pulse {
@@ -203,7 +178,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
             </div>
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item"><a href="../logout.php" class="nav-link text-danger font-weight-bold"><i
-                            class="fas fa-sign-out-alt"></i> <span class="d-none d-md-inline">SAIR</span></a></li>
+                            class="fas fa-sign-out-alt"></i> SAIR</a></li>
             </ul>
         </nav>
 
@@ -212,6 +187,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
         <div class="content-wrapper">
             <section class="content pt-3">
                 <div class="container-fluid">
+
                     <?php if ($status['pode'] ?? false): ?>
                         <div class="alert alert-success shadow border-0 mt-3"
                             style="background-color: #d4edda; border-left: 5px solid #28a745 !important;">
@@ -219,7 +195,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 <i class="fas fa-medal fa-2x mr-3 text-success"></i>
                                 <div>
                                     <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
-                                    <small><?php echo $status['mensagem'] ?? ''; ?></small>
+                                    <small><?php echo htmlspecialchars($status['mensagem'] ?? ''); ?></small>
                                 </div>
                             </div>
                         </div>
@@ -246,12 +222,11 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                     </div>
                                     <div class="mt-5 text-left px-md-4">
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span><i class="fas fa-calendar-check mr-1 text-success"></i> Frequência
-                                                (Aulas)</span>
+                                            <span><i class="fas fa-calendar-check mr-1 text-success"></i>
+                                                Frequência</span>
                                             <span><?php echo $aulas_atuais; ?> / <?php echo $meta_aulas; ?> Aulas</span>
                                         </div>
-                                        <div class="progress mb-4"
-                                            style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
+                                        <div class="progress mb-4" style="height: 18px; border-radius: 10px;">
                                             <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $porcentagem_progresso ?>%">
                                                 <?php echo round($porcentagem_progresso); ?>%
@@ -260,10 +235,9 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
                                             <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica</span>
                                             <span><?php echo $tecnicas_concluidas; ?> /
-                                                <?php echo $total_geral_tecnicas; ?> Selos</span>
+                                                <?php echo $total_geral_tecnicas; ?></span>
                                         </div>
-                                        <div class="progress"
-                                            style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
+                                        <div class="progress" style="height: 18px; border-radius: 10px;">
                                             <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $progresso_maestria; ?>%">
                                                 <?php echo round($progresso_maestria); ?>%
@@ -276,7 +250,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 <?php if ($status['pode'] ?? false): ?>
                                     <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
                                         class="btn btn-success btn-lg btn-block pulse shadow"><i
-                                            class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU / FAIXA</button>
+                                            class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU</button>
                                 <?php else: ?>
                                     <button class="btn btn-secondary btn-block disabled" disabled><i
                                             class="fas fa-lock mr-2"></i> FALTA <?php echo ($meta_aulas - $aulas_atuais); ?>
@@ -291,7 +265,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                             <div class="card shadow-sm border-0 mb-4">
                                 <div class="card-header bg-dark">
                                     <h3 class="card-title font-weight-bold"><i
-                                            class="fas fa-medal mr-2 text-warning"></i>Meus Selos de Técnica</h3>
+                                            class="fas fa-award mr-2 text-warning"></i>Meus Selos</h3>
                                 </div>
                                 <div class="card-body bg-light p-3">
                                     <?php
@@ -306,32 +280,25 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             $grupos[$posicao_label][] = $hab;
                                         }
                                         foreach ($grupos as $posicao_titulo => $tecnicas) { ?>
-                                            <div class="row mt-3 mb-2">
-                                                <div class="col-12">
-                                                    <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1">
-                                                        <?php echo $posicao_titulo; ?></h6>
-                                                </div>
-                                            </div>
+                                            <h6 class="text-uppercase font-weight-bold text-dark border-bottom pb-1 mt-3">
+                                                <?php echo $posicao_titulo; ?></h6>
                                             <div class="row">
                                                 <?php foreach ($tecnicas as $hab) {
                                                     $status_nome = mb_strtolower($hab['status'] ?? '');
                                                     $cor_selo = ($status_nome == 'dominado' || $status_nome == 'concluído') ? 'badge-success' : 'badge-warning';
                                                 ?>
-                                                    <div class="col-6 col-md-4 col-lg-3 mb-3">
-                                                        <div class="card h-100 shadow-sm border" style="border-radius: 10px;">
+                                                    <div class="col-6 col-md-3 mb-3">
+                                                        <div class="card h-100 shadow-sm border-0" style="border-radius: 10px;">
                                                             <div
                                                                 class="card-body p-2 text-center d-flex flex-column justify-content-between">
-                                                                <strong class="d-block text-uppercase mb-2"
-                                                                    style="font-size: 0.75rem;"><?php echo $hab['tecnica'] ?? 'Técnica'; ?></strong>
-                                                                <div>
+                                                                <strong
+                                                                    class="d-block text-uppercase small"><?php echo htmlspecialchars($hab['tecnica']); ?></strong>
+                                                                <div class="mt-2">
                                                                     <span
-                                                                        class="badge <?php echo $cor_selo; ?> w-100 mb-1"><?php echo strtoupper($hab['status'] ?? 'PENDENTE'); ?></span>
+                                                                        class="badge <?php echo $cor_selo; ?> w-100 mb-1"><?php echo strtoupper($hab['status']); ?></span>
                                                                     <?php if ($status_nome != 'dominado' && $status_nome != 'concluído'): ?>
                                                                         <button class="btn btn-xs btn-primary btn-block"
                                                                             onclick="abrirLeitorQR('tecnica', '<?php echo $hab['tecnica']; ?>', '<?php echo $hab['id']; ?>')">VALIDAR</button>
-                                                                    <?php else: ?>
-                                                                        <small class="text-success font-weight-bold"><i
-                                                                                class="fas fa-check-double"></i> VALIDADO</small>
                                                                     <?php endif; ?>
                                                                 </div>
                                                             </div>
@@ -345,78 +312,8 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                             </div>
                         </div>
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="card shadow-sm border-0">
-                                <div class="card-header bg-dark">
-                                    <h3 class="card-title font-weight-bold"><i class="fas fa-history mr-2"></i>Aulas
-                                        Particulares</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <?php
-                                        $query_ap = $pdo->prepare("SELECT p.*, u.nome as nome_professor FROM pedidos_aulas p INNER JOIN usuarios u ON p.id_professor = u.id WHERE p.id_aluno = :id AND p.status = 'Aprovado' ORDER BY p.data_aula DESC");
-                                        $query_ap->bindValue(":id", $id_usuario);
-                                        $query_ap->execute();
-                                        $res_ap = $query_ap->fetchAll(PDO::FETCH_ASSOC);
-                                        if (count($res_ap) > 0) {
-                                            foreach ($res_ap as $aula) {
-                                                $data_f = date('d/m/Y', strtotime($aula['data_aula'] ?? 'now')); ?>
-                                                <div class="col-6 col-md-3">
-                                                    <div class="info-box shadow-none border">
-                                                        <span class="info-box-icon bg-success elevation-1"><i
-                                                                class="fas fa-user-check"></i></span>
-                                                        <div class="info-box-content">
-                                                            <span class="info-box-text text-uppercase font-weight-bold"
-                                                                style="font-size:10px;"><?php echo (!empty($aula['tema'])) ? $aula['tema'] : 'Particular'; ?></span>
-                                                            <span
-                                                                class="info-box-number small text-muted"><?php echo $data_f; ?></span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                        <?php }
-                                        } ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </section>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalPerfil" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title">Editar Perfil</h5><button type="button" class="close text-white"
-                        data-dismiss="modal"><span>&times;</span></button>
-                </div>
-                <form id="form-perfil-completo" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-8">
-                                <div class="form-group"><label>Nome Completo</label><input type="text"
-                                        class="form-control" name="nome" value="<?php echo $nome_usuario ?>" required>
-                                </div>
-                                <div class="form-group"><label>Telefone</label><input type="text" class="form-control"
-                                        name="telefone" value="<?php echo $telefone_usuario ?>"></div>
-                            </div>
-                            <div class="col-4 text-center">
-                                <img src="../images/perfil/<?php echo $foto_usuario; ?>" id="target-perfil"
-                                    class="img-fluid rounded-circle border mb-2"
-                                    style="width:100px; height:100px; object-fit:cover;">
-                                <input type="file" name="foto" id="foto-perfil" onChange="carregarImgPerfil();"
-                                    style="display:none;"><button type="button" class="btn btn-xs btn-outline-dark"
-                                    onclick="$('#foto-perfil').click();">Alterar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer"><button type="submit" class="btn btn-dark w-100">SALVAR</button></div>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -424,18 +321,16 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-qrcode mr-2"></i>Validar Técnica</h5>
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-qrcode mr-2"></i>Validar</h5>
                     <button type="button" class="close text-white" data-dismiss="modal"
                         onclick="pararCamera()"><span>&times;</span></button>
                 </div>
                 <div class="modal-body p-3">
-                    <div style="overflow: hidden; border-radius: 15px; position: relative; background: #000;">
-                        <div id="reader"></div>
-                    </div>
+                    <div id="reader"></div>
                     <input type="hidden" id="tipo_v"><input type="hidden" id="id_v">
                     <div class="text-center mt-3">
-                        <h6 class="font-weight-bold text-uppercase mb-1" id="nome_v"></h6>
-                        <p class="small text-muted mb-0">Aproxime do QR Code do seu Professor</p>
+                        <h6 class="font-weight-bold text-uppercase" id="nome_v"></h6>
+                        <p class="small text-muted">Aponte para o QR Code do Instrutor</p>
                     </div>
                 </div>
             </div>
@@ -448,37 +343,21 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
     <script>
         let html5QrCode;
 
-        function carregarImgPerfil() {
-            var target = document.getElementById('target-perfil');
-            var file = document.querySelector('#foto-perfil').files[0];
-            var reader = new FileReader();
-            reader.onloadend = function() {
-                target.src = reader.result;
-            };
-            if (file) reader.readAsDataURL(file);
-        }
-
         function abrirLeitorQR(tipo, nome, id = 0) {
             $('#tipo_v').val(tipo);
             $('#id_v').val(id);
             $('#nome_v').text(nome);
             $('#modalQR').modal('show');
-            let larguraModal = document.getElementById('reader').clientWidth;
-            let qrBoxSize = Math.floor(larguraModal * 0.7);
+
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({
                 facingMode: "environment"
             }, {
                 fps: 10,
-                qrbox: {
-                    width: qrBoxSize,
-                    height: qrBoxSize
-                },
-                aspectRatio: 1.0
+                qrbox: 250
             }, (txt) => {
                 pararCamera();
-                let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
-                    "validar-estudo.php" : "validar-tecnica.php");
+                let url = (tipo == 'graduacao') ? "validar-promocao.php" : "validar-tecnica.php";
                 $.post(url, {
                     token_professor: txt,
                     id: id
@@ -491,16 +370,12 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                         $('#modalQR').modal('hide');
                     }
                 });
-            }).catch(err => {
-                console.error("Erro ao iniciar câmera", err);
-            });
+            }).catch(err => console.error(err));
         }
 
         function pararCamera() {
             if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                });
+                html5QrCode.stop().then(() => html5QrCode.clear());
             }
         }
 
@@ -513,9 +388,6 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                 $('#resultado_pesquisa').fadeIn().html(data);
             });
         }
-        $("#buscar_aluno").keypress(function(e) {
-            if (e.which == 13) pesquisarEvolucao();
-        });
     </script>
 </body>
 
