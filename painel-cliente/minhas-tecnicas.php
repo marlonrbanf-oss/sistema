@@ -2,7 +2,8 @@
 @session_start();
 require_once("../conexao.php");
 
-if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente') {
+// Verificação de Acesso - Padronizada com autenticar.php
+if (!isset($_SESSION['nivel_usuario']) || ($_SESSION['nivel_usuario'] != 'Cliente' && $_SESSION['nivel_usuario'] != 'Atleta')) {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
@@ -12,7 +13,6 @@ $id_usuario = $_SESSION['id_usuario'];
 // --- LÓGICA DE APROVAÇÃO DE PARCEIRO ---
 if (isset($_GET['acao']) && $_GET['acao'] == 'aprovar' && isset($_GET['id_log'])) {
     $id_log = $_GET['id_log'];
-    // Atualiza para confirmar que você aceita ser o parceiro (exemplo de lógica de confirmação)
     $res = $pdo->prepare("UPDATE tecnicas_estudo SET parceiro_confirmado = 'Sim' WHERE id = :id AND ultimo_parceiro_id = :meu_id");
     $res->bindValue(":id", $id_log);
     $res->bindValue(":meu_id", $id_usuario);
@@ -35,6 +35,8 @@ if (isset($_POST['nome_tecnica']) && !isset($_POST['id_log'])) {
             $res->bindValue(":nome", $nome_tecnica);
             $res->execute();
             echo "<script>alert('Técnica adicionada!'); window.location='minhas-tecnicas.php'</script>";
+        } else {
+            echo "<script>alert('Você já está estudando esta técnica!'); window.location='minhas-tecnicas.php'</script>";
         }
     }
 }
@@ -44,7 +46,7 @@ if (isset($_POST['id_log'])) {
     $id_registro = $_POST['id_log'];
     $novas_reps = (int)$_POST['quantidade_reps'];
     $parceiro_nome = trim($_POST['parceiro']);
-    $parceiro_id = $_POST['parceiro_id'] ?? null;
+    $parceiro_id = !empty($_POST['parceiro_id']) ? $_POST['parceiro_id'] : null;
 
     if ($novas_reps > 0) {
         $res = $pdo->prepare("UPDATE tecnicas_estudo SET repeticoes = repeticoes + :reps, ultimo_parceiro = :parceiro, ultimo_parceiro_id = :p_id, data_ultima_pratica = CURDATE(), parceiro_confirmado = 'Não' WHERE id = :id AND usuario_id = :user_id");
@@ -81,6 +83,7 @@ if (isset($_POST['id_log'])) {
         .card-tecnica {
             transition: 0.3s;
             border-left: 4px solid #007bff;
+            height: 100%;
         }
 
         .stats-diario {
@@ -100,12 +103,13 @@ if (isset($_POST['id_log'])) {
             border-radius: 10px;
         }
 
-        /* Estilo para a lista de busca de alunos */
         .lista-busca {
             position: absolute;
             z-index: 1000;
             width: 100%;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -122,16 +126,18 @@ if (isset($_POST['id_log'])) {
                     $query_solic->bindValue(":id", $id_usuario);
                     $query_solic->execute();
                     $solics = $query_solic->fetchAll(PDO::FETCH_ASSOC);
+
                     if (count($solics) > 0): ?>
                         <div class="alert alert-warning shadow-sm">
                             <h5><i class="fas fa-users mr-2"></i> Solicitações de Parceiro</h5>
                             <ul class="list-unstyled mb-0">
                                 <?php foreach ($solics as $s): ?>
                                     <li class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                        <span><strong><?php echo $s['aluno']; ?></strong> treinou
-                                            <strong><?php echo $s['nome_tecnica']; ?></strong> com você.</span>
+                                        <span><strong><?php echo htmlspecialchars($s['aluno']); ?></strong> treinou
+                                            <strong><?php echo htmlspecialchars($s['nome_tecnica']); ?></strong> com
+                                            você.</span>
                                         <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
-                                            class="btn btn-xs btn-success">Confirmar</a>
+                                            class="btn btn-xs btn-success shadow-sm">Confirmar</a>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
@@ -147,8 +153,10 @@ if (isset($_POST['id_log'])) {
                                 <div class="input-group">
                                     <input type="text" name="nome_tecnica" class="form-control"
                                         placeholder="Ex: De la Riva invertida..." required>
-                                    <div class="input-group-append"><button class="btn btn-primary" type="submit"><i
-                                                class="fas fa-plus mr-1"></i> ADICIONAR</button></div>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="submit"><i class="fas fa-plus mr-1"></i>
+                                            ADICIONAR</button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -162,43 +170,50 @@ if (isset($_POST['id_log'])) {
                         $query_progresso->execute();
                         $res_prog = $query_progresso->fetchAll(PDO::FETCH_ASSOC);
 
-                        foreach ($res_prog as $t) { ?>
-                            <div class="col-md-4 mb-3">
-                                <div class="card card-tecnica shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="mb-2">
-                                            <strong><?php echo htmlspecialchars($t['nome_tecnica'] ?? ''); ?></strong>
-                                        </h6>
-                                        <div class="stats-diario">
-                                            <i class="fas fa-redo-alt mr-1"></i> Total: <span
-                                                class="badge-repeticoes"><?php echo $t['repeticoes'] ?? 0; ?></span><br>
-                                            <small class="text-muted"><i class="fas fa-user mr-1"></i> Parceiro:
-                                                <?php echo htmlspecialchars($t['ultimo_parceiro'] ?? 'Não registrado'); ?></small>
-                                        </div>
-
-                                        <form method="POST" class="mt-2 p-2 border rounded bg-light">
-                                            <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
-                                            <div class="row no-gutters">
-                                                <div class="col-3">
-                                                    <input type="number" name="quantidade_reps"
-                                                        class="form-control form-control-sm" placeholder="Reps" required
-                                                        min="1">
-                                                </div>
-                                                <div class="col-9 pl-1 position-relative">
-                                                    <input type="text" name="parceiro"
-                                                        class="form-control form-control-sm input-busca-aluno"
-                                                        placeholder="Buscar parceiro..." autocomplete="off">
-                                                    <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
-                                                    <div class="list-group lista-busca d-none"></div>
-                                                </div>
+                        if (count($res_prog) > 0) {
+                            foreach ($res_prog as $t) {
+                                $reps = isset($t['repeticoes']) ? $t['repeticoes'] : 0;
+                                $parceiro = !empty($t['ultimo_parceiro']) ? $t['ultimo_parceiro'] : 'Não registrado';
+                        ?>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card card-tecnica shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">
+                                                <strong><?php echo htmlspecialchars($t['nome_tecnica'] ?? 'Técnica'); ?></strong>
+                                            </h6>
+                                            <div class="stats-diario">
+                                                <i class="fas fa-redo-alt mr-1"></i> Total: <span
+                                                    class="badge-repeticoes"><?php echo $reps; ?></span><br>
+                                                <small class="text-muted"><i class="fas fa-user mr-1"></i> Parceiro:
+                                                    <?php echo htmlspecialchars($parceiro); ?></small>
                                             </div>
-                                            <button type="submit" class="btn btn-xs btn-block btn-success mt-2"><i
-                                                    class="fas fa-check mr-1"></i> Salvar Prática</button>
-                                        </form>
+
+                                            <form method="POST" class="mt-2 p-2 border rounded bg-light">
+                                                <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
+                                                <div class="row no-gutters">
+                                                    <div class="col-3">
+                                                        <input type="number" name="quantidade_reps"
+                                                            class="form-control form-control-sm" placeholder="Reps" required
+                                                            min="1">
+                                                    </div>
+                                                    <div class="col-9 pl-1 position-relative">
+                                                        <input type="text" name="parceiro"
+                                                            class="form-control form-control-sm input-busca-aluno"
+                                                            placeholder="Quem treinou?" autocomplete="off">
+                                                        <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
+                                                        <div class="list-group lista-busca d-none"></div>
+                                                    </div>
+                                                </div>
+                                                <button type="submit" class="btn btn-xs btn-block btn-success mt-2"><i
+                                                        class="fas fa-check mr-1"></i> Salvar Prática</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        <?php } ?>
+                        <?php }
+                        } else {
+                            echo "<div class='col-12'><p class='text-muted'>Nenhuma técnica em estudo no momento.</p></div>";
+                        } ?>
                     </div>
                 </div>
             </section>
@@ -211,11 +226,9 @@ if (isset($_POST['id_log'])) {
 
     <script>
         $(document).ready(function() {
-            // Lógica de Autocomplete
             $('.input-busca-aluno').on('keyup', function() {
                 let query = $(this).val();
                 let lista = $(this).siblings('.lista-busca');
-
                 if (query.length > 2) {
                     $.ajax({
                         url: 'buscar_alunos.php',
@@ -232,19 +245,16 @@ if (isset($_POST['id_log'])) {
                 }
             });
 
-            // Ao clicar em um aluno da lista
             $(document).on('click', '.item-aluno', function(e) {
                 e.preventDefault();
                 let nome = $(this).data('nome');
                 let id = $(this).data('id');
                 let form_div = $(this).closest('.position-relative');
-
                 form_div.find('.input-busca-aluno').val(nome);
                 form_div.find('.aluno-id-hidden').val(id);
                 form_div.find('.lista-busca').addClass('d-none');
             });
 
-            // Fechar lista ao clicar fora
             $(document).click(function(e) {
                 if (!$(e.target).closest('.position-relative').length) {
                     $('.lista-busca').addClass('d-none');
