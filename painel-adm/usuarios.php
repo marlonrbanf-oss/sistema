@@ -504,6 +504,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     data: $(this).serialize(),
                     success: function(mensagem) {
                         if (mensagem.trim() === "Salvo com Sucesso") {
+                            // Captura os dados para a mensagem
                             let nomeAluno = $("input[name='nome']").val();
                             let emailAluno = $("input[name='email']").val();
                             let senhaAluno = $("input[name='senha']").val();
@@ -513,19 +514,23 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
                             if (nivelAcesso === 'Cliente' && telefoneAluno !== "") {
                                 let texto = "Olá *" + nomeAluno +
-                                    "*! 👋\n\nSeja muito bem-vindo(a) à *Nova Arte BJJ*! 🥋\nSeu cadastro foi realizado com sucesso.\n\n📍 *DADOS DE ACESSO AO PAINEL:*\n🔗 Link de Acesso: https://sistema-production-e48b.up.railway.app/login.php\n📧 Usuário: `" +
-                                    emailAluno + "`\n🔑 Senha: `" + senhaAluno +
-                                    "`\n\nNo painel você poderá acompanhar suas aulas e progresso! \n\n*OSS!*";
+                                    "*! 👋\n\nSeja muito bem-vindo(a) à *Nova Arte BJJ*! 🥋\nSeu cadastro foi realizado com sucesso.\n\n📍 *DADOS DE ACESSO:*\n🔗 Link: https://sistema-production-e48b.up.railway.app/login.php\n📧 Usuário: `" +
+                                    emailAluno + "`\n🔑 Senha: `" + senhaAluno + "`\n\n*OSS!*";
                                 let linkZap = "https://api.whatsapp.com/send?phone=55" +
                                     telefoneAluno + "&text=" + encodeURIComponent(texto);
-                                alert(
-                                    "Usuário salvo! Clique em OK para enviar os dados de acesso via WhatsApp."
-                                );
+
+                                // 1. Abre o WhatsApp primeiro
                                 window.open(linkZap, '_blank');
+
+                                // 2. Aguarda meio segundo antes de recarregar a página (O PULO DO GATO)
+                                setTimeout(function() {
+                                    window.location = "usuarios.php";
+                                }, 500);
+
                             } else {
-                                alert(mensagem);
+                                // Se não for aluno ou não tiver tel, redireciona na hora
+                                window.location = "usuarios.php";
                             }
-                            window.location = "usuarios.php";
                         } else {
                             alert(mensagem);
                             $('#btn-salvar').text('SALVAR NOVO USUÁRIO').attr('disabled',
