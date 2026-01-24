@@ -2,16 +2,28 @@
 // Pega o nome do arquivo atual para marcar o menu como ativo
 $pagina_atual = basename($_SERVER['PHP_SELF']);
 
-// --- PROTEÇÃO DE VARIÁVEIS DO USUÁRIO ---
-// Garante que o menu não quebre caso a página pai não tenha carregado os dados
-$nome_display = isset($nome_usuario) ? $nome_usuario : (isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuario'] : 'Usuário');
-$foto_display = (isset($foto_usuario) && !empty($foto_usuario)) ? $foto_usuario : 'usuario-icone-claro.png';
+// --- PROTEÇÃO DE VARIÁVEIS E COMPATIBILIDADE ---
+// Se por algum motivo o index não carregou o nome, buscamos direto da sessão
+$nome_display = 'Usuário';
+if (isset($nome_usuario)) {
+    $nome_display = $nome_usuario;
+} elseif (isset($_SESSION['nome_usuario'])) {
+    $nome_display = $_SESSION['nome_usuario'];
+}
+
+// Lógica de foto com verificação de existência física
+$foto_display = 'usuario-icone-claro.png';
+if (isset($foto_usuario) && !empty($foto_usuario)) {
+    $foto_display = $foto_usuario;
+} elseif (isset($_SESSION['foto_usuario']) && !empty($_SESSION['foto_usuario'])) {
+    $foto_display = $_SESSION['foto_usuario'];
+}
 ?>
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <div class="brand-link text-center border-secondary">
+    <a href="index.php" class="brand-link text-center border-secondary">
         <span class="brand-text font-weight-bold">NOVA ARTE BJJ</span>
-    </div>
+    </a>
 
     <div class="sidebar">
         <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
@@ -21,17 +33,18 @@ $foto_display = (isset($foto_usuario) && !empty($foto_usuario)) ? $foto_usuario 
                     onerror="this.src='../images/perfil/usuario-icone-claro.png';">
             </div>
             <div class="info d-flex align-items-center justify-content-between w-100">
-                <a href="#" class="d-block text-white text-truncate" style="max-width: 140px;">
+                <a href="#" class="d-block text-white text-truncate" style="max-width: 120px; font-size: 0.9rem;">
                     <?php echo htmlspecialchars($nome_display); ?>
                 </a>
-                <a href="#" data-toggle="modal" data-target="#modalPerfil" class="text-white-50 ml-2">
-                    <i class="fas fa-edit"></i>
+                <a href="#" data-toggle="modal" data-target="#modalPerfil" class="text-white-50 ml-2"
+                    title="Editar Perfil">
+                    <i class="fas fa-edit fa-xs"></i>
                 </a>
             </div>
         </div>
 
         <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+            <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu">
 
                 <li class="nav-item">
                     <a href="index.php" class="nav-link <?php echo ($pagina_atual == 'index.php') ? 'active' : ''; ?>">
@@ -64,10 +77,12 @@ $foto_display = (isset($foto_usuario) && !empty($foto_usuario)) ? $foto_usuario 
                     </a>
                 </li>
 
+                <li class="nav-item border-bottom border-secondary mb-2"></li>
+
                 <li class="nav-item">
                     <a href="mensalidades.php"
                         class="nav-link <?php echo ($pagina_atual == 'mensalidades.php') ? 'active' : ''; ?>">
-                        <i class="nav-icon fas fa-receipt"></i>
+                        <i class="nav-icon fas fa-receipt text-success"></i>
                         <p>Financeiro</p>
                     </a>
                 </li>
@@ -85,6 +100,14 @@ $foto_display = (isset($foto_usuario) && !empty($foto_usuario)) ? $foto_usuario 
                         class="nav-link <?php echo ($pagina_atual == 'graficos_evolucao.php') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-chart-pie text-warning"></i>
                         <p>Meus Gráficos <span class="badge badge-info right">Novo</span></p>
+                    </a>
+                </li>
+
+                <li class="nav-header mt-3">SISTEMA</li>
+                <li class="nav-item">
+                    <a href="../logout.php" class="nav-link text-danger">
+                        <i class="nav-icon fas fa-sign-out-alt"></i>
+                        <p>Sair</p>
                     </a>
                 </li>
 
