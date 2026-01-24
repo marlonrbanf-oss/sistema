@@ -100,35 +100,35 @@ if (isset($_POST['id_log'])) {
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <style>
-        .card-tecnica {
-            border-left: 4px solid #007bff;
-        }
+    .card-tecnica {
+        border-left: 4px solid #007bff;
+    }
 
-        .badge-reps {
-            background: #28a745;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-weight: bold;
-        }
+    .badge-reps {
+        background: #28a745;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: bold;
+    }
 
-        .lista-busca {
-            position: absolute;
-            z-index: 1000;
-            width: 100%;
-            background: white;
-            border: 1px solid #ddd;
-            max-height: 150px;
-            overflow-y: auto;
-        }
+    .lista-busca {
+        position: absolute;
+        z-index: 1000;
+        width: 100%;
+        background: white;
+        border: 1px solid #ddd;
+        max-height: 150px;
+        overflow-y: auto;
+    }
 
-        .item-aluno {
-            padding: 8px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            display: block;
-            color: #333;
-        }
+    .item-aluno {
+        padding: 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        display: block;
+        color: #333;
+    }
     </style>
 </head>
 
@@ -145,11 +145,11 @@ if (isset($_POST['id_log'])) {
         $query_solic->bindValue(":id", $id_usuario);
         $query_solic->execute();
         while ($s = $query_solic->fetch(PDO::FETCH_ASSOC)) { ?>
-            <div class="alert alert-info elevation-1">
-                <strong><?php echo htmlspecialchars($s['nome']); ?></strong> registrou um treino com você.
-                <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
-                    class="btn btn-sm btn-light ml-2">Confirmar</a>
-            </div>
+        <div class="alert alert-info elevation-1">
+            <strong><?php echo htmlspecialchars($s['nome']); ?></strong> registrou um treino com você.
+            <a href="minhas-tecnicas.php?acao=aprovar&id_log=<?php echo $s['id']; ?>"
+                class="btn btn-sm btn-light ml-2">Confirmar</a>
+        </div>
         <?php } ?>
 
         <div class="card card-primary card-outline shadow-sm mb-4">
@@ -175,34 +175,58 @@ if (isset($_POST['id_log'])) {
             $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($res as $t) { ?>
-                <div class="col-md-4 mb-3">
-                    <div class="card card-tecnica shadow-sm h-100">
-                        <div class="card-body">
-                            <h6 class="font-weight-bold"><?php echo htmlspecialchars($t['nome_tecnica']); ?></h6>
-                            <p class="small text-muted">Reps: <span
-                                    class="badge-reps"><?php echo $t['repeticoes']; ?></span></p>
+            <div class="col-md-4 mb-3">
+                <div class="card card-tecnica shadow-sm h-100">
+                    <div class="card-body">
+                        <h6 class="font-weight-bold"><?php echo htmlspecialchars($t['nome_tecnica']); ?></h6>
+                        <p class="small text-muted">Reps: <span
+                                class="badge-reps"><?php echo $t['repeticoes']; ?></span></p>
 
-                            <form method="POST" class="p-2 border rounded bg-light">
-                                <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
-                                <div class="row no-gutters">
-                                    <div class="col-4"><input type="number" name="quantidade_reps"
-                                            class="form-control form-control-sm" placeholder="Reps" required></div>
-                                    <div class="col-8 pl-1 position-relative">
-                                        <input type="text" class="form-control form-control-sm input-busca-aluno"
-                                            placeholder="Parceiro..." autocomplete="off">
-                                        <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
-                                        <div class="lista-busca d-none"></div>
-                                    </div>
+                        <form method="POST" class="p-2 border rounded bg-light">
+                            <input type="hidden" name="id_log" value="<?php echo $t['id']; ?>">
+                            <div class="row no-gutters">
+                                <div class="col-4"><input type="number" name="quantidade_reps"
+                                        class="form-control form-control-sm" placeholder="Reps" required></div>
+                                <div class="col-8 pl-1 position-relative">
+                                    <input type="text" class="form-control form-control-sm input-busca-aluno"
+                                        placeholder="Parceiro..." autocomplete="off">
+                                    <input type="hidden" name="parceiro_id" class="aluno-id-hidden">
+                                    <div class="lista-busca d-none"></div>
                                 </div>
-                                <button type="submit" class="btn btn-success btn-xs btn-block mt-2">REGISTRAR</button>
-                            </form>
-                        </div>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-xs btn-block mt-2">REGISTRAR</button>
+                        </form>
                     </div>
                 </div>
+            </div>
             <?php } ?>
         </div>
     </div>
 
     <script src="plugins/jquery/jquery.min.js"></script>
     <script>
-        $(document).on('keyup', '.input-busca-aluno',
+    $(document).on('keyup', '.input-busca-aluno', function() {
+        let input = $(this);
+        let query = input.val();
+        let lista = input.siblings('.lista-busca');
+        if (query.length > 2) {
+            $.post('buscar_alunos.php', {
+                query: query
+            }, function(data) {
+                lista.removeClass('d-none').html(data);
+            });
+        } else {
+            lista.addClass('d-none');
+        }
+    });
+
+    $(document).on('click', '.item-aluno', function() {
+        let container = $(this).closest('.position-relative');
+        container.find('.input-busca-aluno').val($(this).data('nome'));
+        container.find('.aluno-id-hidden').val($(this).data('id'));
+        $('.lista-busca').addClass('d-none');
+    });
+    </script>
+</body>
+
+</html>
