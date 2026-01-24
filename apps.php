@@ -105,7 +105,8 @@ include_once("conexao.php");
                     <img src="images/logo_aluno.png" class="app-icon" onerror="this.src='images/icon-512.png'">
                     <h5>Portal do Aluno</h5>
                     <p class="small text-muted">Acesso a treinos, selos e frequência.</p>
-                    <button class="btn-install" onclick="iniciarInstalacao('manifest_aluno.json', 'Aluno')">Instalar App</button>
+                    <button class="btn-install" onclick="iniciarInstalacao('manifest_aluno.json', 'Aluno')">Instalar
+                        App</button>
                 </div>
             </div>
 
@@ -114,7 +115,8 @@ include_once("conexao.php");
                     <img src="images/logo_adm.png" class="app-icon" onerror="this.src='images/icon-512.png'">
                     <h5>Painel Administrativo</h5>
                     <p class="small text-muted">Gestão de alunos e staff da academia.</p>
-                    <button class="btn-install" onclick="iniciarInstalacao('manifest_adm.json', 'Administrativo')">Instalar App</button>
+                    <button class="btn-install"
+                        onclick="iniciarInstalacao('manifest_adm.json', 'Administrativo')">Instalar App</button>
                 </div>
             </div>
         </div>
@@ -126,12 +128,15 @@ include_once("conexao.php");
 
     <div id="ios-ready-advice">
         <div class="text-right">
-            <button class="close" onclick="document.getElementById('ios-ready-advice').style.display='none'">&times;</button>
+            <button class="close"
+                onclick="document.getElementById('ios-ready-advice').style.display='none'">&times;</button>
         </div>
         <div class="text-center">
             <p class="mb-2"><strong>Instalar no iPhone (<span id="ios-app-name">App</span>)</strong></p>
-            <p class="small">1. Toque no ícone de <strong>Compartilhar</strong> <i class="fas fa-external-link-alt text-primary"></i> (na barra inferior do Safari).</p>
-            <p class="small">2. Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong> <i class="far fa-plus-square"></i>.</p>
+            <p class="small">1. Toque no ícone de <strong>Compartilhar</strong> <i
+                    class="fas fa-external-link-alt text-primary"></i> (na barra inferior do Safari).</p>
+            <p class="small">2. Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong> <i
+                    class="far fa-plus-square"></i>.</p>
         </div>
     </div>
 
@@ -176,7 +181,9 @@ include_once("conexao.php");
                 });
             } else {
                 // Fallback para navegadores que não suportam prompt automático ou se o evento ainda não disparou
-                alert("Para instalar o App " + appName + ":\n1. Clique nos 3 pontos (ou menu) do navegador.\n2. Escolha 'Instalar Aplicativo' ou 'Adicionar à tela inicial'.");
+                alert("Para instalar o App " + appName +
+                    ":\n1. Clique nos 3 pontos (ou menu) do navegador.\n2. Escolha 'Instalar Aplicativo' ou 'Adicionar à tela inicial'."
+                );
             }
         }
 
