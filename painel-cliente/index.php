@@ -2,22 +2,26 @@
 @session_start();
 require_once("../conexao.php");
 require_once("funcoes-graduacao.php");
+
 if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
+
 $id_usuario = $_SESSION['id_usuario'];
 $status = verificarRequisitos($pdo, $id_usuario);
+
 $query_u = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id");
 $query_u->bindValue(":id", $id_usuario);
 $query_u->execute();
 $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
+
 $nome_usuario = $dados_u['nome'] ?? 'Usuário';
 $foto_usuario = (!empty($dados_u['foto'])) ? $dados_u['foto'] : 'usuario-icone-claro.png';
 $email_usuario = $dados_u['usuario'] ?? '';
 $telefone_usuario = $dados_u['telefone'] ?? '';
 
-// Mantemos a lógica de processamento caso você precise dela em outra página futuramente
+// Lógica de processamento de nova técnica
 if (isset($_POST['nova_tecnica_estudo'])) {
     $tec_nome = $_POST['nova_tecnica_estudo'];
     $res_estudo = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo'");
@@ -27,26 +31,31 @@ if (isset($_POST['nova_tecnica_estudo'])) {
     echo "<script>window.location='index.php'</script>";
 }
 
+// Cálculo de métricas com tratamento para evitar divisão por zero ou índices inexistentes
 $query_total_hab = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id");
 $query_total_hab->bindValue(":id", $id_usuario);
 $query_total_hab->execute();
-$total_geral_tecnicas = $query_total_hab->fetch(PDO::FETCH_ASSOC)['total'] ?? 1;
+$total_geral_tecnicas = $query_total_hab->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+if ($total_geral_tecnicas == 0) $total_geral_tecnicas = 1; // Evita erro de cálculo
+
 $total_faixas_jornada = 7;
 $meta_maestria = $total_geral_tecnicas + $total_faixas_jornada;
 
 $query_maestria = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id AND (status = 'Dominado' OR status = 'Concluído')");
 $query_maestria->bindValue(":id", $id_usuario);
 $query_maestria->execute();
-$tecnicas_concluidas = $query_maestria->fetch(PDO::FETCH_ASSOC)['total'];
+$tecnicas_concluidas = $query_maestria->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
 $niveis_faixa = ['branca' => 1, 'azul' => 2, 'roxa' => 3, 'marrom' => 4, 'preta' => 5, 'coral' => 6, 'vermelha' => 7];
-$nivel_faixa_atual = $niveis_faixa[mb_strtolower($status['faixa'])] ?? 1;
+$faixa_nome_limpo = mb_strtolower($status['faixa'] ?? 'branca');
+$nivel_faixa_atual = $niveis_faixa[$faixa_nome_limpo] ?? 1;
+
 $progresso_maestria = (($tecnicas_concluidas + $nivel_faixa_atual) / $meta_maestria) * 100;
 if ($progresso_maestria > 100) $progresso_maestria = 100;
 
 function tratarCorFaixa($cor)
 {
-    $c = mb_strtolower(trim($cor));
+    $c = mb_strtolower(trim($cor ?? ''));
     $mapa = [
         'branca' => 'white',
         'azul' => '#0000FF',
@@ -59,8 +68,11 @@ function tratarCorFaixa($cor)
     ];
     return $mapa[$c] ?? '#ddd';
 }
-$cor_css = tratarCorFaixa($status['faixa']);
-$porcentagem_progresso = ($status['meta'] > 0) ? ($status['aulas'] / $status['meta']) * 100 : 0;
+
+$cor_css = tratarCorFaixa($status['faixa'] ?? 'branca');
+$meta_aulas = (int)($status['meta'] ?? 0);
+$aulas_concluidas = (int)($status['aulas'] ?? 0);
+$porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_concluidas / $meta_aulas) * 100 : 0;
 if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 ?>
 
@@ -117,7 +129,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
         .belt-bar {
             width: 110px;
             height: 100%;
-            background-color: <?php echo (mb_strtolower($status['faixa']) == 'preta') ? '#d31b1b' : '#000';
+            background-color: <?php echo (mb_strtolower($status['faixa'] ?? '') == 'preta') ? '#d31b1b' : '#000';
                                 ?>;
             position: absolute;
             right: 30px;
@@ -197,7 +209,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 
                     <?php
                     $dados_graduacao = verificarRequisitos($pdo, $id_usuario);
-                    if ($dados_graduacao['pode']):
+                    if (($dados_graduacao['pode'] ?? false)):
                     ?>
                         <div class="alert alert-success shadow border-0 mt-3"
                             style="background-color: #d4edda; border-left: 5px solid #28a745 !important;">
@@ -205,7 +217,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 <i class="fas fa-medal fa-2x mr-3 text-success"></i>
                                 <div>
                                     <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
-                                    <small><?php echo $dados_graduacao['mensagem']; ?></small>
+                                    <small><?php echo $dados_graduacao['mensagem'] ?? ''; ?></small>
                                 </div>
                             </div>
                         </div>
@@ -221,10 +233,13 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 </div>
                                 <div class="card-body text-center">
                                     <h5 class="text-muted">Faixa: <b
-                                            class="text-dark"><?php echo strtoupper($status['faixa']); ?></b></h5>
+                                            class="text-dark"><?php echo strtoupper($status['faixa'] ?? 'BRANCA'); ?></b>
+                                    </h5>
                                     <div class="bjj-belt">
                                         <div class="belt-bar">
-                                            <?php for ($i = 0; $i < $status['grau']; $i++): ?>
+                                            <?php
+                                            $graus = (int)($status['grau'] ?? 0);
+                                            for ($i = 0; $i < $graus; $i++): ?>
                                                 <div class="belt-stripe"></div>
                                             <?php endfor; ?>
                                         </div>
@@ -233,7 +248,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
                                             <span><i class="fas fa-calendar-check mr-1 text-success"></i> Frequência
                                                 (Aulas)</span>
-                                            <span><?php echo $status['aulas']; ?> / <?php echo $status['meta']; ?>
+                                            <span><?php echo $aulas_concluidas; ?> / <?php echo $meta_aulas; ?>
                                                 Aulas</span>
                                         </div>
                                         <div class="progress mb-4"
@@ -259,14 +274,14 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                 </div>
                             </div>
                             <div class="card shadow-sm border-0 p-3 mb-4">
-                                <?php if ($status['pode']): ?>
+                                <?php if (($status['pode'] ?? false)): ?>
                                     <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
                                         class="btn btn-success btn-lg btn-block pulse shadow"><i
                                             class="fas fa-qrcode mr-2"></i> VALIDAR MEU GRAU / FAIXA</button>
                                 <?php else: ?>
                                     <button class="btn btn-secondary btn-block disabled" disabled><i
                                             class="fas fa-lock mr-2"></i> FALTA
-                                        <?php echo ($status['meta'] - $status['aulas']); ?> AULAS</button>
+                                        <?php echo ($meta_aulas - $aulas_concluidas); ?> AULAS</button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -300,7 +315,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                             </div>
                                             <div class="row">
                                                 <?php foreach ($tecnicas as $hab) {
-                                                    $status_nome = mb_strtolower($hab['status']);
+                                                    $status_nome = mb_strtolower($hab['status'] ?? '');
                                                     $cor_selo = ($status_nome == 'dominado' || $status_nome == 'concluído') ? 'badge-success' : 'badge-warning';
                                                 ?>
                                                     <div class="col-6 col-md-4 col-lg-3 mb-3">
@@ -355,7 +370,7 @@ if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
                                                                 class="fas fa-user-check"></i></span>
                                                         <div class="info-box-content">
                                                             <span class="info-box-text text-uppercase font-weight-bold"
-                                                                style="font-size:10px;"><?php echo $aula['tema'] ?: 'Particular'; ?></span>
+                                                                style="font-size:10px;"><?php echo ($aula['tema'] ?? '') ?: 'Particular'; ?></span>
                                                             <span
                                                                 class="info-box-number small text-muted"><?php echo $data_f; ?></span>
                                                         </div>
