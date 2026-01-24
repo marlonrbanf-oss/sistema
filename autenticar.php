@@ -14,7 +14,6 @@ $senha = $_POST['pass'];
 
 try {
 	// 3. Consulta usando PDO Prepare para evitar SQL Injection
-	// Buscamos o usuário. Note que não filtramos o nível no WHERE para poder identificar o erro depois.
 	$res = $pdo->prepare("SELECT * FROM usuarios WHERE usuario = :usuario AND senha = :senha");
 	$res->bindValue(":usuario", $usuario);
 	$res->bindValue(":senha", $senha);
@@ -26,13 +25,12 @@ try {
 	if ($linhas > 0) {
 		$row = $dados[0];
 
-		// --- LÓGICA DE COMPATIBILIDADE ---
-		// Verifica qual nome de coluna seu banco está usando (nivel ou nivel_usuario)
-		// Isso evita que o login quebre se você renomear a coluna no banco.
+		// --- LÓGICA DE COMPATIBILIDADE DE COLUNAS ---
+		// Identifica se o banco usa 'nivel_usuario' ou 'nivel'
 		$nivel = '';
-		if (isset($row['nivel_usuario'])) {
+		if (!empty($row['nivel_usuario'])) {
 			$nivel = $row['nivel_usuario'];
-		} elseif (isset($row['nivel'])) {
+		} elseif (!empty($row['nivel'])) {
 			$nivel = $row['nivel'];
 		}
 
@@ -40,16 +38,24 @@ try {
 		$_SESSION['id_usuario'] = $row['id'];
 		$_SESSION['nome_usuario'] = $row['nome'];
 		$_SESSION['email_usuario'] = $row['usuario'];
-		$_SESSION['nivel_usuario'] = $nivel; // Padronizamos a sessão como 'nivel_usuario'
+
+		// --- AQUI ESTÁ O SEGREDO DA COMPATIBILIDADE ---
+		// Definimos as duas sessões para que painéis antigos e novos funcionem simultaneamente
+		$_SESSION['nivel_usuario'] = $nivel;
+		$_SESSION['nivel'] = $nivel;
 
 		// 5. Redirecionamento baseado no nível
-		if ($nivel == 'Admin') {
+		// Usamos mb_strtolower para evitar problemas com 'admin' vs 'Admin'
+		$nivel_check = mb_strtolower($nivel);
+
+		if ($nivel_check == 'admin') {
 			echo "<script language='javascript'>window.location='painel-adm/index.php'; </script>";
 			exit();
-		} else if ($nivel == 'Balconista' || $nivel == 'Professor') {
+		} else if ($nivel_check == 'balconista' || $nivel_check == 'professor') {
 			echo "<script language='javascript'>window.location='painel-balcao/index.php'; </script>";
 			exit();
-		} else if ($nivel == 'Cliente') {
+		} else if ($nivel_check == 'cliente' || $nivel_check == 'atleta') {
+			// Se o nível for Atleta, ele também entra no painel do cliente
 			echo "<script language='javascript'>window.location='painel-cliente/index.php'; </script>";
 			exit();
 		} else {
@@ -63,6 +69,7 @@ try {
 		exit();
 	}
 } catch (PDOException $e) {
-	echo "Erro no banco de dados: " . $e->getMessage();
+	echo "Erro técnico no banco de dados. Por favor, contate o suporte.";
+	// Em produção, você pode logar o erro: error_log($e->getMessage());
 	exit();
 }
