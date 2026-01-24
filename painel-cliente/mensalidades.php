@@ -2,8 +2,17 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. Verificação de Segurança
-if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente') {
+// --- AJUSTE DE COMPATIBILIDADE DE COLUNA ---
+$coluna_nivel = 'nivel';
+try {
+    $pdo->query("SELECT nivel_usuario FROM usuarios LIMIT 1");
+    $coluna_nivel = 'nivel_usuario';
+} catch (Exception $e) {
+    $coluna_nivel = 'nivel';
+}
+
+// 1. Verificação de Segurança (Compatível com ambas as colunas)
+if (!isset($_SESSION['id_usuario']) || !isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
@@ -11,7 +20,7 @@ if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente
 $id_usuario = $_SESSION['id_usuario'];
 $hoje = date('Y-m-d');
 
-// 2. Busca dados do Aluno (Tabela 'usuarios' possui 'data_venc')
+// 2. Busca dados do Aluno
 $query_u = $pdo->prepare("SELECT nome, data_venc FROM usuarios WHERE id = :id");
 $query_u->bindValue(":id", $id_usuario);
 $query_u->execute();
@@ -28,11 +37,15 @@ if ($vencimento_cadastro && strtotime($vencimento_cadastro) < strtotime($hoje)) 
     $classe_card = "bg-success";
 }
 
-// 3. Busca Histórico (CORREÇÃO: Usando 'data_vencimento' que é o nome real na sua tabela)
-$query_m = $pdo->prepare("SELECT * FROM mensalidades WHERE usuario_id = :id ORDER BY data_vencimento DESC");
-$query_m->bindValue(":id", $id_usuario);
-$query_m->execute();
-$res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
+// 3. Busca Histórico (Usando data_vencimento conforme sua estrutura)
+try {
+    $query_m = $pdo->prepare("SELECT * FROM mensalidades WHERE usuario_id = :id ORDER BY data_vencimento DESC");
+    $query_m->bindValue(":id", $id_usuario);
+    $query_m->execute();
+    $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $res_m = []; // Evita erro na tela se a tabela mensalidades não existir
+}
 ?>
 
 <!DOCTYPE html>
@@ -48,12 +61,18 @@ $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
         .card-mensalidade {
             border-radius: 15px;
             border: none;
+            transition: transform 0.3s;
         }
 
         .status-badge {
             border-radius: 50px;
             padding: 5px 15px;
             font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .bg-light-custom {
+            background-color: #f8f9fa;
         }
     </style>
 </head>
@@ -73,23 +92,30 @@ $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
                         <div class="col-md-4">
                             <div class="card card-mensalidade shadow <?php echo $classe_card; ?> text-white p-3 mb-4">
                                 <div class="card-body">
-                                    <h6 class="text-uppercase small">Vencimento Atual</h6>
+                                    <h6 class="text-uppercase small" style="opacity: 0.8;">Vencimento Atual</h6>
                                     <h1 class="font-weight-bold">
                                         <?php echo ($vencimento_cadastro) ? date('d/m/Y', strtotime($vencimento_cadastro)) : '--/--/----'; ?>
                                     </h1>
                                     <hr style="border-top: 1px solid rgba(255,255,255,0.2)">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span>STATUS: <b><?php echo $status_card; ?></b></span>
-                                        <i class="fas fa-shield-alt fa-2x"></i>
+                                        <i class="fas fa-shield-alt fa-2x" style="opacity: 0.5;"></i>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="alert alert-light border shadow-sm small">
+                                <i class="fas fa-info-circle mr-1 text-primary"></i>
+                                Para pagamentos via Pix ou Cartão, procure a recepção da academia.
                             </div>
                         </div>
 
                         <div class="col-md-8">
                             <div class="card card-mensalidade shadow">
-                                <div class="card-header bg-white border-0 py-3">
-                                    <h5 class="card-title font-weight-bold">Histórico de Mensalidades</h5>
+                                <div
+                                    class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title font-weight-bold mb-0">Histórico de Mensalidades</h5>
+                                    <i class="fas fa-history text-muted"></i>
                                 </div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
@@ -104,14 +130,16 @@ $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
                                             <tbody>
                                                 <?php if (count($res_m) > 0): ?>
                                                     <?php foreach ($res_m as $m):
-                                                        $st = $m['status'];
-                                                        $classe_st = ($st == 'Pago') ? 'badge-success' : 'badge-warning';
+                                                        $st = $m['status'] ?? 'Pendente';
+                                                        $classe_st = (mb_strtolower($st) == 'pago') ? 'badge-success' : 'badge-warning';
+                                                        $data_venc = $m['data_vencimento'] ?? $m['vencimento'] ?? null;
+                                                        $valor = $m['valor'] ?? 0;
                                                     ?>
                                                         <tr>
                                                             <td class="font-weight-bold">
-                                                                <?php echo date('d/m/Y', strtotime($m['data_vencimento'])); ?>
+                                                                <?php echo ($data_venc) ? date('d/m/Y', strtotime($data_venc)) : '---'; ?>
                                                             </td>
-                                                            <td>R$ <?php echo number_format($m['valor'], 2, ',', '.'); ?></td>
+                                                            <td>R$ <?php echo number_format($valor, 2, ',', '.'); ?></td>
                                                             <td class="text-center">
                                                                 <span class="badge status-badge <?php echo $classe_st; ?>">
                                                                     <?php echo strtoupper($st); ?>
@@ -122,6 +150,7 @@ $res_m = $query_m->fetchAll(PDO::FETCH_ASSOC);
                                                 <?php else: ?>
                                                     <tr>
                                                         <td colspan="3" class="text-center py-5 text-muted">
+                                                            <i class="fas fa-folder-open d-block fa-2x mb-2 opacity-50"></i>
                                                             Nenhum registro de mensalidade encontrado.
                                                         </td>
                                                     </tr>

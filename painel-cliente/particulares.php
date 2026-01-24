@@ -9,6 +9,16 @@ if (!isset($_SESSION['id_usuario'])) {
 }
 
 $id_aluno = $_SESSION['id_usuario'];
+
+// --- AJUSTE DE COMPATIBILIDADE DE COLUNA ---
+// Verifica se o banco usa 'nivel' ou 'nivel_usuario' para evitar o erro 1054
+$coluna_nivel = 'nivel';
+try {
+    $pdo->query("SELECT nivel_usuario FROM usuarios LIMIT 1");
+    $coluna_nivel = 'nivel_usuario';
+} catch (Exception $e) {
+    $coluna_nivel = 'nivel';
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -49,10 +59,10 @@ $id_aluno = $_SESSION['id_usuario'];
 
         <div class="row">
             <?php
-            /** * QUERY CORRIGIDA: 
-             * Removido 'Admin' para exibir apenas quem é Professor ou Balconista.
+            /** * QUERY CORRIGIDA DINAMICAMENTE: 
+             * Usa a variável $coluna_nivel identificada no topo do arquivo.
              */
-            $query = $pdo->query("SELECT * FROM usuarios WHERE nivel = 'Professor' OR nivel = 'Balconista' ORDER BY nome ASC");
+            $query = $pdo->query("SELECT * FROM usuarios WHERE $coluna_nivel = 'Professor' OR $coluna_nivel = 'Balconista' ORDER BY nome ASC");
             $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
             if (count($res) > 0) {
