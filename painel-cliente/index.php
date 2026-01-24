@@ -2,30 +2,22 @@
 @session_start();
 require_once("../conexao.php");
 require_once("funcoes-graduacao.php");
-
-// 1. Verificação de Segurança
 if (!isset($_SESSION['nivel_usuario']) || $_SESSION['nivel_usuario'] != 'Cliente') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
-
 $id_usuario = $_SESSION['id_usuario'];
-
-// 2. Busca UNIFICADA de Graduação (Regras de aulas, faixa e grau)
 $status = verificarRequisitos($pdo, $id_usuario);
-
-// 3. Busca de Dados Pessoais
 $query_u = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id");
 $query_u->bindValue(":id", $id_usuario);
 $query_u->execute();
 $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
-
 $nome_usuario = $dados_u['nome'] ?? 'Usuário';
 $foto_usuario = (!empty($dados_u['foto'])) ? $dados_u['foto'] : 'usuario-icone-claro.png';
 $email_usuario = $dados_u['usuario'] ?? '';
 $telefone_usuario = $dados_u['telefone'] ?? '';
 
-// --- NOVA LÓGICA: ADICIONAR TÉCNICA DE ESTUDO ---
+// Mantemos a lógica de processamento caso você precise dela em outra página futuramente
 if (isset($_POST['nova_tecnica_estudo'])) {
     $tec_nome = $_POST['nova_tecnica_estudo'];
     $res_estudo = $pdo->prepare("INSERT INTO tecnicas_estudo SET usuario_id = :id, nome_tecnica = :nome, status = 'Em Estudo'");
@@ -35,12 +27,10 @@ if (isset($_POST['nova_tecnica_estudo'])) {
     echo "<script>window.location='index.php'</script>";
 }
 
-// --- AJUSTE: CÁLCULO DINÂMICO DA JORNADA DE MAESTRIA ---
 $query_total_hab = $pdo->prepare("SELECT COUNT(*) as total FROM habilidades WHERE usuario_id = :id");
 $query_total_hab->bindValue(":id", $id_usuario);
 $query_total_hab->execute();
 $total_geral_tecnicas = $query_total_hab->fetch(PDO::FETCH_ASSOC)['total'] ?? 1;
-
 $total_faixas_jornada = 7;
 $meta_maestria = $total_geral_tecnicas + $total_faixas_jornada;
 
@@ -51,7 +41,6 @@ $tecnicas_concluidas = $query_maestria->fetch(PDO::FETCH_ASSOC)['total'];
 
 $niveis_faixa = ['branca' => 1, 'azul' => 2, 'roxa' => 3, 'marrom' => 4, 'preta' => 5, 'coral' => 6, 'vermelha' => 7];
 $nivel_faixa_atual = $niveis_faixa[mb_strtolower($status['faixa'])] ?? 1;
-
 $progresso_maestria = (($tecnicas_concluidas + $nivel_faixa_atual) / $meta_maestria) * 100;
 if ($progresso_maestria > 100) $progresso_maestria = 100;
 
@@ -59,39 +48,21 @@ function tratarCorFaixa($cor)
 {
     $c = mb_strtolower(trim($cor));
     $mapa = [
-        'branca'            => 'white',
-        'azul'              => '#0000FF',
-        'roxa'              => '#8A2BE2',
-        'marrom'            => '#8B4513',
-        'preta'             => 'black',
-        'coral'             => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #000 20%, #000 40%, #ff0000 40%, #ff0000 60%, #000 60%, #000 80%, #ff0000 80%, #ff0000 100%)',
+        'branca' => 'white',
+        'azul' => '#0000FF',
+        'roxa' => '#8A2BE2',
+        'marrom' => '#8B4513',
+        'preta' => 'black',
+        'coral' => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #000 20%, #000 40%, #ff0000 40%, #ff0000 60%, #000 60%, #000 80%, #ff0000 80%, #ff0000 100%)',
         'vermelha e branca' => 'linear-gradient(to right, #ff0000 0%, #ff0000 20%, #fff 20%, #fff 40%, #ff0000 40%, #ff0000 60%, #fff 60%, #fff 80%, #ff0000 80%, #ff0000 100%)',
-        'vermelha'          => 'red'
+        'vermelha' => 'red'
     ];
     return $mapa[$c] ?? '#ddd';
 }
-
 $cor_css = tratarCorFaixa($status['faixa']);
 $porcentagem_progresso = ($status['meta'] > 0) ? ($status['aulas'] / $status['meta']) * 100 : 0;
 if ($porcentagem_progresso > 100) $porcentagem_progresso = 100;
 ?>
-<?php
-// Carrega os dados
-$dados_graduacao = verificarRequisitos($pdo, $id_usuario);
-
-if ($dados_graduacao['pode']):
-?>
-    <div class="alert alert-success shadow border-0 mt-3"
-        style="background-color: #d4edda; border-left: 5px solid #28a745 !important;">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-medal fa-2x mr-3 text-success"></i>
-            <div>
-                <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
-                <small><?php echo $dados_graduacao['mensagem']; ?></small>
-            </div>
-        </div>
-    </div>
-<?php endif; ?>
 
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -106,7 +77,6 @@ if ($dados_graduacao['pode']):
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-
     <style>
         .card-body strong {
             display: -webkit-box;
@@ -128,13 +98,6 @@ if ($dados_graduacao['pode']):
             background-color: #1a1a1a !important;
         }
 
-        .navbar-search-mobile {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* Ajuste na Faixa BJJ */
         .bjj-belt {
             width: 100%;
             max-width: 400px;
@@ -173,7 +136,6 @@ if ($dados_graduacao['pode']):
             border-radius: 1px;
         }
 
-        /* Estilos do Leitor QR Corrigidos */
         #reader {
             width: 100% !important;
             border: none !important;
@@ -186,10 +148,6 @@ if ($dados_graduacao['pode']):
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
-        }
-
-        #reader__dashboard {
-            display: none !important;
         }
 
         .pulse {
@@ -215,8 +173,8 @@ if ($dados_graduacao['pode']):
                 <li class="nav-item"><a class="nav-link" data-widget="pushmenu" href="#" role="button"><i
                             class="fas fa-bars text-dark"></i></a></li>
             </ul>
-            <div class="navbar-search-mobile">
-                <div class="input-group input-group-sm w-100" style="max-width: 350px;">
+            <div class="navbar-search-mobile mx-auto">
+                <div class="input-group input-group-sm" style="max-width: 350px;">
                     <input class="form-control border-secondary" type="text" id="buscar_aluno"
                         placeholder="Pesquisar colega...">
                     <div class="input-group-append">
@@ -236,6 +194,23 @@ if ($dados_graduacao['pode']):
         <div class="content-wrapper">
             <section class="content pt-3">
                 <div class="container-fluid">
+
+                    <?php
+                    $dados_graduacao = verificarRequisitos($pdo, $id_usuario);
+                    if ($dados_graduacao['pode']):
+                    ?>
+                        <div class="alert alert-success shadow border-0 mt-3"
+                            style="background-color: #d4edda; border-left: 5px solid #28a745 !important;">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-medal fa-2x mr-3 text-success"></i>
+                                <div>
+                                    <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
+                                    <small><?php echo $dados_graduacao['mensagem']; ?></small>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <div id="resultado_pesquisa" style="display:none;" class="mb-4"></div>
 
                     <div class="row">
@@ -248,8 +223,11 @@ if ($dados_graduacao['pode']):
                                     <h5 class="text-muted">Faixa: <b
                                             class="text-dark"><?php echo strtoupper($status['faixa']); ?></b></h5>
                                     <div class="bjj-belt">
-                                        <div class="belt-bar"><?php for ($i = 0; $i < $status['grau']; $i++): ?><div
-                                                    class="belt-stripe"></div><?php endfor; ?></div>
+                                        <div class="belt-bar">
+                                            <?php for ($i = 0; $i < $status['grau']; $i++): ?>
+                                                <div class="belt-stripe"></div>
+                                            <?php endfor; ?>
+                                        </div>
                                     </div>
                                     <div class="mt-5 text-left px-md-4">
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
@@ -262,7 +240,8 @@ if ($dados_graduacao['pode']):
                                             style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
                                             <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $porcentagem_progresso ?>%">
-                                                <?php echo round($porcentagem_progresso); ?>%</div>
+                                                <?php echo round($porcentagem_progresso); ?>%
+                                            </div>
                                         </div>
                                         <div class="d-flex justify-content-between mb-1 font-weight-bold">
                                             <span><i class="fas fa-brain mr-1 text-primary"></i> Maestria Técnica</span>
@@ -273,7 +252,8 @@ if ($dados_graduacao['pode']):
                                             style="height: 18px; border-radius: 10px; background-color: #e9ecef;">
                                             <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
                                                 style="width: <?php echo $progresso_maestria; ?>%">
-                                                <?php echo round($progresso_maestria); ?>%</div>
+                                                <?php echo round($progresso_maestria); ?>%
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -295,52 +275,6 @@ if ($dados_graduacao['pode']):
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card shadow-sm border-0 mb-4">
-                                <div class="card-header bg-primary">
-                                    <h3 class="card-title font-weight-bold text-white"><i
-                                            class="fas fa-book-reader mr-2"></i>O que deseja aprender hoje?</h3>
-                                </div>
-                                <div class="card-body">
-                                    <form method="POST" class="mb-4">
-                                        <div class="input-group">
-                                            <input type="text" name="nova_tecnica_estudo" class="form-control"
-                                                placeholder="Digite uma técnica para estudar..." required>
-                                            <div class="input-group-append"><button class="btn btn-primary"
-                                                    type="submit">ADICIONAR</button></div>
-                                        </div>
-                                    </form>
-                                    <div class="row">
-                                        <?php
-                                        try {
-                                            $q_estudo = $pdo->prepare("SELECT * FROM tecnicas_estudo WHERE usuario_id = :id ORDER BY id DESC");
-                                            $q_estudo->bindValue(":id", $id_usuario);
-                                            $q_estudo->execute();
-                                            while ($row = $q_estudo->fetch(PDO::FETCH_ASSOC)) { ?>
-                                                <div class="col-6 col-md-3">
-                                                    <div class="info-box shadow-none border p-2">
-                                                        <div class="info-box-content">
-                                                            <span class="info-box-text text-uppercase font-weight-bold"
-                                                                style="font-size:10px;"><?php echo $row['nome_tecnica']; ?></span>
-                                                            <?php if ($row['status'] == 'Em Estudo'): ?>
-                                                                <button class="btn btn-xs btn-outline-primary btn-block mt-1"
-                                                                    onclick="abrirLeitorQR('estudo', '<?php echo $row['nome_tecnica']; ?>', '<?php echo $row['id']; ?>')">VALIDAR</button>
-                                                            <?php else: ?>
-                                                                <span class="badge badge-success w-100">DOMINADO</span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                        <?php }
-                                        } catch (Exception $e) {
-                                        } ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="card shadow-sm border-0 mb-4">
                                 <div class="card-header bg-dark">
                                     <h3 class="card-title font-weight-bold"><i
                                             class="fas fa-medal mr-2 text-warning"></i>Meus Selos de Técnica</h3>
@@ -351,14 +285,12 @@ if ($dados_graduacao['pode']):
                                     $query_hab->bindValue(":id", $id_usuario);
                                     $query_hab->execute();
                                     $res_hab = $query_hab->fetchAll(PDO::FETCH_ASSOC);
-
                                     if (count($res_hab) > 0) {
                                         $grupos = [];
                                         foreach ($res_hab as $hab) {
                                             $posicao_label = (!empty($hab['posicao'])) ? $hab['posicao'] : 'OUTRAS TÉCNICAS';
                                             $grupos[$posicao_label][] = $hab;
                                         }
-
                                         foreach ($grupos as $posicao_titulo => $tecnicas) { ?>
                                             <div class="row mt-3 mb-2">
                                                 <div class="col-12">
@@ -518,40 +450,35 @@ if ($dados_graduacao['pode']):
             $('#id_v').val(id);
             $('#nome_v').text(nome);
             $('#modalQR').modal('show');
-
-            // Cálculo dinâmico do box de leitura para não estourar em telas pequenas
             let larguraModal = document.getElementById('reader').clientWidth;
             let qrBoxSize = Math.floor(larguraModal * 0.7);
-
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({
-                    facingMode: "environment"
-                }, {
-                    fps: 10,
-                    qrbox: {
-                        width: qrBoxSize,
-                        height: qrBoxSize
-                    },
-                    aspectRatio: 1.0
+                facingMode: "environment"
+            }, {
+                fps: 10,
+                qrbox: {
+                    width: qrBoxSize,
+                    height: qrBoxSize
                 },
-                (txt) => {
-                    pararCamera();
-                    let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
-                        "validar-estudo.php" : "validar-tecnica.php");
-                    $.post(url, {
-                        token_professor: txt,
-                        id: id
-                    }, function(res) {
-                        if (res.trim() == "Sucesso") {
-                            confetti();
-                            setTimeout(() => location.reload(), 1200);
-                        } else {
-                            alert(res);
-                            $('#modalQR').modal('hide');
-                        }
-                    });
-                }
-            ).catch(err => {
+                aspectRatio: 1.0
+            }, (txt) => {
+                pararCamera();
+                let url = (tipo == 'graduacao') ? "validar-promocao.php" : (tipo == 'estudo' ?
+                    "validar-estudo.php" : "validar-tecnica.php");
+                $.post(url, {
+                    token_professor: txt,
+                    id: id
+                }, function(res) {
+                    if (res.trim() == "Sucesso") {
+                        confetti();
+                        setTimeout(() => location.reload(), 1200);
+                    } else {
+                        alert(res);
+                        $('#modalQR').modal('hide');
+                    }
+                });
+            }).catch(err => {
                 console.error("Erro ao iniciar câmera", err);
             });
         }
@@ -573,73 +500,8 @@ if ($dados_graduacao['pode']):
                 $('#resultado_pesquisa').fadeIn().html(data);
             });
         }
-
         $("#buscar_aluno").keypress(function(e) {
             if (e.which == 13) pesquisarEvolucao();
-        });
-    </script>
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
-    <script>
-        window.OneSignal = window.OneSignal || [];
-        OneSignal.push(function() {
-            OneSignal.init({
-                appId: "SEU_APP_ID_REAL_AQUI", // SUBSTITUA PELO SEU ID
-                safari_web_id: "SUA_SAFARI_ID_SE_TIVER",
-                notifyButton: {
-                    enable: false
-                },
-            });
-
-            // Função para enviar o ID ao banco de dados
-            function salvarIdNoBanco(userId) {
-                if (userId) {
-                    // Ajuste o caminho ../ conforme a localização do seu arquivo salvar-onesignal.php
-                    fetch('../salvar-onesignal.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            'onesignal_id': userId
-                        })
-                    });
-                }
-            }
-
-            // Caso 1: Usuário acabou de se inscrever agora
-            OneSignal.on('subscriptionChange', function(isSubscribed) {
-                if (isSubscribed) {
-                    OneSignal.getUserId(function(userId) {
-                        salvarIdNoBanco(userId);
-                    });
-                }
-            });
-
-            // Caso 2: Usuário já estava inscrito (garante que o ID esteja sempre no banco)
-            OneSignal.getUserId(function(userId) {
-                salvarIdNoBanco(userId);
-            });
-        });
-    </script>
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
-    <script>
-        window.OneSignal = window.OneSignal || [];
-        OneSignal.push(function() {
-            OneSignal.init({
-                appId: "SEU_APP_ID_AQUI", // Use o ID do seu painel OneSignal
-            });
-
-            // Quando o usuário permitir a notificação, pegamos o ID e enviamos ao PHP
-            OneSignal.getUserId(function(userId) {
-                if (userId) {
-                    console.log("ID capturado: " + userId);
-                    $.post("../salvar-onesignal.php", {
-                        onesignal_id: userId
-                    }, function(response) {
-                        console.log("Servidor respondeu: " + response);
-                    });
-                }
-            });
         });
     </script>
 </body>
