@@ -18,8 +18,9 @@ $usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuario'] :
 $pdo->query("UPDATE usuarios SET ativo = 'Não' WHERE data_venc < DATE_SUB(NOW(), INTERVAL 30 DAY) AND nivel = 'Cliente' AND ativo = 'Sim'");
 $pdo->query("DELETE FROM usuarios WHERE data_venc < DATE_SUB(NOW(), INTERVAL 365 DAY) AND ativo = 'Não' AND nivel = 'Cliente'");
 
+// Se não houver ID ou Ação, volta usando o histórico
 if (!$id || !$acao) {
-    echo "<script>window.location='usuarios.php';</script>";
+    echo "<script>window.history.back();</script>";
     exit();
 }
 
@@ -35,7 +36,6 @@ $nome_aluno = ($dados_u) ? $dados_u['nome'] : "ID: " . $id;
 
 // 1. AÇÃO DE RENOVAR MENSALIDADE
 if ($acao == 'renovar') {
-    // Se a data manual foi enviada e for válida, usa ela. Caso contrário, +30 dias.
     if ($data_manual && strtotime($data_manual)) {
         $novo_vencimento = $data_manual;
     } else {
@@ -94,8 +94,9 @@ if ($log_acao != "") {
     }
 }
 
+// Retorno dinâmico para a página anterior
 if ($msg != "") {
-    echo "<script>alert('$msg'); window.location='usuarios.php';</script>";
+    echo "<script>alert('$msg'); window.location=document.referrer;</script>";
 } else {
-    echo "<script>window.location='usuarios.php';</script>";
+    echo "<script>window.location=document.referrer;</script>";
 }
