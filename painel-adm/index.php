@@ -21,7 +21,6 @@ $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCo
 $total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor_id = '0' AND observacoes LIKE '%EXPERIMENTAL%'")->rowCount();
 
 // --- LÓGICA DO GRÁFICO DE FAIXAS (SINCRONIZADO COM TABELA USUARIOS) ---
-// Usamos a coluna 'faixa' da tabela 'usuarios' que é o dado mestre do cadastro
 $query_f = $pdo->query("SELECT faixa, COUNT(*) as qtd FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' GROUP BY faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
 
@@ -33,7 +32,6 @@ $consolidado = [
     'Preta'  => 0
 ];
 
-// Tradução para garantir que variações de escrita (ex: white, azul, Azul) caiam na mesma categoria
 $traducao = [
     'branca' => 'Branca',
     'white' => 'Branca',
@@ -55,14 +53,12 @@ foreach ($dados_f as $row) {
     }
 }
 
-// Remove categorias que estão com valor ZERO (faz o gráfico sumir com faixas vazias)
 $consolidado = array_filter($consolidado);
-
 $labels_faixas = array_keys($consolidado);
 $valores_faixas = array_values($consolidado);
 
 $mapa_cores = [
-    'Branca' => '#f8f9fa', // Cinza muito claro para parecer branco no fundo branco
+    'Branca' => '#f8f9fa',
     'Azul'   => '#007bff',
     'Roxa'   => '#6f42c1',
     'Marrom' => '#6d4c41',
@@ -189,6 +185,8 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     <a href="logs.php"><i class="fas fa-history mr-2"></i> Logs do Sistema</a>
                     <a href="relatorio_experimentais.php"><i class="fas fa-file-invoice mr-2 text-light"></i> Relatório
                         de Aulas</a>
+
+                    <a href="metodologia.php"><i class="fas fa-book-open mr-2 text-primary"></i> Metodologia</a>
                 </div>
 
                 <div class="sidebar-footer">
