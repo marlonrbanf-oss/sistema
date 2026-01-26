@@ -7,277 +7,33 @@ if (@$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] !=
     exit();
 }
 
-// Mapeamento Completo com Técnicas e suas Categorias/Posições (1 a 50)
-$licoes_array = [
-    1 => [
-        ["t" => "Princípio da Alavanca", "p" => "Fundamentos"],
-        ["t" => "Gravata por trás", "p" => "Defesa Pessoal"],
-        ["t" => "Gangorra + Levantada técnica", "p" => "Fundamentos"],
-        ["t" => "Defesa de tapa com queda", "p" => "Defesa Pessoal"],
-        ["t" => "Montada + Arm-lock", "p" => "montada ataque (por cima)"],
-        ["t" => "Pegada pelas costas + Mata leão", "p" => "costas ataque"]
-    ],
-    2 => [
-        ["t" => "Rolamento de costas + Fuga de quadril", "p" => "Fundamentos"],
-        ["t" => "Upa e roda", "p" => "montada defesa (por baixo)"],
-        ["t" => "Postura de guarda e passagem", "p" => "passagem de guarda"],
-        ["t" => "Estrangulamento montado", "p" => "montada ataque (por cima)"]
-    ],
-    3 => [
-        ["t" => "Rolamento de frente", "p" => "Fundamentos"],
-        ["t" => "Sprawl", "p" => "Quedas"],
-        ["t" => "Abraço por cima dos braços por trás", "p" => "Defesa Pessoal"],
-        ["t" => "Saída de cotovelo", "p" => "montada defesa (por baixo)"],
-        ["t" => "Estrangulamento na guarda", "p" => "guarda fechada por cima"],
-        ["t" => "Raspagem tesourada", "p" => "guarda fechada por baixo"],
-        ["t" => "Raspagem com mãos nos calcanhares", "p" => "guarda aberta"]
-    ],
-    4 => [
-        ["t" => "Abraço por cima dos braços", "p" => "Defesa Pessoal"],
-        ["t" => "Reposição de guarda", "p" => "100 kilos defesa (por baixo)"],
-        ["t" => "Raspagem com mão na faixa", "p" => "guarda fechada por baixo"],
-        ["t" => "Kimura", "p" => "guarda fechada por baixo"]
-    ],
-    5 => [
-        ["t" => "Koshi Guruma com defesa pessoal", "p" => "Quedas"],
-        ["t" => "Baiana", "p" => "Quedas"],
-        ["t" => "Toreando", "p" => "passagem de guarda"],
-        ["t" => "Kimura partindo do 100kg", "p" => "100 kilos ataque (por cima)"]
-    ],
-    6 => [
-        ["t" => "Gravata por trás (sentido contrário)", "p" => "Defesa Pessoal"],
-        ["t" => "Virada de 4", "p" => "100 kilos defesa (por baixo)"],
-        ["t" => "Americana", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Chave de braço girando", "p" => "100 kilos ataque (por cima)"]
-    ],
-    7 => [
-        ["t" => "Defesa gravata com soco", "p" => "Defesa Pessoal"],
-        ["t" => "Defesa de gravata lateral", "p" => "Defesa Pessoal"],
-        ["t" => "Montada com chave de braço (ataque duplo)", "p" => "montada ataque (por cima)"],
-        ["t" => "Montada com estrangulamento (ataque duplo)", "p" => "montada ataque (por cima)"]
-    ],
-    8 => [
-        ["t" => "Educativo para pé na virilha", "p" => "Fundamentos"],
-        ["t" => "Raspagem pé na virilha com gancho", "p" => "guarda aberta"],
-        ["t" => "Balão", "p" => "guarda aberta"],
-        ["t" => "Arm-lock invertido", "p" => "100 kilos ataque (por cima)"]
-    ],
-    9 => [
-        ["t" => "Guilhotina", "p" => "defesa de finalizações"],
-        ["t" => "Guilhotina puxando pra guarda", "p" => "Quedas"],
-        ["t" => "Raspagem com pêndulo", "p" => "guarda fechada por baixo"],
-        ["t" => "Chave de braço na guarda", "p" => "guarda fechada por baixo"]
-    ],
-    10 => [
-        ["t" => "Empurrão no peito (1 e 2 mãos)", "p" => "Defesa Pessoal"],
-        ["t" => "Montada técnica com estrangulamento pela gola", "p" => "montada ataque (por cima)"],
-        ["t" => "Montada técnica com chave de braço", "p" => "montada ataque (por cima)"]
-    ],
-    11 => [
-        ["t" => "Defesa de guilhotina", "p" => "defesa de finalizações"],
-        ["t" => "Joelho na barriga (+ estrangulamento/arm-lock)", "p" => "100 kilos ataque (por cima)"]
-    ],
-    12 => [
-        ["t" => "Baiana de joelhos", "p" => "Quedas"],
-        ["t" => "Postura de guarda com a mão na manga", "p" => "guarda fechada por cima"],
-        ["t" => "Passagem para meia guarda", "p" => "passagem de guarda"],
-        ["t" => "Meia guarda para montada", "p" => "meia guarda por cima"]
-    ],
-    13 => [
-        ["t" => "Abraço pela frente por baixo dos braços", "p" => "Defesa Pessoal"],
-        ["t" => "Saída de montada com duas mãos na faixa", "p" => "montada defesa (por baixo)"],
-        ["t" => "Estrangulamento com braço enrolado", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Chave de braço na guarda em pé", "p" => "guarda fechada por baixo"]
-    ],
-    14 => [
-        ["t" => "Seat belt + pegada pelas costas", "p" => "costas ataque"],
-        ["t" => "Retenção das costas", "p" => "costas ataque"],
-        ["t" => "Estrangulamento de golas", "p" => "costas ataque"]
-    ],
-    15 => [
-        ["t" => "Saída de gravata lateral/chão (com gancho)", "p" => "Defesa Pessoal"],
-        ["t" => "Defesa de pegada de costas (girando)", "p" => "costas defesa"]
-    ],
-    16 => [
-        ["t" => "Single leg", "p" => "Quedas"],
-        ["t" => "Reposição de guarda partindo de 4 apoios", "p" => "4 apoios por defesa (por baixo)"],
-        ["t" => "Guarda aberta / Triângulo", "p" => "guarda aberta"],
-        ["t" => "Raspagem de tripé", "p" => "guarda aberta"]
-    ],
-    17 => [
-        ["t" => "Defesa de jab", "p" => "Defesa Pessoal"],
-        ["t" => "Cinturada por trás", "p" => "Quedas"],
-        ["t" => "Estrangulamento relógio", "p" => "4 apoios ataque (por cima)"],
-        ["t" => "Rolo de 4 apoios", "p" => "4 apoios por defesa (por baixo)"]
-    ],
-    18 => [
-        ["t" => "Pegada na perna com varredura por dentro", "p" => "Quedas"],
-        ["t" => "Passagem com joelho por dentro / cabeça", "p" => "passagem de guarda"],
-        ["t" => "Arm-lock com braço enrolado", "p" => "100 kilos ataque (por cima)"]
-    ],
-    19 => [
-        ["t" => "Ippon Seoi", "p" => "Quedas"],
-        ["t" => "Raspagem de gancho", "p" => "guarda aberta"],
-        ["t" => "Passagem de meia guarda joelho cruzado", "p" => "passagem de guarda"],
-        ["t" => "Ezequiel da montada", "p" => "montada ataque (por cima)"]
-    ],
-    20 => [
-        ["t" => "Esgrima", "p" => "Fundamentos"],
-        ["t" => "Esgrima com single leg", "p" => "Quedas"],
-        ["t" => "Passagem cruzando o joelho", "p" => "passagem de guarda"],
-        ["t" => "Montada técnica (com perna em pé)", "p" => "montada ataque (por cima)"]
-    ],
-    21 => [
-        ["t" => "Raspagem DLR (Chutar o joelho)", "p" => "guarda aberta"],
-        ["t" => "Raspagem DLR (Gancho Invertido)", "p" => "guarda aberta"],
-        ["t" => "Raspagem DLR (Indo para as costas)", "p" => "guarda aberta"]
-    ],
-    22 => [
-        ["t" => "Passagem DLR (Estouro de gancho e esgrima)", "p" => "passagem de guarda"],
-        ["t" => "Passagem DLR (Pressão Knee slide)", "p" => "passagem de guarda"],
-        ["t" => "Defesa de Omoplata (Rolamento antecipado)", "p" => "defesa de finalizações"]
-    ],
-    23 => [
-        ["t" => "Raspagem Omoplata (Capotagem clássica)", "p" => "guarda fechada por baixo"],
-        ["t" => "Raspagem Omoplata (Variação gola cruzada)", "p" => "guarda fechada por baixo"],
-        ["t" => "Raspagem Omoplata (Saindo para o Single Leg)", "p" => "guarda fechada por baixo"]
-    ],
-    24 => [
-        ["t" => "Passagem após tentativa de Omoplata (Circundar)", "p" => "passagem de guarda"],
-        ["t" => "Passagem após tentativa de Omoplata (Salto oposto)", "p" => "passagem de guarda"],
-        ["t" => "Finalização de Omoplata (Ajuste braço na cintura)", "p" => "guarda fechada por baixo"]
-    ],
-    25 => [
-        ["t" => "Raspagem Guarda X (Desequilíbrio para trás)", "p" => "guarda aberta"],
-        ["t" => "Raspagem Guarda X (Levantada técnica)", "p" => "guarda aberta"],
-        ["t" => "Raspagem Guarda X (Chutando o quadril)", "p" => "guarda aberta"]
-    ],
-    26 => [
-        ["t" => "Passagem Guarda X (Grampo e Step over)", "p" => "passagem de guarda"],
-        ["t" => "Passagem Guarda X (Passagem por cima do quadril)", "p" => "passagem de guarda"],
-        ["t" => "Finalização: Triângulo das costas", "p" => "costas ataque"]
-    ],
-    27 => [
-        ["t" => "Raspagem Meia Profunda (Fura-bolo)", "p" => "meia guarda por cima"],
-        ["t" => "Raspagem Meia Profunda (Waiter Sweep)", "p" => "meia guarda por cima"],
-        ["t" => "Raspagem Meia Profunda (Saída para as costas)", "p" => "meia guarda por cima"]
-    ],
-    28 => [
-        ["t" => "Passagem Meia Profunda (Esgrima de quadril)", "p" => "passagem de guarda"],
-        ["t" => "Passagem Meia Profunda (Peso morto)", "p" => "passagem de guarda"],
-        ["t" => "Saída de costas (Giro para a guarda)", "p" => "costas defesa"]
-    ],
-    29 => [
-        ["t" => "Raspagem One Leg X (Ataque no calcanhar)", "p" => "guarda aberta"],
-        ["t" => "Raspagem One Leg X (Tesoura técnica)", "p" => "guarda aberta"],
-        ["t" => "Finalização: Arco e flecha (Bow and Arrow)", "p" => "costas ataque"]
-    ],
-    30 => [
-        ["t" => "Passagem One Leg X (Esgrima e quadril baixo)", "p" => "passagem de guarda"],
-        ["t" => "Passagem One Leg X (Estouro e step back)", "p" => "passagem de guarda"],
-        ["t" => "Saída de costas (Deslizar quadril e ponte)", "p" => "costas defesa"]
-    ],
-    31 => [
-        ["t" => "Finalização: Arm-lock da Montada S", "p" => "montada ataque (por cima)"],
-        ["t" => "Finalização: Triângulo da Montada", "p" => "montada ataque (por cima)"],
-        ["t" => "Saída de montada técnica (Camarão lateral)", "p" => "montada defesa (por baixo)"]
-    ],
-    32 => [
-        ["t" => "Finalização: Kata-gatame (Triângulo de mão)", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Finalização: Estrangulamento Norte-Sul", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Saída de 100kg (Indo para os 4 apoios)", "p" => "100 kilos defesa (por baixo)"]
-    ],
-    33 => [
-        ["t" => "Finalização: Crucifixo das costas", "p" => "costas ataque"],
-        ["t" => "Finalização: Estrangulamento gola técnica", "p" => "costas ataque"],
-        ["t" => "Defesa de Mata-leão (Mão na gola técnica)", "p" => "costas defesa"]
-    ],
-    34 => [
-        ["t" => "Estrangulamento Relógio (Clock Choke)", "p" => "4 apoios ataque (por cima)"],
-        ["t" => "Ataque de 4 apoios (Ida para as costas)", "p" => "4 apoios ataque (por cima)"],
-        ["t" => "Rolo de 4 apoios para reposição de guarda", "p" => "4 apoios por defesa (por baixo)"]
-    ],
-    35 => [
-        ["t" => "Finalização: Kimura partindo do 100kg", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Finalização: Arm-lock invertido (100kg)", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Saída de 100kg (Reposição perna de fora)", "p" => "100 kilos defesa (por baixo)"]
-    ],
-    36 => [
-        ["t" => "Passagem de Guarda: Leg Drag técnica", "p" => "passagem de guarda"],
-        ["t" => "Passagem de Guarda: Smash Pass (Pressão)", "p" => "passagem de guarda"],
-        ["t" => "Defesa de Triângulo (Postura e amasso)", "p" => "defesa de finalizações"]
-    ],
-    37 => [
-        ["t" => "Passagem de Guarda: Over-Under profunda", "p" => "passagem de guarda"],
-        ["t" => "Passagem de Guarda: X-Pass (Em pé)", "p" => "passagem de guarda"],
-        ["t" => "Defesa de Arm-lock (Saída Hitchhiker)", "p" => "defesa de finalizações"]
-    ],
-    38 => [
-        ["t" => "Finalização: Arm-lock Joelho na Barriga", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Finalização: Ezequiel técnica (100kg)", "p" => "100 kilos ataque (por cima)"],
-        ["t" => "Saída de montada (Upa travamento técnico)", "p" => "montada defesa (por baixo)"]
-    ],
-    39 => [
-        ["t" => "Finalização: Triângulo invertido (Guarda)", "p" => "guarda fechada por baixo"],
-        ["t" => "Finalização: Omoplata (Guarda aberta)", "p" => "guarda aberta"],
-        ["t" => "Defesa de Kimura (Contra-ataque)", "p" => "defesa de finalizações"]
-    ],
-    40 => [
-        ["t" => "Finalização: Guilhotina da Montada", "p" => "montada ataque (por cima)"],
-        ["t" => "Finalização: Ezequiel da Montada", "p" => "montada ataque (por cima)"],
-        ["t" => "Saída de 4 apoios (Levantada técnica)", "p" => "4 apoios por defesa (por baixo)"]
-    ],
-    41 => [
-        ["t" => "Transição DLR para X-Guard", "p" => "guarda aberta"],
-        ["t" => "Raspagem de X-Guard (Variação tesoura)", "p" => "guarda aberta"],
-        ["t" => "Passagem de pressão em pé", "p" => "passagem de guarda"]
-    ],
-    42 => [
-        ["t" => "Passagem Guarda Aranha (Estouro de pegada)", "p" => "passagem de guarda"],
-        ["t" => "Passagem circundando as pernas", "p" => "passagem de guarda"],
-        ["t" => "Contra-ataque de triângulo na passagem", "p" => "defesa de finalizações"]
-    ],
-    43 => [
-        ["t" => "Raspagem Meia Guarda (Gancho lateral)", "p" => "meia guarda por cima"],
-        ["t" => "Raspagem Meia Guarda (Pêndulo profundo)", "p" => "meia guarda por cima"],
-        ["t" => "Finalização: Kimura da meia guarda", "p" => "meia guarda por cima"]
-    ],
-    44 => [
-        ["t" => "Saída de 100kg para 4 apoios (Antecipação)", "p" => "100 kilos defesa (por baixo)"],
-        ["t" => "Reposição de meia guarda profunda", "p" => "100 kilos defesa (por baixo)"],
-        ["t" => "Saída de 100kg (Esgrima e quadril)", "p" => "100 kilos defesa (por baixo)"]
-    ],
-    45 => [
-        ["t" => "Ataque de 4 apoios (Triângulo de mão)", "p" => "4 apoios ataque (por cima)"],
-        ["t" => "Ataque de 4 apoios (Transição para montada)", "p" => "4 apoios ataque (por cima)"],
-        ["t" => "Estrangulamento de gola (4 apoios)", "p" => "4 apoios ataque (por cima)"]
-    ],
-    46 => [
-        ["t" => "Passagem Emborrachando profunda", "p" => "passagem de guarda"],
-        ["t" => "Passagem cruzando o braço (Gift Wrap)", "p" => "passagem de guarda"],
-        ["t" => "Finalização: Arm-lock da passagem", "p" => "passagem de guarda"]
-    ],
-    47 => [
-        ["t" => "Raspagem Balão (Tomoe-Nage gancho)", "p" => "guarda aberta"],
-        ["t" => "Raspagem Helicóptero técnica", "p" => "guarda aberta"],
-        ["t" => "Ataque de Omoplata da guarda aberta", "p" => "guarda aberta"]
-    ],
-    48 => [
-        ["t" => "Mata-leão controle punho (4 apoios)", "p" => "costas ataque"],
-        ["t" => "Ataque de braço das costas (Arm-lock)", "p" => "costas ataque"],
-        ["t" => "Transição das costas para Triângulo", "p" => "costas ataque"]
-    ],
-    49 => [
-        ["t" => "Reposição de guarda de 4 apoios (Rolamento)", "p" => "4 apoios por defesa (por baixo)"],
-        ["t" => "Fuga de quadril dos 4 apoios (Sit-out)", "p" => "4 apoios por defesa (por baixo)"],
-        ["t" => "Defesa de ganchos das costas", "p" => "costas defesa"]
-    ],
-    50 => [
-        ["t" => "Triângulo da Montada Técnica (S-Mount)", "p" => "montada ataque (por cima)"],
-        ["t" => "Finalização: Arm-lock técnico da montada", "p" => "montada ataque (por cima)"],
-        ["t" => "Transição Joelho na barriga para montada", "p" => "montada ataque (por cima)"]
-    ]
-];
+// --- BUSCA DINÂMICA DE LIÇÕES E TÉCNICAS NO BANCO ---
+$licoes_array = [];
+$query_l = $pdo->query("SELECT * FROM licoes ORDER BY numero ASC");
+$res_l = $query_l->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($res_l as $licao) {
+    $id_licao = $licao['id'];
+    $num_licao = $licao['numero'];
+    $cat_licao = $licao['categoria'];
+
+    // Busca as técnicas atreladas a esta lição
+    $query_t = $pdo->prepare("SELECT nome FROM tecnicas WHERE licao_id = :id ORDER BY id ASC");
+    $query_t->bindValue(":id", $id_licao);
+    $query_t->execute();
+    $res_t = $query_t->fetchAll(PDO::FETCH_ASSOC);
+
+    $tecnicas_formatadas = [];
+    foreach ($res_t as $tec) {
+        $tecnicas_formatadas[] = [
+            "t" => $tec['nome'],
+            "p" => $cat_licao // Usa a categoria da lição como 'posição'
+        ];
+    }
+
+    // Organiza no array usando o número da lição como chave
+    $licoes_array[$num_licao] = $tecnicas_formatadas;
+}
 ?>
 
 <!DOCTYPE html>
@@ -290,6 +46,16 @@ $licoes_array = [
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
+        :root {
+            --primary-color: #007bff;
+            --dark-color: #343a40;
+            --success-color: #28a745;
+        }
+
+        body {
+            background-color: #f4f7f6;
+        }
+
         .radio-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
@@ -300,180 +66,204 @@ $licoes_array = [
             cursor: pointer;
             text-align: center;
             border: 1px solid #dee2e6;
-            padding: 10px 5px;
-            border-radius: 5px;
+            padding: 12px 5px;
+            border-radius: 8px;
             background: #fff;
             transition: all 0.2s;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            color: #495057;
         }
 
         .btn-radio:hover {
-            background: #f8f9fa;
+            background: #e9ecef;
+            border-color: var(--primary-color);
         }
 
         input[type="radio"]:checked+.btn-radio {
-            background-color: #343a40;
+            background-color: var(--dark-color);
             color: #fff;
-            border-color: #343a40;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-color: var(--dark-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
-        @media (max-width: 768px) {
-            .radio-grid {
-                grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
-                gap: 8px;
-            }
-
-            .border-right {
-                border-right: none !important;
-                border-bottom: 1px solid #dee2e6;
-                margin-bottom: 20px;
-                padding-bottom: 20px;
-            }
+        .preview-box {
+            min-height: 180px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
         }
 
-        /* Estilo para os rádios de Status */
         .status-container {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .btn-status {
             cursor: pointer;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: 2px solid #dee2e6;
-            border-radius: 30px;
-            font-weight: bold;
+            border-radius: 50px;
+            font-weight: 700;
             transition: 0.3s;
             background: #fff;
+            text-transform: uppercase;
+            font-size: 0.8rem;
         }
 
         input[name="status"]:checked+.btn-estudo {
             background: #ffc107;
-            border-color: #ffc107;
-            color: #000;
+            border-color: #e0a800;
+            color: #212529;
         }
 
         input[name="status"]:checked+.btn-revisao {
             background: #17a2b8;
-            border-color: #17a2b8;
+            border-color: #117a8b;
             color: #fff;
         }
 
         input[name="status"]:checked+.btn-concluido {
             background: #28a745;
-            border-color: #28a745;
+            border-color: #1e7e34;
             color: #fff;
         }
 
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+        .aluno-row {
+            transition: 0.2s;
             cursor: pointer;
         }
 
-        .aluno-row {
+        .aluno-row:hover {
+            background-color: #f1f3f5 !important;
+        }
+
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
             cursor: pointer;
+            accent-color: var(--success-color);
+        }
+
+        .sticky-footer {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid #dee2e6;
+            z-index: 1000;
+        }
+
+        .border-right-custom {
+            border-right: 1px solid #dee2e6;
+        }
+
+        @media (max-width: 768px) {
+            .border-right-custom {
+                border-right: none;
+                border-bottom: 1px solid #dee2e6;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
 
-<body class="bg-light">
-    <div class="container-fluid mt-3">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">REGISTRAR LIÇÃO</h5>
-                <a href="index.php" class="btn btn-outline-light btn-sm">Voltar</a>
+<body>
+    <div class="container-fluid mt-3 mb-5">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 font-weight-bold"><i class="fas fa-edit mr-2 text-warning"></i> LANÇAMENTO COLETIVO</h5>
+                <a href="index.php" class="btn btn-outline-light btn-sm rounded-pill px-3">Voltar</a>
             </div>
-            <form action="lancar-selos.php" method="POST">
+
+            <form action="lancar-selos.php" method="POST" id="formLancar">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6 border-right">
-                            <h6 class="font-weight-bold mb-3 text-primary"><i class="fas fa-list-ol mr-2"></i>1. Escolha
-                                a Lição</h6>
+                        <div class="col-md-6 border-right-custom">
+                            <h6 class="font-weight-bold mb-3 text-primary"><span class="badge badge-primary mr-2">1</span> SELECIONE A LIÇÃO</h6>
                             <div class="radio-grid mb-4">
                                 <?php foreach ($licoes_array as $n => $tecnicas) : ?>
-                                    <label class="m-0">
-                                        <input type="radio" name="licao_id" value="<?php echo $n; ?>" class="d-none"
-                                            required>
-                                        <div class="btn-radio">L-<?php echo $n; ?></div>
+                                    <label class="m-0 p-0">
+                                        <input type="radio" name="licao_id" value="<?php echo $n; ?>" class="d-none" required>
+                                        <div class="btn-radio">L-<?php echo str_pad($n, 2, "0", STR_PAD_LEFT); ?></div>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
 
-                            <h6 class="font-weight-bold">Técnicas desta aula:</h6>
-                            <div id="preview-tecnicas" class="p-3 bg-white border rounded shadow-sm"
-                                style="min-height: 150px;">
-                                <small class="text-muted">Selecione uma lição para visualizar as técnicas.</small>
+                            <h6 class="font-weight-bold text-secondary small text-uppercase">Técnicas desta lição:</h6>
+                            <div id="preview-tecnicas" class="preview-box shadow-sm overflow-auto">
+                                <div class="text-center mt-4 text-muted">
+                                    <i class="fas fa-book-open fa-2x mb-2 opacity-5"></i><br>
+                                    Clique em uma lição acima.
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <h6 class="font-weight-bold mb-3 text-primary"><i class="fas fa-users mr-2"></i>2. Alunos
-                                Presentes</h6>
-                            <div class="input-group input-group-sm mb-2">
+                        <div class="col-md-6 mt-4 mt-md-0">
+                            <h6 class="font-weight-bold mb-3 text-primary"><span class="badge badge-primary mr-2">2</span> SELECIONE OS ALUNOS</h6>
+                            <div class="input-group mb-3 shadow-sm">
                                 <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
                                 </div>
-                                <input type="text" id="busca" class="form-control"
-                                    placeholder="Buscar aluno pelo nome...">
+                                <input type="text" id="busca" class="form-control border-left-0" placeholder="Filtrar aluno por nome...">
                             </div>
 
-                            <div style="height: 350px; overflow-y: auto;" class="border rounded bg-white">
-                                <table class="table table-sm table-hover mb-0">
+                            <div style="max-height: 400px; overflow-y: auto;" class="border rounded bg-white">
+                                <table class="table table-hover mb-0">
                                     <tbody id="tabela_alunos">
                                         <?php
-                                        $query = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Cliente' ORDER BY nome ASC");
+                                        $query = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' ORDER BY nome ASC");
                                         $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                         foreach ($res as $aluno) {
                                         ?>
                                             <tr class="aluno-row">
-                                                <td width="45" class="text-center align-middle">
-                                                    <input type="checkbox" name="alunos[]"
-                                                        value="<?php echo $aluno['id']; ?>">
+                                                <td width="50" class="text-center align-middle">
+                                                    <input type="checkbox" name="alunos[]" value="<?php echo $aluno['id']; ?>" class="custom-checkbox">
                                                 </td>
-                                                <td class="align-middle">
-                                                    <span
-                                                        class="text-dark font-weight-bold d-block py-2"><?php echo $aluno['nome']; ?></span>
+                                                <td class="align-middle py-3">
+                                                    <span class="text-dark font-weight-bold"><?php echo mb_strtoupper($aluno['nome']); ?></span>
                                                 </td>
                                             </tr>
                                         <?php } ?>
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="text-right mt-2">
+                                <small class="text-muted" id="contador-alunos">0 alunos selecionados</small>
+                            </div>
                         </div>
                     </div>
 
-                    <hr>
+                    <hr class="my-4">
 
-                    <div class="row mt-3">
+                    <div class="row">
                         <div class="col-12 text-center">
-                            <h6 class="font-weight-bold mb-3 text-primary"><i class="fas fa-star mr-2"></i>3. Status do
-                                Conhecimento</h6>
+                            <h6 class="font-weight-bold mb-3 text-primary"><span class="badge badge-primary mr-2">3</span> NÍVEL DE APRENDIZADO</h6>
                             <div class="status-container">
                                 <label class="m-0">
                                     <input type="radio" name="status" value="Em Estudo" class="d-none" checked>
-                                    <div class="btn-status btn-estudo">Em Estudo</div>
+                                    <div class="btn-status btn-estudo">🟡 Em Estudo</div>
                                 </label>
                                 <label class="m-0">
                                     <input type="radio" name="status" value="Revisão" class="d-none">
-                                    <div class="btn-status btn-revisao">Revisão</div>
+                                    <div class="btn-status btn-revisao">🔵 Revisão</div>
                                 </label>
                                 <label class="m-0">
                                     <input type="radio" name="status" value="Concluído" class="d-none">
-                                    <div class="btn-status btn-concluido">Concluído</div>
+                                    <div class="btn-status btn-concluido">🟢 Concluído</div>
                                 </label>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-footer bg-white p-3">
-                    <button type="submit" class="btn btn-success btn-lg btn-block shadow font-weight-bold py-3">
-                        <i class="fas fa-check-circle mr-2"></i> FINALIZAR LANÇAMENTO
+                <div class="card-footer bg-white p-3 sticky-footer">
+                    <button type="submit" class="btn btn-success btn-lg btn-block shadow font-weight-bold py-3" id="btnFinalizar">
+                        <i class="fas fa-save mr-2"></i> SALVAR PARA TODOS SELECIONADOS
                     </button>
                 </div>
             </form>
@@ -485,32 +275,53 @@ $licoes_array = [
         const licoes = <?php echo json_encode($licoes_array); ?>;
 
         $('input[name="licao_id"]').change(function() {
-            let id = $(this).val();
+            const id = $(this).val();
+            const box = $('#preview-tecnicas');
             if (id && licoes[id]) {
-                let html = '<ul class="list-group list-group-flush">';
+                let html = '<div class="list-group list-group-flush">';
                 licoes[id].forEach(item => {
-                    html += `<li class="list-group-item px-0 py-2 border-0">
-                                <i class="fas fa-chevron-right text-success mr-2 small"></i>
-                                <strong>${item.t}</strong> <br>
-                                <span class="badge badge-light border text-muted ml-3">${item.p}</span>
-                             </li>`;
+                    html += `
+                        <div class="list-group-item px-1 py-2 bg-transparent border-bottom">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-caret-right text-primary mt-1 mr-2"></i>
+                                <div>
+                                    <div class="font-weight-bold text-dark">${item.t}</div>
+                                    <span class="badge badge-light border text-primary small">${item.p}</span>
+                                </div>
+                            </div>
+                        </div>`;
                 });
-                $('#preview-tecnicas').html(html + '</ul>');
+                box.html(html + '</div>').hide().fadeIn(200);
             }
         });
 
         $('.aluno-row').click(function(e) {
             if (e.target.type !== 'checkbox') {
-                let cb = $(this).find('input[type="checkbox"]');
+                const cb = $(this).find('input[type="checkbox"]');
                 cb.prop('checked', !cb.prop('checked'));
             }
+            atualizarContador();
         });
 
+        function atualizarContador() {
+            const total = $('input[name="alunos[]"]:checked').length;
+            $('#contador-alunos').text(total + (total === 1 ? ' aluno selecionado' : ' alunos selecionados'));
+        }
+
         $("#busca").on("keyup", function() {
-            var v = $(this).val().toLowerCase();
-            $("#tabela_alunos tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(v) > -1)
+            const value = $(this).val().toLowerCase();
+            $("#tabela_alunos tr").each(function() {
+                $(this).toggle($(this).find('span').text().toLowerCase().indexOf(value) > -1);
             });
+        });
+
+        $('#formLancar').submit(function() {
+            if ($('input[name="alunos[]"]:checked').length === 0) {
+                alert("Selecione pelo menos um aluno!");
+                return false;
+            }
+            $('#btnFinalizar').html('<i class="fas fa-spinner fa-spin mr-2"></i> GRAVANDO...').addClass('disabled');
+            return true;
         });
     </script>
 </body>

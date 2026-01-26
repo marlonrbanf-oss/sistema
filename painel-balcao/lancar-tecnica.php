@@ -2,6 +2,7 @@
 @session_start();
 require_once("../conexao.php");
 
+// Validação de nível (mantida)
 if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
@@ -18,51 +19,33 @@ $query->bindValue(":id", $id_aluno);
 $query->execute();
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
-if (count($res) == 0) {
-    exit();
-}
+if (count($res) == 0) exit();
 $nome_aluno = $res[0]['nome'];
 
-// Mapeamento de Técnicas x Posições (ATUALIZADO COM LIÇÕES 1 A 50)
-$mapa_tecnicas = [
-    'Fundamentos' => ['Princípio da Alavanca', 'Gangorra + Levantada técnica', 'Rolamento de costas + Fuga de quadril', 'Rolamento de frente', 'Educativo para pé na virilha', 'Esgrima'],
-    'Defesa Pessoal' => ['Gravata por trás', 'Defesa de tapa com queda', 'Abraço por cima dos braços por trás', 'Abraço por cima dos braços', 'Gravata por trás (sentido contrário)', 'Defesa gravata com soco', 'Defesa de gravata lateral', 'Empurrão no peito (1 e 2 mãos)', 'Abraço pela frente por baixo dos braços', 'Saída de gravata lateral/chão (com gancho)', 'Defesa de jab'],
-    'Quedas' => ['Sprawl', 'Koshi Guruma com defesa pessoal', 'Baiana', 'Guilhotina puxando pra guarda', 'Baiana de joelhos', 'Single leg', 'Cinturada por trás', 'Pegada na perna com varredura por dentro', 'Ippon Seoi', 'Esgrima com single leg'],
-    'montada ataque (por cima)' => ['Montada + Arm-lock', 'Estrangulamento montado', 'Montada com chave de braço (ataque duplo)', 'Montada com estrangulamento (ataque duplo)', 'Montada técnica com estrangulamento pela gola', 'Montada técnica com chave de braço', 'Ezequiel da montada', 'Montada técnica (com perna em pé)', 'Arm-lock da Montada S', 'Triângulo da Montada', 'Guilhotina da Montada', 'Ezequiel da Montada', 'Triângulo da Montada Técnica (S-Mount)', 'Arm-lock técnico da montada'],
-    'costas ataque' => ['Pegada pelas costas + Mata leão', 'Seat belt + pegada pelas costas', 'Retenção das costas', 'Estrangulamento de golas', 'Triângulo das costas', 'Arco e flecha (Bow and Arrow)', 'Crucifixo das costas', 'Estrangulamento gola técnica', 'Mata-leão controle punho (4 apoios)', 'Ataque de braço das costas (Arm-lock)', 'Transição das costas para Triângulo'],
-    'montada defesa (por baixo)' => ['Upa e roda', 'Saída de cotovelo', 'Saída de montada com duas mãos na faixa', 'Saída de montada técnica (Camarão lateral)', 'Saída de montada (Upa travamento técnico)'],
-    'passagem de guarda' => ['Postura de guarda e passagem', 'Toreando', 'Passagem para meia guarda', 'Passagem com joelho por dentro / cabeça', 'Passagem de meia guarda joelho cruzado', 'Passagem cruzando o joelho', 'Passagem DLR (Estouro de gancho e esgrima)', 'Passagem DLR (Pressão Knee slide)', 'Passagem após tentativa de Omoplata (Circundar)', 'Passagem após tentativa de Omoplata (Salto oposto)', 'Passagem Guarda X (Grampo e Step over)', 'Passagem Guarda X (Passagem por cima do quadril)', 'Passagem Meia Profunda (Esgrima de quadril)', 'Passagem Meia Profunda (Peso morto)', 'Passagem One Leg X (Esgrima e quadril baixo)', 'Passagem One Leg X (Estouro e step back)', 'Leg Drag técnica', 'Smash Pass (Pressão)', 'Over-Under profunda', 'X-Pass (Em pé)', 'Passagem Guarda Aranha (Estouro de pegada)', 'Passagem circundando as pernas', 'Passagem Emborrachando profunda', 'Passagem cruzando o braço (Gift Wrap)'],
-    'guarda fechada por cima' => ['Estrangulamento na guarda', 'Postura de guarda com a mão na manga'],
-    'guarda fechada por baixo' => ['Raspagem tesourada', 'Raspagem com mão na faixa', 'Kimura', 'Raspagem com pêndulo', 'Chave de braço na guarda', 'Chave de braço na guarda em pé', 'Raspagem Omoplata (Capotagem clássica)', 'Raspagem Omoplata (Variação gola cruzada)', 'Raspagem Omoplata (Saindo para o Single Leg)', 'Finalização de Omoplata (Ajuste braço na cintura)', 'Triângulo invertido (Guarda)'],
-    'guarda aberta' => ['Raspagem com mãos nos calcanhares', 'Raspagem pé na virilha com gancho', 'Balão', 'Guarda aberta / Triângulo', 'Raspagem de tripé', 'Raspagem de gancho', 'Raspagem DLR (Chutar o joelho)', 'Raspagem DLR (Gancho Invertido)', 'Raspagem DLR (Indo para as costas)', 'Raspagem Guarda X (Desequilíbrio para trás)', 'Raspagem Guarda X (Levantada técnica)', 'Raspagem Guarda X (Chutando o quadril)', 'Raspagem One Leg X (Ataque no calcanhar)', 'Raspagem One Leg X (Tesoura técnica)', 'Omoplata (Guarda aberta)', 'Transição DLR para X-Guard', 'Raspagem de X-Guard (Variação tesoura)', 'Raspagem Balão (Tomoe-Nage gancho)', 'Raspagem Helicóptero técnica', 'Ataque de Omoplata da guarda aberta'],
-    '100 kilos ataque (por cima)' => ['Kimura partindo do 100kg', 'Americana', 'Chave de braço girando', 'Arm-lock invertido', 'Joelho na barriga (+ estrangulamento/arm-lock)', 'Estrangulamento com braço enrolado', 'Arm-lock com braço enrolado', 'Kata-gatame (Triângulo de mão)', 'Estrangulamento Norte-Sul', 'Arm-lock Joelho na Barriga', 'Ezequiel técnica (100kg)'],
-    '100 kilos defesa (por baixo)' => ['Reposição de guarda', 'Virada de 4', 'Saída de 100kg (Indo para os 4 apoios)', 'Saída de 100kg (Reposição perna de fora)', 'Saída de 100kg para 4 apoios (Antecipação)', 'Reposição de meia guarda profunda', 'Saída de 100kg (Esgrima e quadril)'],
-    'meia guarda por cima' => ['Meia guarda para montada', 'Raspagem Meia Profunda (Fura-bolo)', 'Raspagem Meia Profunda (Waiter Sweep)', 'Raspagem Meia Profunda (Saída para as costas)', 'Raspagem Meia Guarda (Gancho lateral)', 'Raspagem Meia Guarda (Pêndulo profundo)', 'Kimura da meia guarda'],
-    'costas defesa' => ['Defesa de pegada de costas (girando)', 'Saída de costas (Giro para a guarda)', 'Saída de costas (Deslizar quadril e ponte)', 'Defesa de Mata-leão (Mão na gola técnica)', 'Defesa de ganchos das costas'],
-    '4 apoios ataque (por cima)' => ['Estrangulamento relógio', 'Ataque de 4 apoios (Ida para as costas)', 'Ataque de 4 apoios (Triângulo de mão)', 'Ataque de 4 apoios (Transição para montada)', 'Estrangulamento de gola (4 apoios)'],
-    '4 apoios por defesa (por baixo)' => ['Reposição de guarda partindo de 4 apoios', 'Rolo de 4 apoios', 'Rolo de 4 apoios para reposição de guarda', 'Saída de 4 apoios (Levantada técnica)', 'Reposição de guarda de 4 apoios (Rolamento)', 'Fuga de quadril dos 4 apoios (Sit-out)'],
-    'defesa de finalizações' => ['Guilhotina', 'Defesa de guilhotina', 'Defesa de Omoplata (Rolamento antecipado)', 'Defesa de Triângulo (Postura e amasso)', 'Defesa de Arm-lock (Saída Hitchhiker)', 'Defesa de Kimura (Contra-ataque)', 'Contra-ataque de triângulo na passagem']
-];
+// --- BUSCA DINÂMICA DE MÓDULOS (CATEGORIAS) ---
+// Buscamos as categorias únicas que existem na tabela licoes
+$query_cat = $pdo->query("SELECT DISTINCT categoria FROM licoes ORDER BY categoria ASC");
+$categorias_bd = $query_cat->fetchAll(PDO::FETCH_ASSOC);
 
-$posicoes_lista = [
-    'Fundamentos',
-    'Defesa Pessoal',
-    'Quedas',
-    'passagem de guarda',
-    'guarda fechada por baixo',
-    'guarda fechada por cima',
-    'guarda aberta',
-    'montada ataque (por cima)',
-    'montada defesa (por baixo)',
-    '100 kilos ataque (por cima)',
-    '100 kilos defesa (por baixo)',
-    'meia guarda por cima',
-    'costas ataque',
-    'costas defesa',
-    '4 apoios ataque (por cima)',
-    '4 apoios por defesa (por baixo)',
-    'defesa de finalizações'
-];
+// --- BUSCA DINÂMICA DE LIÇÕES E TÉCNICAS ---
+$licoes_array = [];
+$query_l = $pdo->query("SELECT * FROM licoes ORDER BY numero ASC");
+$todas_licoes = $query_l->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($todas_licoes as $licao) {
+    $id_l = $licao['id'];
+    $cat_l = $licao['categoria'];
+
+    $query_t = $pdo->query("SELECT nome FROM tecnicas WHERE licao_id = '$id_l' ORDER BY id ASC");
+    $tecs = $query_t->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($tecs as $t) {
+        $licoes_array[] = [
+            'nome' => $t['nome'],
+            'categoria' => $cat_l
+        ];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -105,6 +88,10 @@ $posicoes_lista = [
             font-size: 0.75rem;
             background: #fff;
             transition: 0.2s;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .opt-card input:checked+label {
@@ -120,6 +107,7 @@ $posicoes_lista = [
             margin-bottom: 10px;
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
+            margin-top: 20px;
         }
 
         .status-badge {
@@ -162,53 +150,54 @@ $posicoes_lista = [
             <div class="col-lg-7 col-md-10">
                 <div class="card shadow-lg border-0">
                     <div class="card-header bg-dark text-white text-center p-3">
-                        <h5 class="m-0 font-weight-bold">LANÇAR SELO INDIVIDUAL</h5>
+                        <h5 class="m-0 font-weight-bold text-uppercase">Lançar Conteúdo Individual</h5>
                         <small>Aluno: <?php echo $nome_aluno ?></small>
                     </div>
                     <div class="card-body p-4">
                         <form action="salvar-tecnica.php" method="POST">
                             <input type="hidden" name="id_aluno" value="<?php echo $id_aluno ?>">
 
-                            <div class="section-title">1. Escolha a Técnica</div>
-
+                            <div class="section-title">1. Pesquisar Técnica</div>
                             <div class="input-group mb-3 shadow-sm">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text bg-white border-right-0"><i
                                             class="fas fa-search text-muted"></i></span>
                                 </div>
                                 <input type="text" id="busca_tecnica" class="form-control border-left-0"
-                                    placeholder="Digite para filtrar 50 lições..." onkeyup="filtrarTecnicas()">
+                                    placeholder="Ex: Passagem, Raspagem..." onkeyup="filtrarTecnicas()">
                             </div>
 
                             <div class="grid-select" id="lista_tecnicas"
-                                style="max-height: 300px; overflow-y: auto; padding: 5px; border: 1px solid #eee; border-radius: 10px;">
-                                <?php foreach ($mapa_tecnicas as $pos_ref => $tecs): ?>
-                                    <?php foreach ($tecs as $t): ?>
-                                        <div class="opt-card item-tecnica">
-                                            <input type="radio" name="tecnica" id="t_<?php echo md5($t) ?>"
-                                                value="<?php echo $t ?>" data-posicao="<?php echo $pos_ref ?>"
-                                                onclick="selecionarPosicao(this)">
-                                            <label for="t_<?php echo md5($t) ?>"><?php echo $t ?></label>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <div class="form-group mt-3 mb-3">
-                                <label class="font-weight-bold text-muted">Ou escreva manualmente:</label>
-                                <input type="text" name="tecnica_manual" id="tecnica_manual" class="form-control"
-                                    placeholder="Nome da técnica..." oninput="limparRadiosTecnica()">
-                            </div>
-
-                            <div class="section-title">2. Posição / Categoria</div>
-                            <div class="grid-select" id="container_posicoes">
-                                <?php foreach ($posicoes_lista as $idx => $p): ?>
-                                    <div class="opt-card">
-                                        <input type="radio" name="posicao" id="p_<?php echo $idx ?>"
-                                            value="<?php echo $p ?>" required>
-                                        <label for="p_<?php echo $idx ?>"><?php echo $p ?></label>
+                                style="max-height: 250px; overflow-y: auto; padding: 5px; border: 1px solid #eee; border-radius: 10px;">
+                                <?php foreach ($licoes_array as $item): ?>
+                                    <div class="opt-card item-tecnica">
+                                        <input type="radio" name="tecnica" id="t_<?php echo md5($item['nome']) ?>"
+                                            value="<?php echo $item['nome'] ?>"
+                                            data-posicao="<?php echo $item['categoria'] ?>"
+                                            onclick="selecionarPosicao(this)">
+                                        <label for="t_<?php echo md5($item['nome']) ?>"><?php echo $item['nome'] ?></label>
                                     </div>
                                 <?php endforeach; ?>
+                            </div>
+
+                            <div class="section-title">2. Módulo / Posição</div>
+                            <div class="grid-select" id="container_posicoes">
+                                <?php foreach ($categorias_bd as $cat):
+                                    $c = $cat['categoria'];
+                                ?>
+                                    <div class="opt-card">
+                                        <input type="radio" name="posicao" id="p_<?php echo md5($c) ?>"
+                                            value="<?php echo $c ?>" required>
+                                        <label for="p_<?php echo md5($c) ?>"><?php echo $c ?></label>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label class="small font-weight-bold text-muted text-uppercase">Técnica Manual (Caso não
+                                    esteja na lista):</label>
+                                <input type="text" name="tecnica_manual" id="tecnica_manual" class="form-control"
+                                    placeholder="Nome da técnica..." oninput="limparRadiosTecnica()">
                             </div>
 
                             <hr>
