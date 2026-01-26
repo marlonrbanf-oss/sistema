@@ -13,75 +13,65 @@ $nivel_logado = @$_SESSION['nivel_usuario'];
 $hoje = date('Y-m-d');
 
 // --- BUSCA DE ESTATÍSTICAS PARA OS CARDS ---
-$total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->rowCount();
-$total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
+$total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim'")->rowCount();
+$total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista') AND ativo = 'Sim'")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
 // --- CORREÇÃO DE COLUNAS: Usando professor_id e observacoes conforme seu banco ---
 $total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor_id = '0' AND observacoes LIKE '%EXPERIMENTAL%'")->rowCount();
 
-// --- LÓGICA DO GRÁFICO DE FAIXAS (CORREÇÃO DE AGRUPAMENTO) ---
-// Buscamos apenas alunos ativos para o gráfico fazer sentido na gestão atual
-$query_f = $pdo->query("SELECT g.cor_faixa, COUNT(*) as qtd 
-                        FROM graduacoes g 
-                        INNER JOIN usuarios u ON g.usuario_id = u.id 
-                        WHERE u.ativo = 'Sim' 
-                        GROUP BY g.cor_faixa");
+// --- LÓGICA DO GRÁFICO DE FAIXAS (SINCRONIZADO COM TABELA USUARIOS) ---
+// Usamos a coluna 'faixa' da tabela 'usuarios' que é o dado mestre do cadastro
+$query_f = $pdo->query("SELECT faixa, COUNT(*) as qtd FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' GROUP BY faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
 
-$consolidado = [];
+$consolidado = [
+    'Branca' => 0,
+    'Azul'   => 0,
+    'Roxa'   => 0,
+    'Marrom' => 0,
+    'Preta'  => 0
+];
+
+// Tradução para garantir que variações de escrita (ex: white, azul, Azul) caiam na mesma categoria
 $traducao = [
     'branca' => 'Branca',
     'white' => 'Branca',
-    'azul' => 'Azul',
-    'blue' => 'Azul',
-    'roxa' => 'Roxa',
+    'azul'   => 'Azul',
+    'blue'  => 'Azul',
+    'roxa'   => 'Roxa',
     'purple' => 'Roxa',
     'marrom' => 'Marrom',
     'brown' => 'Marrom',
-    'preta' => 'Preta',
+    'preta'  => 'Preta',
     'black' => 'Preta'
 ];
 
+foreach ($dados_f as $row) {
+    $cor_banco = strtolower(trim($row['faixa'] ?? ''));
+    if (isset($traducao[$cor_banco])) {
+        $label = $traducao[$cor_banco];
+        $consolidado[$label] += $row['qtd'];
+    }
+}
+
+// Remove categorias que estão com valor ZERO (faz o gráfico sumir com faixas vazias)
+$consolidado = array_filter($consolidado);
+
+$labels_faixas = array_keys($consolidado);
+$valores_faixas = array_values($consolidado);
+
 $mapa_cores = [
-    'Branca' => '#f8f9fa',
+    'Branca' => '#f8f9fa', // Cinza muito claro para parecer branco no fundo branco
     'Azul'   => '#007bff',
     'Roxa'   => '#6f42c1',
     'Marrom' => '#6d4c41',
     'Preta'  => '#212529'
 ];
 
-foreach ($dados_f as $row) {
-    $cor_banco = strtolower(trim($row['cor_faixa'] ?? ''));
-    if ($cor_banco == '') continue;
-
-    $label_final = isset($traducao[$cor_banco]) ? $traducao[$cor_banco] : ucfirst($cor_banco);
-
-    if (!isset($consolidado[$label_final])) {
-        $consolidado[$label_final] = 0;
-    }
-    $consolidado[$label_final] += $row['qtd'];
-}
-
-// Ordenação sugerida (Branca -> Preta)
-$ordem = ['Branca', 'Azul', 'Roxa', 'Marrom', 'Preta'];
-$labels_faixas = [];
-$valores_faixas = [];
 $cores_js = [];
-
-foreach ($ordem as $cor_ref) {
-    if (isset($consolidado[$cor_ref])) {
-        $labels_faixas[] = $cor_ref;
-        $valores_faixas[] = $consolidado[$cor_ref];
-        $cores_js[] = $mapa_cores[$cor_ref];
-        unset($consolidado[$cor_ref]);
-    }
-}
-// Adiciona qualquer outra cor que não esteja na ordem padrão (ex: faixas infantis)
-foreach ($consolidado as $label => $qtd) {
-    $labels_faixas[] = $label;
-    $valores_faixas[] = $qtd;
-    $cores_js[] = '#cccccc';
+foreach ($labels_faixas as $l) {
+    $cores_js[] = isset($mapa_cores[$l]) ? $mapa_cores[$l] : '#cccccc';
 }
 
 // --- LÓGICA DE MENSALIDADES ---
@@ -139,6 +129,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             border-radius: 10px;
             border: none;
             overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
         .chart-container {
@@ -233,7 +224,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                 <div class="bg-light p-3 rounded mr-3 text-primary"><i
                                         class="fas fa-user-graduate fa-2x"></i></div>
                                 <div>
-                                    <p class="text-muted mb-0 small">ALUNOS</p>
+                                    <p class="text-muted mb-0 small">ALUNOS ATIVOS</p>
                                     <h2 class="font-weight-bold mb-0"><?php echo $total_alunos; ?></h2>
                                 </div>
                             </div>
@@ -246,7 +237,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                                 <div class="bg-light p-3 rounded mr-3 text-warning"><i class="fas fa-users fa-2x"></i>
                                 </div>
                                 <div>
-                                    <p class="text-muted mb-0 small">STAFF</p>
+                                    <p class="text-muted mb-0 small">STAFF ATIVO</p>
                                     <h2 class="font-weight-bold mb-0"><?php echo $total_staff; ?></h2>
                                 </div>
                             </div>
@@ -270,8 +261,8 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 <div class="row">
                     <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold">DISTRIBUIÇÃO POR
-                                FAIXA</div>
+                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold text-uppercase">
+                                Distribuição por Faixa</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartFaixas"></canvas></div>
                             </div>
@@ -279,8 +270,9 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold text-center">SAÚDE
-                                FINANCEIRA</div>
+                            <div
+                                class="card-header bg-white border-bottom p-3 small font-weight-bold text-center text-uppercase">
+                                Saúde Financeira</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartMensalidade"></canvas></div>
                             </div>
@@ -290,7 +282,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                         <div class="card shadow-sm h-100 border-top border-dark">
                             <div
                                 class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
-                                <span class="small font-weight-bold">ATIVIDADE RECENTE</span>
+                                <span class="small font-weight-bold text-uppercase">Atividade Recente</span>
                                 <a href="logs.php" class="btn btn-xs btn-outline-primary py-0"
                                     style="font-size: 0.65rem;">HISTÓRICO</a>
                             </div>
@@ -315,6 +307,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
     </div>
 
     <script>
+        // Gráfico de Faixas
         new Chart(document.getElementById('chartFaixas'), {
             type: 'pie',
             data: {
@@ -342,6 +335,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             }
         });
 
+        // Gráfico Financeiro
         new Chart(document.getElementById('chartMensalidade'), {
             type: 'doughnut',
             data: {
