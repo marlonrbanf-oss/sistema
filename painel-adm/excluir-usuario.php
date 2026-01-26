@@ -13,30 +13,55 @@ $usuario_logado = $_SESSION['nome_usuario'];
 
 if ($id != "") {
     try {
-        // A. Busca o nome antes de excluir para o Log
-        $query_u = $pdo->prepare("SELECT nome FROM usuarios WHERE id = :id");
+        // A. Busca os dados antes de excluir para o Log e para saber o nível
+        $query_u = $pdo->prepare("SELECT nome, nivel FROM usuarios WHERE id = :id");
         $query_u->bindValue(":id", $id);
         $query_u->execute();
         $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
-        $nome_excluido = ($dados_u) ? $dados_u['nome'] : "ID: " . $id;
 
-        // B. LIMPEZA DE DEPENDÊNCIAS (IMPORTANTE)
-        // Apagamos primeiro os registros onde esse ID é usado como chave estrangeira
+        if (!$dados_u) {
+            echo "<script>alert('Usuário não encontrado!'); window.location='index.php?pag=usuarios';</script>";
+            exit();
+        }
 
-        // Apaga aulas particulares vinculadas a este aluno
-        $pdo->query("DELETE FROM aulas_particulares WHERE aluno_id = '$id'");
+        $nome_excluido = $dados_u['nome'];
+        $nivel_excluido = $dados_u['nivel'];
 
-        // Apaga graduações vinculadas
-        $pdo->query("DELETE FROM graduacoes WHERE usuario_id = '$id'");
+        // B. LIMPEZA DE DEPENDÊNCIAS (PROTEÇÃO CONTRA ERROS DE CHAVE ESTRANGEIRA)
 
-        // Se houver outras tabelas como 'mensalidades' ou 'frequencias', adicione aqui:
-        // $pdo->query("DELETE FROM mensalidades WHERE usuario_id = '$id'");
+        // 1. Apaga graduações vinculadas (Independente se é aluno ou professor)
+        $res = $pdo->prepare("DELETE FROM graduacoes WHERE usuario_id = :id");
+        $res->bindValue(":id", $id);
+        $res->execute();
+
+        // 2. Apaga registros em aulas_particulares onde ele é o ALUNO
+        $res = $pdo->prepare("DELETE FROM aulas_particulares WHERE aluno_id = :id");
+        $res->bindValue(":id", $id);
+        $res->execute();
+
+        // 3. Se for Professor, apaga as aulas onde ele é o PROFESSOR
+        if ($nivel_excluido == 'Professor') {
+            $res = $pdo->prepare("DELETE FROM aulas_particulares WHERE professor_id = :id");
+            $res->bindValue(":id", $id);
+            $res->execute();
+        }
+
+        // 4. Se houver tabela de técnicas/estudos (do Dojo Digital), limpa também
+        // Nota: Ajuste o nome da tabela se for diferente no seu banco
+        try {
+            $res = $pdo->prepare("DELETE FROM tecnicas_estudo WHERE usuario_id = :id OR ultimo_parceiro_id = :id");
+            $res->bindValue(":id", $id);
+            $res->execute();
+        } catch (Exception $e) { /* Tabela pode não existir ainda */
+        }
 
         // C. Agora sim, exclui o usuário principal
-        $pdo->query("DELETE FROM usuarios WHERE id = '$id'");
+        $res = $pdo->prepare("DELETE FROM usuarios WHERE id = :id");
+        $res->bindValue(":id", $id);
+        $res->execute();
 
         // D. Registra no Log de Atividades
-        $acao = "Excluiu o usuário: " . $nome_excluido;
+        $acao = "Excluiu o usuário (" . $nivel_excluido . "): " . $nome_excluido;
         $res_log = $pdo->prepare("INSERT INTO logs (usuario, acao, data) VALUES (:usuario_logado, :acao, NOW())");
         $res_log->bindValue(":usuario_logado", $usuario_logado);
         $res_log->bindValue(":acao", $acao);
@@ -44,9 +69,9 @@ if ($id != "") {
 
         echo "<script>alert('Removido com sucesso!'); window.location='index.php?pag=usuarios';</script>";
     } catch (Exception $e) {
-        // Exibe uma mensagem mais amigável em caso de erro
+        // Em caso de erro, mostra o erro técnico para o Admin resolver dependências de banco
         echo "Erro ao excluir: Verifique se existem outros registros vinculados a este usuário.";
-        // echo " Erro técnico: " . $e->getMessage(); // Use para debugar se necessário
+        // echo " Erro técnico: " . $e->getMessage(); 
     }
 } else {
     echo "<script>window.location='index.php?pag=usuarios';</script>";

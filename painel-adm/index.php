@@ -17,57 +17,33 @@ $total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->
 $total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
-// --- CORREÇÃO DE COLUNAS ---
+// --- CORREÇÃO DE COLUNAS: Usando professor_id e observacoes conforme seu banco ---
 $total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor_id = '0' AND observacoes LIKE '%EXPERIMENTAL%'")->rowCount();
 
-// --- LÓGICA DO GRÁFICO DE FAIXAS (CORRIGIDA) ---
-// Buscamos a última graduação registrada para cada aluno
-$query_f = $pdo->query("SELECT cor_faixa, COUNT(*) as qtd FROM graduacoes GROUP BY cor_faixa");
+// --- LÓGICA DO GRÁFICO DE FAIXAS (CORREÇÃO DE AGRUPAMENTO) ---
+// Buscamos apenas alunos ativos para o gráfico fazer sentido na gestão atual
+$query_f = $pdo->query("SELECT g.cor_faixa, COUNT(*) as qtd 
+                        FROM graduacoes g 
+                        INNER JOIN usuarios u ON g.usuario_id = u.id 
+                        WHERE u.ativo = 'Sim' 
+                        GROUP BY g.cor_faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
 
-$consolidado = [
-    'Branca' => 0,
-    'Azul'   => 0,
-    'Roxa'   => 0,
-    'Marrom' => 0,
-    'Preta'  => 0
-];
-
-// Dicionário de normalização
-$mapa_nomes = [
+$consolidado = [];
+$traducao = [
     'branca' => 'Branca',
     'white' => 'Branca',
-    'azul'   => 'Azul',
-    'blue'  => 'Azul',
-    'roxa'   => 'Roxa',
+    'azul' => 'Azul',
+    'blue' => 'Azul',
+    'roxa' => 'Roxa',
     'purple' => 'Roxa',
     'marrom' => 'Marrom',
     'brown' => 'Marrom',
-    'preta'  => 'Preta',
+    'preta' => 'Preta',
     'black' => 'Preta'
 ];
 
-foreach ($dados_f as $row) {
-    $cor_bruta = strtolower(trim($row['cor_faixa'] ?? ''));
-    if (isset($mapa_nomes[$cor_bruta])) {
-        $label = $mapa_nomes[$cor_bruta];
-        $consolidado[$label] += $row['qtd'];
-    } else if ($cor_bruta != '') {
-        // Para faixas infantis ou outras não mapeadas
-        $label_outros = ucfirst($cor_bruta);
-        if (!isset($consolidado[$label_outros])) $consolidado[$label_outros] = 0;
-        $consolidado[$label_outros] += $row['qtd'];
-    }
-}
-
-// Remove categorias zeradas para o gráfico ficar limpo
-$consolidado = array_filter($consolidado);
-
-$labels_faixas = array_keys($consolidado);
-$valores_faixas = array_values($consolidado);
-
-// Cores hexadecimais correspondentes aos labels
-$cores_referencia = [
+$mapa_cores = [
     'Branca' => '#f8f9fa',
     'Azul'   => '#007bff',
     'Roxa'   => '#6f42c1',
@@ -75,9 +51,37 @@ $cores_referencia = [
     'Preta'  => '#212529'
 ];
 
+foreach ($dados_f as $row) {
+    $cor_banco = strtolower(trim($row['cor_faixa'] ?? ''));
+    if ($cor_banco == '') continue;
+
+    $label_final = isset($traducao[$cor_banco]) ? $traducao[$cor_banco] : ucfirst($cor_banco);
+
+    if (!isset($consolidado[$label_final])) {
+        $consolidado[$label_final] = 0;
+    }
+    $consolidado[$label_final] += $row['qtd'];
+}
+
+// Ordenação sugerida (Branca -> Preta)
+$ordem = ['Branca', 'Azul', 'Roxa', 'Marrom', 'Preta'];
+$labels_faixas = [];
+$valores_faixas = [];
 $cores_js = [];
-foreach ($labels_faixas as $l) {
-    $cores_js[] = isset($cores_referencia[$l]) ? $cores_referencia[$l] : '#adb5bd';
+
+foreach ($ordem as $cor_ref) {
+    if (isset($consolidado[$cor_ref])) {
+        $labels_faixas[] = $cor_ref;
+        $valores_faixas[] = $consolidado[$cor_ref];
+        $cores_js[] = $mapa_cores[$cor_ref];
+        unset($consolidado[$cor_ref]);
+    }
+}
+// Adiciona qualquer outra cor que não esteja na ordem padrão (ex: faixas infantis)
+foreach ($consolidado as $label => $qtd) {
+    $labels_faixas[] = $label;
+    $valores_faixas[] = $qtd;
+    $cores_js[] = '#cccccc';
 }
 
 // --- LÓGICA DE MENSALIDADES ---
@@ -266,8 +270,8 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 <div class="row">
                     <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold text-center">
-                                DISTRIBUIÇÃO POR FAIXA</div>
+                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold">DISTRIBUIÇÃO POR
+                                FAIXA</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartFaixas"></canvas></div>
                             </div>
@@ -311,7 +315,6 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
     </div>
 
     <script>
-        // Gráfico de Faixas (Pizza)
         new Chart(document.getElementById('chartFaixas'), {
             type: 'pie',
             data: {
@@ -319,7 +322,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 datasets: [{
                     data: <?php echo json_encode($valores_faixas); ?>,
                     backgroundColor: <?php echo json_encode($cores_js); ?>,
-                    borderColor: '#ced4da',
+                    borderColor: '#dee2e6',
                     borderWidth: 1
                 }]
             },
@@ -329,10 +332,9 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     legend: {
                         position: 'bottom',
                         labels: {
-                            boxWidth: 12,
-                            padding: 15,
+                            boxWidth: 10,
                             font: {
-                                size: 11
+                                size: 10
                             }
                         }
                     }
@@ -340,27 +342,25 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             }
         });
 
-        // Gráfico Financeiro (Donut)
         new Chart(document.getElementById('chartMensalidade'), {
             type: 'doughnut',
             data: {
                 labels: ['Em Dia', 'Atrasado', 'Inativo'],
                 datasets: [{
                     data: [<?php echo $pagos ?>, <?php echo $atrasados ?>, <?php echo $inativos ?>],
-                    backgroundColor: ['#28a745', '#dc3545', '#6c757d']
+                    backgroundColor: ['#28a745', '#dc3545', '#adb5bd']
                 }]
             },
             options: {
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '75%',
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
-                            boxWidth: 12,
-                            padding: 15,
+                            boxWidth: 10,
                             font: {
-                                size: 11
+                                size: 10
                             }
                         }
                     }
