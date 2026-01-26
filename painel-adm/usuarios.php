@@ -41,17 +41,22 @@ function converterCorFaixa($cor_banco)
 $nivel_filtro = isset($_GET['nivel']) ? $_GET['nivel'] : '';
 $status_filtro = isset($_GET['status']) ? $_GET['status'] : '';
 
-// 2. Monta a Query SQL baseada nos filtros recebidos
+// 2. Monta a Query SQL baseada nos filtros recebidos de forma robusta
 $sql = "SELECT u.*, g.cor_faixa, g.graus, g.total_aulas 
         FROM usuarios as u 
         LEFT JOIN graduacoes as g ON u.id = g.usuario_id";
 
+$filtros = [];
 if ($status_filtro == 'atrasado') {
-    $sql .= " WHERE u.nivel = 'Cliente' AND u.ativo = 'Sim' AND u.data_venc < '$hoje'";
+    $filtros[] = "u.nivel = 'Cliente' AND u.ativo = 'Sim' AND u.data_venc < '$hoje'";
 } elseif ($nivel_filtro == 'Cliente') {
-    $sql .= " WHERE u.nivel = 'Cliente'";
+    $filtros[] = "u.nivel = 'Cliente'";
 } elseif ($nivel_filtro == 'Professor') {
-    $sql .= " WHERE (u.nivel = 'Professor' OR u.nivel = 'Balconista')";
+    $filtros[] = "(u.nivel = 'Professor' OR u.nivel = 'Balconista')";
+}
+
+if (count($filtros) > 0) {
+    $sql .= " WHERE " . implode(" AND ", $filtros);
 }
 
 $sql .= " ORDER BY u.nome ASC";
@@ -224,8 +229,9 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="container-fluid mt-3 mb-5">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-            <h3 class="font-weight-bold mb-0 text-dark"><i class="fas fa-users-cog mr-2 text-primary"></i> Gestão de
-                Pessoas</h3>
+            <h3 class="font-weight-bold mb-0 text-dark">
+                <i class="fas fa-users-cog mr-2 text-primary"></i> Gestão de Pessoas
+            </h3>
 
             <div class="btn-group-mobile">
                 <button class="btn btn-sm btn-novo shadow-sm mr-2" data-toggle="modal" data-target="#modalNovo">
@@ -303,20 +309,27 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                     <td>
                                         <span
                                             class="font-weight-bold d-block"><?php echo mb_strtoupper($usu['nome']) ?></span>
-                                        <span
-                                            class="badge <?php echo $cor_selo ?> badge-nivel"><?php echo ($usu['nivel'] == 'Balconista') ? 'PROFESSOR' : $usu['nivel']; ?></span>
+                                        <span class="badge <?php echo $cor_selo ?> badge-nivel">
+                                            <?php echo ($usu['nivel'] == 'Balconista') ? 'PROFESSOR' : $usu['nivel']; ?>
+                                        </span>
                                         <small class="text-muted ml-1"><?php echo $usu['usuario'] ?></small>
                                     </td>
-                                    <td><?php if ($usu['nivel'] == 'Cliente'): ?><span
-                                                class="badge-aulas"><?php echo $total_aulas ?></span><?php else: ?><span
-                                                class="text-muted">---</span><?php endif; ?></td>
+                                    <td>
+                                        <?php if ($usu['nivel'] == 'Cliente'): ?>
+                                            <span class="badge-aulas"><?php echo $total_aulas ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted">---</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <?php if ($usu['nivel'] == 'Cliente'): ?>
                                             <div class="faixa-amostra" style="background-color: <?php echo $cor_exibicao ?>;">
                                             </div>
                                             <span class="ml-1 small font-weight-bold"><?php echo $usu['graus'] ?? '0' ?>º
                                                 G</span>
-                                        <?php else: ?><span class="text-muted small">---</span><?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-muted small">---</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <span class="status-pill <?php echo $st_class ?>"><?php echo $st_txt ?></span>
@@ -349,7 +362,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                                         class="fas fa-edit mr-2 text-info"></i> Editar</a>
                                                 <a class="dropdown-item text-danger"
                                                     href="excluir-usuario.php?id=<?php echo $id ?>"
-                                                    onclick="return confirm('Excluir?')"><i
+                                                    onclick="return confirm('Deseja realmente excluir este usuário?')"><i
                                                         class="fas fa-trash-alt mr-2"></i> Excluir</a>
                                             </div>
                                         </div>
@@ -395,9 +408,11 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                         onclick="toggleGraduacao('Cliente')">
                                     <label for="nivel_cliente"><i class="fas fa-user-graduate mr-1"></i> ALUNO
                                         (CLIENTE)</label>
+
                                     <input type="radio" name="nivel" value="Professor" id="nivel_prof"
                                         onclick="toggleGraduacao('Professor')">
                                     <label for="nivel_prof"><i class="fas fa-user-tie mr-1"></i> PROFESSOR</label>
+
                                     <input type="radio" name="nivel" value="Admin" id="nivel_admin"
                                         onclick="toggleGraduacao('Admin')">
                                     <label for="nivel_admin"><i class="fas fa-user-shield mr-1"></i> ADMIN</label>
@@ -504,7 +519,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     data: $(this).serialize(),
                     success: function(mensagem) {
                         if (mensagem.trim() === "Salvo com Sucesso") {
-                            // Captura os dados para a mensagem
                             let nomeAluno = $("input[name='nome']").val();
                             let emailAluno = $("input[name='email']").val();
                             let senhaAluno = $("input[name='senha']").val();
@@ -519,16 +533,12 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                 let linkZap = "https://api.whatsapp.com/send?phone=55" +
                                     telefoneAluno + "&text=" + encodeURIComponent(texto);
 
-                                // 1. Abre o WhatsApp primeiro
                                 window.open(linkZap, '_blank');
 
-                                // 2. Aguarda meio segundo antes de recarregar a página (O PULO DO GATO)
                                 setTimeout(function() {
                                     window.location = "usuarios.php";
-                                }, 500);
-
+                                }, 800);
                             } else {
-                                // Se não for aluno ou não tiver tel, redireciona na hora
                                 window.location = "usuarios.php";
                             }
                         } else {
@@ -536,7 +546,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                             $('#btn-salvar').text('SALVAR NOVO USUÁRIO').attr('disabled',
                                 false);
                         }
-                    }, // VÍRGULA ADICIONADA AQUI (CORREÇÃO)
+                    },
                     error: function() {
                         alert("Erro ao processar a requisição no servidor.");
                         $('#btn-salvar').text('SALVAR NOVO USUÁRIO').attr('disabled', false);
