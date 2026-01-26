@@ -2,17 +2,26 @@
 require_once("../conexao.php");
 @session_start();
 
-// Validação de Segurança básica
-if (@$_SESSION['nivel_usuario'] != 'Admin') {
+// 1. Validação de Segurança
+if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Balconista') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
 $hoje = date('Y-m-d');
 
-// Busca apenas alunos (Cliente) que estão com data_venc menor que hoje e estão ativos
-$query = $pdo->query("SELECT * FROM usuarios WHERE nivel = 'Cliente' AND data_venc < '$hoje' AND ativo != 'Não' ORDER BY data_venc ASC");
+// --- MANUTENÇÃO AUTOMÁTICA ANTES DE GERAR O RELATÓRIO ---
+// Regra: Se venceu há mais de 30 dias e ainda está "Sim", muda para "Não" (Inativo)
+$pdo->query("UPDATE usuarios SET ativo = 'Não' WHERE data_venc < DATE_SUB(NOW(), INTERVAL 30 DAY) AND nivel = 'Cliente' AND ativo = 'Sim'");
+
+// Regra: Se está inativo e venceu há mais de 1 ano, exclui permanentemente
+$pdo->query("DELETE FROM usuarios WHERE data_venc < DATE_SUB(NOW(), INTERVAL 365 DAY) AND ativo = 'Não' AND nivel = 'Cliente'");
+// -------------------------------------------------------
+
+// Busca alunos (Cliente) que estão com data_venc menor que hoje e ainda estão Ativos (dentro dos 30 dias de tolerância)
+$query = $pdo->query("SELECT * FROM usuarios WHERE nivel = 'Cliente' AND data_venc < '$hoje' AND ativo = 'Sim' ORDER BY data_venc ASC");
 $res = $query->fetchAll(PDO::FETCH_ASSOC);
+$total_atrasados = count($res);
 ?>
 
 <!DOCTYPE html>
@@ -29,7 +38,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
         body {
             background-color: #f4f7f6;
             font-size: 0.85rem;
-            /* Letras menores e mais elegantes */
             color: #333;
         }
 
@@ -42,7 +50,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        /* Cabeçalho Responsivo */
         .header-rep {
             border-bottom: 2px solid #dee2e6;
             margin-bottom: 20px;
@@ -52,8 +59,6 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
         h1 {
             font-size: 1.5rem;
         }
-
-        /* Título menor */
 
         .table thead th {
             background-color: #212529;
@@ -78,32 +83,13 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
             text-decoration: none;
             display: inline-block;
             transition: 0.3s;
+            font-weight: bold;
         }
 
         .btn-whatsapp:hover {
             background-color: #128c7e;
             transform: scale(1.05);
-        }
-
-        /* Ajustes Mobile */
-        @media (max-width: 576px) {
-            .header-rep {
-                text-align: center;
-                flex-direction: column;
-            }
-
-            .btn-group-print {
-                margin-top: 15px;
-                width: 100%;
-            }
-
-            .btn-group-print .btn {
-                width: 48%;
-            }
-
-            h1 {
-                font-size: 1.2rem;
-            }
+            text-decoration: none;
         }
 
         /* Estilos para Impressão */
@@ -118,20 +104,16 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 padding: 0;
             }
 
+            .no-print,
             .btn-print,
             .btn-whatsapp,
-            .btn-voltar,
-            .no-print {
+            .btn-voltar {
                 display: none !important;
             }
 
             .table td,
             .table th {
-                border: 1px solid #eee !important;
-            }
-
-            .text-atraso {
-                color: #000 !important;
+                border: 1px solid #ddd !important;
             }
         }
     </style>
@@ -143,16 +125,16 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
         <div class="header-rep d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="font-weight-bold mb-0 text-dark">NOVA ARTE BJJ</h1>
-                <p class="text-muted mb-0 small"><i class="fas fa-exclamation-circle mr-1"></i> Lista de Inadimplência</p>
+                <p class="text-muted mb-0 small"><i class="fas fa-exclamation-triangle mr-1 text-danger"></i> Relatório de Cobrança (Até 30 dias de atraso)</p>
             </div>
-            <div class="text-md-right mt-2 mt-md-0">
-                <p class="mb-2 small"><b>Data do Relatório:</b> <?php echo date('d/m/Y') ?></p>
-                <div class="btn-group-print">
-                    <button onclick="window.print()" class="btn btn-outline-danger btn-sm btn-print">
-                        <i class="fas fa-print"></i> PDF
+            <div class="text-md-right no-print">
+                <p class="mb-2 small"><b>Gerado em:</b> <?php echo date('d/m/Y H:i') ?></p>
+                <div class="btn-group">
+                    <button onclick="window.print()" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-print mr-1"></i> Imprimir / PDF
                     </button>
-                    <a href="usuarios.php" class="btn btn-outline-dark btn-sm btn-voltar ml-1">
-                        <i class="fas fa-arrow-left"></i> Sair
+                    <a href="usuarios.php" class="btn btn-outline-dark btn-sm ml-1">
+                        <i class="fas fa-arrow-left mr-1"></i> Sair
                     </a>
                 </div>
             </div>
@@ -164,21 +146,23 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     <tr>
                         <th>Aluno / E-mail</th>
                         <th>Vencimento</th>
-                        <th class="text-center">Atraso</th>
-                        <th class="text-right no-print">Ação</th>
+                        <th class="text-center">Dias de Atraso</th>
+                        <th class="text-right no-print">Ação de Cobrança</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php
-                    if (count($res) > 0) {
+                    if ($total_atrasados > 0) {
                         foreach ($res as $row) {
-                            $data_venc = new DateTime($row['data_venc']);
-                            $agora = new DateTime($hoje);
-                            $intervalo = $data_venc->diff($agora);
-                            $dias_atraso = $intervalo->days;
+                            $venc = new DateTime($row['data_venc']);
+                            $hoje_dt = new DateTime($hoje);
+                            $diff = $venc->diff($hoje_dt);
+                            $dias = $diff->days;
 
-                            $tel_limpo = preg_replace('/[^0-9]/', '', $row['telefone']);
-                            $msg = "Olá *{$row['nome']}*, tudo bem? Notamos que sua mensalidade na *Nova Arte BJJ* está pendente desde o dia " . date('d/m/Y', strtotime($row['data_venc'])) . ". Como podemos te ajudar a regularizar? Oss!";
+                            $tel_limpo = preg_replace('/[^0-9]/', '', $row['telefone'] ?? '');
+                            $primeiro_nome = explode(' ', trim($row['nome']))[0];
+
+                            $msg = "Olá *{$primeiro_nome}*! 👋 Notamos que sua mensalidade na *Nova Arte BJJ* venceu no dia " . date('d/m/Y', strtotime($row['data_venc'])) . ". Como podemos te ajudar a regularizar para você não perder os treinos? Oss! 🥋";
                             $url_zap = "https://api.whatsapp.com/send?phone=55$tel_limpo&text=" . urlencode($msg);
                     ?>
                             <tr>
@@ -190,29 +174,36 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                     <?php echo date('d/m/Y', strtotime($row['data_venc'])) ?>
                                 </td>
                                 <td class="align-middle text-center">
-                                    <span class="badge badge-pill badge-light border text-danger" style="font-size: 0.7rem;">
-                                        <?php echo $dias_atraso ?> dias
+                                    <span class="badge badge-pill badge-danger shadow-sm" style="padding: 5px 10px;">
+                                        <?php echo $dias ?> dias
                                     </span>
                                 </td>
                                 <td class="align-middle text-right no-print">
-                                    <a href="<?php echo $url_zap ?>" target="_blank" class="btn-whatsapp">
-                                        <i class="fab fa-whatsapp mr-1"></i> COBRAR
-                                    </a>
+                                    <?php if (!empty($tel_limpo)): ?>
+                                        <a href="<?php echo $url_zap ?>" target="_blank" class="btn-whatsapp">
+                                            <i class="fab fa-whatsapp mr-1"></i> ENVIAR COBRANÇA
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted small">Sem Telefone</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                     <?php
                         }
                     } else {
-                        echo "<tr><td colspan='4' class='text-center py-5 text-muted'>Parabéns! Todos os alunos estão em dia.</td></tr>";
+                        echo "<tr><td colspan='4' class='text-center py-5 text-muted'>
+                                <i class='fas fa-check-circle fa-2x text-success mb-2'></i><br>
+                                Parabéns! Todos os alunos ativos estão em dia.
+                              </td></tr>";
                     }
                     ?>
                 </tbody>
             </table>
         </div>
 
-        <div class="mt-4 pt-3 border-top d-flex justify-content-between">
-            <p class="text-muted small">Relatório gerado automaticamente pelo Sistema Nova Arte.</p>
-            <p class="font-weight-bold small">Total: <?php echo count($res) ?> aluno(s)</p>
+        <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+            <p class="text-muted small mb-0">Obs: Alunos com mais de 30 dias de atraso são movidos automaticamente para "Inativos".</p>
+            <p class="font-weight-bold mb-0">Total Pendente: <?php echo $total_atrasados ?> aluno(s)</p>
         </div>
     </div>
 

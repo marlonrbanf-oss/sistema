@@ -8,25 +8,38 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
     exit();
 }
 
-$id_usuario = $_GET['id'];
+$id_usuario = isset($_GET['id']) ? $_GET['id'] : '';
 
-// 2. Busca dados atuais (Adicionado total_aulas na query)
-$query = $pdo->query("SELECT u.*, g.cor_faixa, g.graus, g.total_aulas FROM usuarios as u LEFT JOIN graduacoes as g ON u.id = g.usuario_id WHERE u.id = '$id_usuario'");
-$res = $query->fetchAll(PDO::FETCH_ASSOC);
+// Inicialização de variáveis para evitar erros em branco
+$nome = $usuario = $cpf = $senha = $telefone = $data_venc = "";
+$nivel_atual = "cliente";
+$faixa_atual = "branca";
+$graus_atual = 0;
+$aulas_atual = 0;
 
-if (count($res) > 0) {
-    $nome = $res[0]['nome'];
-    $usuario = $res[0]['usuario'];
-    $cpf = $res[0]['cpf'];
-    $senha = $res[0]['senha'];
-    $telefone = $res[0]['telefone'] ?? '';
-    $data_venc = $res[0]['data_venc'] ?? '';
+// 2. Busca dados atuais se houver um ID
+if ($id_usuario != "") {
+    $query = $pdo->prepare("SELECT u.*, g.cor_faixa, g.graus, g.total_aulas 
+                            FROM usuarios as u 
+                            LEFT JOIN graduacoes as g ON u.id = g.usuario_id 
+                            WHERE u.id = :id");
+    $query->bindValue(":id", $id_usuario);
+    $query->execute();
+    $res = $query->fetchAll(PDO::FETCH_ASSOC);
 
-    // Tratamento para garantir a seleção
-    $nivel_atual = strtolower(trim($res[0]['nivel']));
-    $faixa_atual = strtolower(trim($res[0]['cor_faixa'] ?? 'branca'));
-    $graus_atual = $res[0]['graus'] ?? 0;
-    $aulas_atual = $res[0]['total_aulas'] ?? 0;
+    if (count($res) > 0) {
+        $nome = $res[0]['nome'];
+        $usuario = $res[0]['usuario'];
+        $cpf = $res[0]['cpf'];
+        $senha = $res[0]['senha'];
+        $telefone = $res[0]['telefone'] ?? '';
+        $data_venc = $res[0]['data_venc'] ?? '';
+
+        $nivel_atual = strtolower(trim($res[0]['nivel']));
+        $faixa_atual = strtolower(trim($res[0]['cor_faixa'] ?? 'branca'));
+        $graus_atual = $res[0]['graus'] ?? 0;
+        $aulas_atual = $res[0]['total_aulas'] ?? 0;
+    }
 }
 ?>
 
@@ -96,13 +109,12 @@ if (count($res) > 0) {
                         <h5 class="m-0"><i class="fas fa-user-edit mr-2 text-warning"></i>EDITAR USUÁRIO</h5>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="cadastrar-usuario.php">
+                        <form method="POST" action="salvar-usuario.php">
                             <input type="hidden" name="id" value="<?php echo $id_usuario ?>">
 
                             <div class="form-group mb-4">
                                 <label class="font-weight-bold">Nome Completo</label>
-                                <input type="text" name="nome" class="form-control" value="<?php echo $nome ?>"
-                                    required>
+                                <input type="text" name="nome" class="form-control" value="<?php echo $nome ?>" required>
                             </div>
 
                             <div class="row">
@@ -112,57 +124,47 @@ if (count($res) > 0) {
                                 </div>
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="font-weight-bold">E-mail (Login)</label>
-                                    <input type="email" name="email" class="form-control" value="<?php echo $usuario ?>"
-                                        required>
+                                    <input type="email" name="email" class="form-control" value="<?php echo $usuario ?>" required>
                                 </div>
                             </div>
 
                             <div class="row mb-4">
                                 <div class="col-md-6 form-group">
                                     <label class="font-weight-bold">Telefone</label>
-                                    <input type="text" name="telefone" class="form-control"
-                                        value="<?php echo $telefone ?>">
+                                    <input type="text" name="telefone" class="form-control" value="<?php echo $telefone ?>">
                                 </div>
                                 <div class="col-md-6 form-group">
                                     <label class="font-weight-bold">Data de Vencimento</label>
-                                    <input type="date" name="data_venc" class="form-control"
-                                        value="<?php echo $data_venc ?>">
+                                    <input type="date" name="data_venc" class="form-control" value="<?php echo $data_venc ?>">
                                 </div>
                             </div>
 
                             <div class="row mb-4">
                                 <div class="col-md-5 form-group">
                                     <label class="font-weight-bold">Senha</label>
-                                    <input type="text" name="senha" class="form-control" value="<?php echo $senha ?>"
-                                        required>
+                                    <input type="text" name="senha" class="form-control" value="<?php echo $senha ?>" required>
                                 </div>
                                 <div class="col-md-7">
                                     <label class="secao-titulo font-weight-bold">Nível de Acesso</label>
                                     <div class="opcoes-flex">
                                         <label class="item-selecao">
-                                            <input type="radio" name="nivel" value="Cliente"
-                                                <?php if ($nivel_atual == 'cliente') echo 'checked'; ?> required> Aluno
+                                            <input type="radio" name="nivel" value="Cliente" <?php if ($nivel_atual == 'cliente') echo 'checked'; ?> required> Aluno
                                         </label>
                                         <label class="item-selecao">
-                                            <input type="radio" name="nivel" value="Professor"
-                                                <?php if ($nivel_atual == 'professor' || $nivel_atual == 'balconista') echo 'checked'; ?>>
-                                            Professor
+                                            <input type="radio" name="nivel" value="Professor" <?php if ($nivel_atual == 'professor') echo 'checked'; ?>> Professor
                                         </label>
                                         <label class="item-selecao">
-                                            <input type="radio" name="nivel" value="Admin"
-                                                <?php if ($nivel_atual == 'admin') echo 'checked'; ?>> Admin
+                                            <input type="radio" name="nivel" value="Admin" <?php if ($nivel_atual == 'admin') echo 'checked'; ?>> Admin
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <div id="secao_graduacao"
-                                style="display: <?php echo ($nivel_atual == 'cliente') ? 'block' : 'none'; ?>;">
+                            <div id="secao_graduacao" style="display: <?php echo ($nivel_atual == 'cliente') ? 'block' : 'none'; ?>;">
                                 <hr class="my-4">
                                 <div class="row">
                                     <div class="col-12 mb-3">
-                                        <label class="secao-titulo font-weight-bold"><i
-                                                class="fas fa-medal mr-1"></i>Cor da Faixa</label>
+                                        <label class="secao-titulo font-weight-bold"><i class="fas fa-medal mr-1"></i>Cor da Faixa</label>
                                         <div class="opcoes-flex">
                                             <?php
                                             $faixas = ['Branca', 'Azul', 'Roxa', 'Marrom', 'Preta'];
@@ -170,21 +172,18 @@ if (count($res) > 0) {
                                                 $selected = ($faixa_atual == strtolower($f)) ? 'checked' : '';
                                             ?>
                                                 <label class="item-selecao">
-                                                    <input type="radio" name="cor_faixa" value="<?php echo $f ?>"
-                                                        <?php echo $selected ?>> <?php echo $f ?>
+                                                    <input type="radio" name="cor_faixa" value="<?php echo $f ?>" <?php echo $selected ?>> <?php echo $f ?>
                                                 </label>
                                             <?php endforeach; ?>
                                         </div>
                                     </div>
                                     <div class="col-md-6 form-group mt-2">
                                         <label class="font-weight-bold">Graus na Faixa</label>
-                                        <input type="number" name="graus" class="form-control"
-                                            value="<?php echo $graus_atual ?>" min="0" max="4">
+                                        <input type="number" name="graus" class="form-control" value="<?php echo $graus_atual ?>" min="0" max="4">
                                     </div>
                                     <div class="col-md-6 form-group mt-2">
                                         <label class="font-weight-bold">Total de Aulas (Frequência)</label>
-                                        <input type="number" name="total_aulas" class="form-control"
-                                            value="<?php echo $aulas_atual ?>" min="0">
+                                        <input type="number" name="total_aulas" class="form-control" value="<?php echo $aulas_atual ?>" min="0">
                                     </div>
                                 </div>
                             </div>
@@ -206,6 +205,7 @@ if (count($res) > 0) {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Lógica para mostrar/esconder graduação baseado no nível
         $('input[name="nivel"]').change(function() {
             if ($(this).val() == 'Cliente') {
                 $('#secao_graduacao').fadeIn();

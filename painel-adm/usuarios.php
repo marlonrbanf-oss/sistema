@@ -33,7 +33,7 @@ function converterCorFaixa($cor_banco)
         case 'preta':
             return 'black';
         default:
-            return $cor_banco;
+            return (!empty($cor_banco)) ? $cor_banco : 'white';
     }
 }
 
@@ -41,7 +41,7 @@ function converterCorFaixa($cor_banco)
 $nivel_filtro = isset($_GET['nivel']) ? $_GET['nivel'] : '';
 $status_filtro = isset($_GET['status']) ? $_GET['status'] : '';
 
-// 2. Monta a Query SQL baseada nos filtros recebidos de forma robusta
+// 2. Monta a Query SQL baseada nos filtros
 $sql = "SELECT u.*, g.cor_faixa, g.graus, g.total_aulas 
         FROM usuarios as u 
         LEFT JOIN graduacoes as g ON u.id = g.usuario_id";
@@ -333,7 +333,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                     </td>
                                     <td>
                                         <span class="status-pill <?php echo $st_class ?>"><?php echo $st_txt ?></span>
-                                        <?php if ($usu['nivel'] == 'Cliente' && $data_venc != null && $data_venc != '0000-00-00'): ?>
+                                        <?php if ($usu['nivel'] == 'Cliente' && !empty($data_venc) && $data_venc != '0000-00-00'): ?>
                                             <br><small class="text-muted">Venc:
                                                 <?php echo date('d/m/Y', strtotime($data_venc)) ?></small>
                                         <?php endif; ?>
@@ -354,7 +354,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                                         href="mudar-status.php?id=<?php echo $id ?>&acao=atrasar"><i
                                                             class="fas fa-hand-holding-usd mr-2"></i> Definir Atrasado</a>
                                                     <a class="dropdown-item" href="#"
-                                                        onclick="darPresenca(<?php echo $id ?>, '<?php echo $usu['nome'] ?>')"><i
+                                                        onclick="darPresenca(<?php echo $id ?>, '<?php echo addslashes($usu['nome']) ?>')"><i
                                                             class="fas fa-check mr-2 text-success"></i> Dar Presença</a>
                                                 <?php endif; ?>
                                                 <div class="dropdown-divider"></div>
@@ -408,11 +408,9 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                         onclick="toggleGraduacao('Cliente')">
                                     <label for="nivel_cliente"><i class="fas fa-user-graduate mr-1"></i> ALUNO
                                         (CLIENTE)</label>
-
                                     <input type="radio" name="nivel" value="Professor" id="nivel_prof"
                                         onclick="toggleGraduacao('Professor')">
                                     <label for="nivel_prof"><i class="fas fa-user-tie mr-1"></i> PROFESSOR</label>
-
                                     <input type="radio" name="nivel" value="Admin" id="nivel_admin"
                                         onclick="toggleGraduacao('Admin')">
                                     <label for="nivel_admin"><i class="fas fa-user-shield mr-1"></i> ADMIN</label>

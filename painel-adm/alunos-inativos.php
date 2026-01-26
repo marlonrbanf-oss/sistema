@@ -7,6 +7,16 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
+
+// --- MANUTENÇÃO AUTOMÁTICA DAS REGRAS DE NEGÓCIO ---
+
+// 1. REGRA: Mais de 30 dias de atraso -> Torna Inativo (Ativo = 'Não')
+$pdo->query("UPDATE usuarios SET ativo = 'Não' WHERE data_venc < DATE_SUB(NOW(), INTERVAL 30 DAY) AND nivel = 'Cliente' AND ativo = 'Sim'");
+
+// 2. REGRA: Mais de 1 ano (365 dias) inativo -> Exclui o cadastro definitivamente
+$pdo->query("DELETE FROM usuarios WHERE data_venc < DATE_SUB(NOW(), INTERVAL 365 DAY) AND ativo = 'Não' AND nivel = 'Cliente'");
+
+// ---------------------------------------------------
 ?>
 
 <!DOCTYPE html>
@@ -49,14 +59,6 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
             transform: scale(1.02);
         }
 
-        .badge-count {
-            font-size: 1rem;
-            background-color: #dc3545;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 50px;
-        }
-
         .empty-state {
             padding: 50px;
             background: white;
@@ -77,7 +79,7 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
                 <small class="text-muted">Gerencie quem está afastado e facilite o retorno.</small>
             </div>
             <div class="d-flex align-items-center">
-                <a href="usuarios.php" class="btn btn-dark shadow-sm mr-2">
+                <a href="usuarios.php" class="btn btn-dark shadow-sm">
                     <i class="fas fa-arrow-left mr-1"></i> Voltar
                 </a>
             </div>
@@ -85,7 +87,7 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
 
         <div class="row">
             <?php
-            // Busca usuários inativos do nível Cliente
+            // Busca usuários inativos do nível Cliente (já atualizados pelas regras acima)
             $query = $pdo->query("SELECT * FROM usuarios WHERE ativo = 'Não' AND nivel = 'Cliente' ORDER BY nome ASC");
             $res = $query->fetchAll(PDO::FETCH_ASSOC);
             $total_inativos = count($res);
@@ -93,20 +95,15 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
             if ($total_inativos > 0) {
                 foreach ($res as $usu) {
                     $id = $usu['id'];
-                    // Formata nome para exibição (Primeira letra maiúscula)
                     $nome = mb_convert_case($usu['nome'], MB_CASE_TITLE, "UTF-8");
-
-                    // Limpa o telefone para o link do WhatsApp (mantém apenas números)
                     $tel_limpo = preg_replace('/[^0-9]/', '', $usu['telefone'] ?? '');
 
-                    // Lógica para capturar primeiro nome com segurança
+                    // Lógica do primeiro nome para a mensagem
                     $nome_partes = explode(' ', trim($nome));
                     $primeiro_nome = $nome_partes[0];
 
                     // Mensagem personalizada
                     $mensagem = "Olá *$primeiro_nome*! Tudo bem? 👋\n\nNotamos que você está afastado dos treinos na *Nova Arte BJJ*. Estamos passando para saber se você deseja retornar aos tatames!🥋\n\nTemos condições especiais para alunos antigos. Vamos treinar? *OSS!*";
-
-                    // Verifica se o telefone tem o formato mínimo esperado
                     $url_whats = "https://api.whatsapp.com/send?phone=55$tel_limpo&text=" . urlencode($mensagem);
             ?>
                     <div class="col-md-6 col-lg-4 mb-4">
@@ -117,6 +114,8 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
                                     <span class="badge badge-light border text-muted">
                                         <i class="fas fa-phone-alt mr-1"></i> <?php echo !empty($usu['telefone']) ? $usu['telefone'] : 'Não informado' ?>
                                     </span>
+                                    <br>
+                                    <small class="text-danger">Vencimento: <?php echo date('d/m/Y', strtotime($usu['data_venc'])) ?></small>
                                 </div>
 
                                 <div class="mt-auto">
@@ -149,9 +148,9 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
                 <div class="col-12">
                     <div class="empty-state text-center">
                         <i class="fas fa-users text-muted fa-3x mb-3"></i>
-                        <h4 class="text-secondary">Tudo em dia!</h4>
-                        <p class="text-muted">Não há alunos inativos registrados no sistema.</p>
-                        <a href="usuarios.php" class="btn btn-outline-primary btn-sm">Ver todos os alunos</a>
+                        <h4 class="text-secondary">Nenhum aluno inativo!</h4>
+                        <p class="text-muted">Todos os alunos estão com a mensalidade em dia ou dentro do prazo de 30 dias de atraso.</p>
+                        <a href="usuarios.php" class="btn btn-outline-primary btn-sm">Ir para Gerenciar Alunos</a>
                     </div>
                 </div>';
             }

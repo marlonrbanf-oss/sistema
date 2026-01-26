@@ -2,8 +2,7 @@
 require_once("../conexao.php");
 @session_start();
 
-// Configurações do interpretador CSV
-// Ajustado para aceitar vírgula ou ponto-e-vírgula (comum em Excels brasileiros)
+// Configurações iniciais
 $delimitador = ',';
 $cerca = '"';
 
@@ -14,48 +13,51 @@ if (isset($_FILES['arquivo_excel']) && $_FILES['arquivo_excel']['name'] != "") {
     // Abre o arquivo para leitura
     $handle = fopen($arquivo, 'r');
 
-    // Detecta se o separador é vírgula ou ponto-e-vírgula na primeira linha
+    // 1. Detecta o separador (vírgula ou ponto-e-vírgula)
     $primeiraLinha = fgets($handle);
     if (strpos($primeiraLinha, ';') !== false) {
         $delimitador = ';';
     }
-    rewind($handle); // Volta para o início do arquivo
+    rewind($handle); // Volta para o início
 
-    // Pula a linha do cabeçalho
+    // 2. Lê e pula o cabeçalho
     fgetcsv($handle, 1000, $delimitador, $cerca);
 
     $cont_sucesso = 0;
     $cont_erro = 0;
     $ja_cadastrados = 0;
 
-    // Loop pelas linhas do arquivo
+    // 3. Loop pelas linhas do arquivo
     while (($dados = fgetcsv($handle, 1000, $delimitador, $cerca)) !== FALSE) {
 
         // Se a linha estiver vazia ou o nome estiver em branco, pula
         if (empty($dados[0]) || trim($dados[0]) == "") continue;
 
-        // Mapeamento das 10 Colunas (Ordem da Planilha)
-        $nome        = trim($dados[0]);
-        $usuario     = trim($dados[1]); // E-mail usado para login
-        $cpf         = trim($dados[2]);
+        // Mapeamento e Limpeza (Tratando acentuação com utf8_encode se necessário)
+        $nome        = trim(utf8_encode($dados[0]));
+        $usuario     = trim($dados[1]); // E-mail
+        $cpf         = preg_replace('/[^0-9]/', '', $dados[2]); // Limpa CPF
         $senha       = trim($dados[3]);
-        $nivel       = (!empty($dados[4])) ? trim($dados[4]) : 'Cliente';
-        $telefone    = trim($dados[5] ?? '');
+        $nivel       = (!empty($dados[4])) ? ucfirst(strtolower(trim($dados[4]))) : 'Cliente';
+        $telefone    = preg_replace('/[^0-9]/', '', $dados[5] ?? ''); // Limpa Telefone
         $data_venc   = (!empty($dados[6])) ? trim($dados[6]) : date('Y-m-d', strtotime('+30 days'));
 
+        // Padronização: se na planilha estiver 'Aluno', vira 'Cliente' para o banco
+        if ($nivel == 'Aluno') $nivel = 'Cliente';
+
         // Dados de Graduação (Colunas H, I, J)
-        $cor_faixa   = mb_strtolower(trim($dados[7] ?? 'branca'));
+        $cor_faixa   = (!empty($dados[7])) ? trim($dados[7]) : 'Branca';
         $graus       = (int)($dados[8] ?? 0);
         $total_aulas = (int)($dados[9] ?? 0);
 
-        // 1. Verificar se o Usuário/E-mail já existe no banco
+        // Verificar se o Usuário/E-mail já existe
         $query = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = :u");
         $query->bindValue(":u", $usuario);
         $query->execute();
 
         if ($query->rowCount() == 0) {
             try {
-                // 2. Inserir na tabela USUARIOS
+                // Inserir na tabela USUARIOS
                 $res = $pdo->prepare("INSERT INTO usuarios SET 
                     nome = :nome, 
                     usuario = :usuario, 
@@ -78,8 +80,8 @@ if (isset($_FILES['arquivo_excel']) && $_FILES['arquivo_excel']['name'] != "") {
 
                 $id_novo_usuario = $pdo->lastInsertId();
 
-                // 3. Inserir na tabela GRADUACOES se o nível for Cliente
-                if ($nivel == 'Cliente' || $nivel == 'Aluno') {
+                // Inserir na tabela GRADUACOES se for Cliente
+                if ($nivel == 'Cliente') {
                     $res_g = $pdo->prepare("INSERT INTO graduacoes SET 
                         usuario_id = :id, 
                         cor_faixa = :cor, 
@@ -95,6 +97,7 @@ if (isset($_FILES['arquivo_excel']) && $_FILES['arquivo_excel']['name'] != "") {
 
                 $cont_sucesso++;
             } catch (Exception $e) {
+                // Log de erro pode ser adicionado aqui: error_log($e->getMessage());
                 $cont_erro++;
             }
         } else {
@@ -104,9 +107,9 @@ if (isset($_FILES['arquivo_excel']) && $_FILES['arquivo_excel']['name'] != "") {
 
     fclose($handle);
 
-    // Feedback visual para o usuário
+    // Feedback visual
     echo "<script>
-            alert('Processamento concluído!\\n\\n✅ Sucesso: $cont_sucesso\\n⚠️ Já cadastrados: $ja_cadastrados\\n❌ Erros técnicos: $cont_erro'); 
+            alert('Processamento concluído!\\n\\n✅ Importados: $cont_sucesso\\n⚠️ Já existiam: $ja_cadastrados\\n❌ Erros: $cont_erro'); 
             window.location='usuarios.php';
           </script>";
 } else {
