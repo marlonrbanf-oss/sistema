@@ -15,7 +15,7 @@ $query_a = $pdo->prepare("SELECT u.nome, u.data_venc, g.* FROM usuarios u LEFT J
 $query_a->execute([':id' => $id_aluno]);
 $aluno = $query_a->fetch(PDO::FETCH_ASSOC);
 
-// 3. CÁLCULO TÉCNICO (Mesma lógica do painel do aluno)
+// 3. CÁLCULO TÉCNICO
 $query_h = $pdo->prepare("SELECT status, COUNT(*) as total FROM habilidades WHERE usuario_id = :id GROUP BY status");
 $query_h->execute([':id' => $id_aluno]);
 $habilidades = $query_h->fetchAll(PDO::FETCH_ASSOC);
@@ -25,17 +25,21 @@ foreach ($habilidades as $h) {
     $stats[$h['status']] = $h['total'];
 }
 
-$total_tecnicas_curriculo = 150; // Total de técnicas da sua metodologia
+$total_tecnicas_curriculo = 150;
 $pontuacao_atual = ($stats['Concluído'] * 100) + ($stats['Revisão'] * 60) + ($stats['Em Estudo'] * 30);
 $porcentagem_tecnica = ($total_tecnicas_curriculo > 0) ? round(($pontuacao_atual / ($total_tecnicas_curriculo * 100)) * 100) : 0;
 if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
+
+// Função auxiliar para cor do texto na badge
+$cor_fundo = $aluno['cor_faixa'] ?? 'white';
+$texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'yellow'])) ? '#000' : '#fff';
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
-    <title>Análise de Graduação</title>
+    <title>Análise de Graduação - <?php echo $aluno['nome']; ?></title>
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
@@ -63,17 +67,30 @@ if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
             padding: 15px;
             text-align: center;
             height: 100%;
+            border: 1px solid #eee;
+        }
+
+        .badge-faixa-analise {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            border: 1px solid #333;
         }
     </style>
 </head>
 
 <body class="bg-light">
 
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <div class="card card-analise shadow">
-            <div class="card-header bg-dark text-white d-flex justify-content-between">
-                <h5 class="mb-0">Análise de Prontidão: <?php echo $aluno['nome']; ?></h5>
-                <button onclick="window.print()" class="btn btn-sm btn-light"><i class="fas fa-print"></i></button>
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-line mr-2"></i> Análise de Prontidão:
+                    <?php echo $aluno['nome']; ?></h5>
+                <div>
+                    <button onclick="window.print()" class="btn btn-sm btn-light mr-2"><i
+                            class="fas fa-print"></i></button>
+                    <a href="usuarios.php" class="btn btn-sm btn-outline-light">Voltar</a>
+                </div>
             </div>
             <div class="card-body">
 
@@ -89,8 +106,8 @@ if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
                             <div class="col-6 mb-3">
                                 <div class="meta-box shadow-sm">
                                     <small class="text-muted d-block">FAIXA ATUAL</small>
-                                    <span class="badge p-2"
-                                        style="background: <?php echo $aluno['cor_faixa']; ?>; border: 1px solid #ddd;">
+                                    <span class="badge-faixa-analise"
+                                        style="background: <?php echo $cor_fundo; ?>; color: <?php echo $texto_cor; ?>;">
                                         <?php echo strtoupper($aluno['cor_faixa'] ?? 'Branca'); ?>
                                     </span>
                                 </div>
@@ -121,7 +138,7 @@ if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
                     </div>
                 </div>
 
-                <h6 class="font-weight-bold border-bottom pb-2 mb-3">Checklist de Avaliação</h6>
+                <h6 class="font-weight-bold border-bottom pb-2 mb-3 text-secondary">Checklist de Avaliação</h6>
                 <div class="table-responsive">
                     <table class="table table-sm table-borderless">
                         <tr>
@@ -132,29 +149,24 @@ if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
                         </tr>
                         <tr>
                             <td><i
-                                    class="fas <?php echo ($aluno['total_aulas'] >= 40) ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'; ?> mr-2"></i>
+                                    class="fas <?php echo (($aluno['total_aulas'] ?? 0) >= 40) ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'; ?> mr-2"></i>
                                 Mínimo de Aulas (Frequência)</td>
-                            <td class="text-right font-weight-bold"><?php echo $aluno['total_aulas']; ?>/40</td>
+                            <td class="text-right font-weight-bold"><?php echo $aluno['total_aulas'] ?? 0; ?>/40</td>
                         </tr>
                         <tr>
                             <td><i class="fas fa-info-circle text-primary mr-2"></i> Disciplina e Atitude</td>
-                            <td class="text-right">Avaliável pelo Professor</td>
+                            <td class="text-right text-muted">Avaliável pelo Professor</td>
                         </tr>
                     </table>
                 </div>
 
-                <hr>
+                <hr class="my-4">
 
                 <div class="row text-center">
-                    <div class="col-6">
-                        <button class="btn btn-outline-primary btn-block"
-                            onclick="alert('Funcionalidade: Lançar Grau')">
-                            <i class="fas fa-plus-circle mr-2"></i> PROMOVER GRAU
-                        </button>
-                    </div>
-                    <div class="col-6">
-                        <button class="btn btn-dark btn-block" onclick="alert('Funcionalidade: Trocar Faixa')">
-                            <i class="fas fa-sync-alt mr-2"></i> TROCAR FAIXA
+                    <div class="col-12">
+                        <button class="btn btn-primary btn-lg px-5 shadow-sm" data-toggle="modal"
+                            data-target="#modalPromover">
+                            <i class="fas fa-award mr-2"></i> GERENCIAR GRADUAÇÃO (PROMOVER)
                         </button>
                     </div>
                 </div>
@@ -162,6 +174,77 @@ if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="modalPromover" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Promover Aluno: <?php echo $aluno['nome']; ?></h5>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="form-promover">
+                    <div class="modal-body">
+                        <input type="hidden" name="id_aluno" value="<?php echo $id_aluno; ?>">
+
+                        <div class="form-group">
+                            <label class="font-weight-bold">Nova Faixa:</label>
+                            <select name="nova_faixa" class="form-control form-control-lg">
+                                <?php
+                                $faixas = ['Branca', 'Cinza', 'Amarela', 'Laranja', 'Verde', 'Azul', 'Roxa', 'Marrom', 'Preta'];
+                                foreach ($faixas as $f) {
+                                    $sel = ($aluno['cor_faixa'] == $f) ? 'selected' : '';
+                                    echo "<option value='$f' $sel>$f</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-weight-bold">Quantidade de Graus:</label>
+                            <input type="number" name="novo_grau" class="form-control form-control-lg"
+                                value="<?php echo ($aluno['graus'] ?? 0); ?>" min="0" max="4">
+                        </div>
+
+                        <div class="alert alert-info py-2">
+                            <small><i class="fas fa-info-circle mr-1"></i> Ao confirmar, o contador de <b>Aulas
+                                    Atuais</b> será resetado para 0.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success px-4" id="btn_confirmar">CONFIRMAR
+                            PROMOÇÃO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $('#form-promover').submit(function(e) {
+            e.preventDefault();
+            $('#btn_confirmar').html('<i class="fas fa-spinner fa-spin"></i> Processando...').prop('disabled',
+                true);
+
+            $.ajax({
+                url: "promover-aluno.php",
+                method: "POST",
+                data: $(this).serialize(),
+                success: function(mensagem) {
+                    if (mensagem.trim() === "Sucesso") {
+                        alert("Graduação atualizada com sucesso! OSS.");
+                        window.location.reload();
+                    } else {
+                        alert(mensagem);
+                        $('#btn_confirmar').html('CONFIRMAR PROMOÇÃO').prop('disabled', false);
+                    }
+                }
+            });
+        });
+    </script>
 
 </body>
 
