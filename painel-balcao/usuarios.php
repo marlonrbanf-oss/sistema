@@ -55,6 +55,17 @@ function tratarCorFaixa($cor)
             color: white;
         }
 
+        .btn-analise {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+
+        .btn-analise:hover {
+            background-color: #218838;
+            color: white;
+        }
+
         .status-atrasado {
             border-left: 6px solid #dc3545;
             background-color: #fff5f5;
@@ -152,7 +163,6 @@ function tratarCorFaixa($cor)
                                 $cor_banco = $aluno['cor_faixa'] ?? 'Branca';
                                 $cor_css = tratarCorFaixa($cor_banco);
 
-                                // Contraste de texto na badge da faixa
                                 $texto_cor = (in_array($cor_css, ['white', '#FFFF00', 'yellow'])) ? '#000' : '#fff';
 
                                 $data_venc = $aluno['data_venc'];
@@ -198,6 +208,11 @@ function tratarCorFaixa($cor)
                                                 <i class="fas fa-stamp"></i>
                                             </a>
 
+                                            <a href="index.php?pag=relatorio-graduacao&id=<?php echo $id ?>"
+                                                class="btn btn-warning btn-sm shadow-sm" title="Análise de Graduação">
+                                                <i class="fas fa-chart-line"></i>
+                                            </a>
+
                                             <a href="index.php?pag=editar-perfil-aluno&id=<?php echo $id ?>"
                                                 class="btn btn-info btn-sm shadow-sm" title="Perfil do Aluno">
                                                 <i class="fas fa-eye"></i>
@@ -216,7 +231,6 @@ function tratarCorFaixa($cor)
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Busca Instantânea AJAX
             $("#txt_busca").keyup(function() {
                 var texto = $(this).val();
                 if (texto.length > 0) {
@@ -231,7 +245,6 @@ function tratarCorFaixa($cor)
                         }
                     });
                 } else {
-                    // Se limpar a busca e houver filtro de atrasados, recarrega para manter o filtro
                     var urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.has('status')) {
                         window.location.href = 'usuarios.php?status=atrasado';
