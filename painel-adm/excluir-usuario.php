@@ -4,7 +4,7 @@ require_once("../conexao.php");
 
 // 1. Validação de Segurança
 if (@$_SESSION['nivel_usuario'] != 'Admin') {
-    echo "<script language='javascript'>window.alert('Acesso Negado! Somente administradores podem excluir registros.'); window.location='index.php?pag=usuarios';</script>";
+    echo "<script language='javascript'>window.alert('Acesso Negado! Somente administradores podem excluir registros.'); window.history.back();</script>";
     exit();
 }
 
@@ -20,7 +20,7 @@ if ($id != "") {
         $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
 
         if (!$dados_u) {
-            echo "<script>alert('Usuário não encontrado!'); window.location='index.php?pag=usuarios';</script>";
+            echo "<script>alert('Usuário não encontrado!'); window.history.back();</script>";
             exit();
         }
 
@@ -76,11 +76,12 @@ if ($id != "") {
         $res_log->bindValue(":acao", $acao_log);
         $res_log->execute();
 
-        echo "<script>alert('Removido com sucesso!'); window.location='index.php?pag=usuarios';</script>";
+        // RETORNO PARA A PÁGINA ANTERIOR (Mantém filtros de busca ou paginação)
+        echo "<script>alert('Removido com sucesso!'); window.location=document.referrer;</script>";
     } catch (Exception $e) {
         // Tratamento de erro caso haja restrições de chave estrangeira não mapeadas
-        echo "<script>alert('Erro ao excluir: Existem registros em outras tabelas vinculados a este usuário.'); window.location='index.php?pag=usuarios';</script>";
+        echo "<script>alert('Erro ao excluir: Existem registros em outras tabelas vinculados a este usuário.'); window.history.back();</script>";
     }
 } else {
-    echo "<script>window.location='index.php?pag=usuarios';</script>";
+    echo "<script>window.history.back();</script>";
 }

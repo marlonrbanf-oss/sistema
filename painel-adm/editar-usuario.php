@@ -96,6 +96,10 @@ if ($id_usuario != "") {
             margin-bottom: 8px;
             display: block;
         }
+
+        #mensagem {
+            margin-top: 15px;
+        }
     </style>
 </head>
 
@@ -109,62 +113,73 @@ if ($id_usuario != "") {
                         <h5 class="m-0"><i class="fas fa-user-edit mr-2 text-warning"></i>EDITAR USUÁRIO</h5>
                     </div>
                     <div class="card-body p-4">
-                        <form method="POST" action="salvar-usuario.php">
+                        <form id="form-editar" method="POST">
                             <input type="hidden" name="id" value="<?php echo $id_usuario ?>">
 
                             <div class="form-group mb-4">
                                 <label class="font-weight-bold">Nome Completo</label>
-                                <input type="text" name="nome" class="form-control" value="<?php echo $nome ?>" required>
+                                <input type="text" name="nome" class="form-control" value="<?php echo $nome ?>"
+                                    required>
                             </div>
 
                             <div class="row">
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="font-weight-bold">CPF</label>
-                                    <input type="text" name="cpf" class="form-control" value="<?php echo $cpf ?>">
+                                    <input type="text" name="cpf" id="cpf" class="form-control"
+                                        value="<?php echo $cpf ?>">
                                 </div>
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="font-weight-bold">E-mail (Login)</label>
-                                    <input type="email" name="email" class="form-control" value="<?php echo $usuario ?>" required>
+                                    <input type="email" name="email" class="form-control" value="<?php echo $usuario ?>"
+                                        required>
                                 </div>
                             </div>
 
                             <div class="row mb-4">
                                 <div class="col-md-6 form-group">
                                     <label class="font-weight-bold">Telefone</label>
-                                    <input type="text" name="telefone" class="form-control" value="<?php echo $telefone ?>">
+                                    <input type="text" name="telefone" id="telefone" class="form-control"
+                                        value="<?php echo $telefone ?>">
                                 </div>
                                 <div class="col-md-6 form-group">
                                     <label class="font-weight-bold">Data de Vencimento</label>
-                                    <input type="date" name="data_venc" class="form-control" value="<?php echo $data_venc ?>">
+                                    <input type="date" name="data_venc" class="form-control"
+                                        value="<?php echo $data_venc ?>">
                                 </div>
                             </div>
 
                             <div class="row mb-4">
                                 <div class="col-md-5 form-group">
                                     <label class="font-weight-bold">Senha</label>
-                                    <input type="text" name="senha" class="form-control" value="<?php echo $senha ?>" required>
+                                    <input type="text" name="senha" class="form-control" value="<?php echo $senha ?>"
+                                        required>
                                 </div>
                                 <div class="col-md-7">
                                     <label class="secao-titulo font-weight-bold">Nível de Acesso</label>
                                     <div class="opcoes-flex">
                                         <label class="item-selecao">
-                                            <input type="radio" name="nivel" value="Cliente" <?php if ($nivel_atual == 'cliente') echo 'checked'; ?> required> Aluno
+                                            <input type="radio" name="nivel" value="Cliente"
+                                                <?php if ($nivel_atual == 'cliente') echo 'checked'; ?> required> Aluno
                                         </label>
                                         <label class="item-selecao">
-                                            <input type="radio" name="nivel" value="Professor" <?php if ($nivel_atual == 'professor') echo 'checked'; ?>> Professor
+                                            <input type="radio" name="nivel" value="Professor"
+                                                <?php if ($nivel_atual == 'professor') echo 'checked'; ?>> Professor
                                         </label>
                                         <label class="item-selecao">
-                                            <input type="radio" name="nivel" value="Admin" <?php if ($nivel_atual == 'admin') echo 'checked'; ?>> Admin
+                                            <input type="radio" name="nivel" value="Admin"
+                                                <?php if ($nivel_atual == 'admin') echo 'checked'; ?>> Admin
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <div id="secao_graduacao" style="display: <?php echo ($nivel_atual == 'cliente') ? 'block' : 'none'; ?>;">
+                            <div id="secao_graduacao"
+                                style="display: <?php echo ($nivel_atual == 'cliente') ? 'block' : 'none'; ?>;">
                                 <hr class="my-4">
                                 <div class="row">
                                     <div class="col-12 mb-3">
-                                        <label class="secao-titulo font-weight-bold"><i class="fas fa-medal mr-1"></i>Cor da Faixa</label>
+                                        <label class="secao-titulo font-weight-bold"><i
+                                                class="fas fa-medal mr-1"></i>Cor da Faixa</label>
                                         <div class="opcoes-flex">
                                             <?php
                                             $faixas = ['Branca', 'Azul', 'Roxa', 'Marrom', 'Preta'];
@@ -172,30 +187,36 @@ if ($id_usuario != "") {
                                                 $selected = ($faixa_atual == strtolower($f)) ? 'checked' : '';
                                             ?>
                                                 <label class="item-selecao">
-                                                    <input type="radio" name="cor_faixa" value="<?php echo $f ?>" <?php echo $selected ?>> <?php echo $f ?>
+                                                    <input type="radio" name="cor_faixa" value="<?php echo $f ?>"
+                                                        <?php echo $selected ?>> <?php echo $f ?>
                                                 </label>
                                             <?php endforeach; ?>
                                         </div>
                                     </div>
                                     <div class="col-md-6 form-group mt-2">
                                         <label class="font-weight-bold">Graus na Faixa</label>
-                                        <input type="number" name="graus" class="form-control" value="<?php echo $graus_atual ?>" min="0" max="4">
+                                        <input type="number" name="graus" class="form-control"
+                                            value="<?php echo $graus_atual ?>" min="0" max="4">
                                     </div>
                                     <div class="col-md-6 form-group mt-2">
                                         <label class="font-weight-bold">Total de Aulas (Frequência)</label>
-                                        <input type="number" name="total_aulas" class="form-control" value="<?php echo $aulas_atual ?>" min="0">
+                                        <input type="number" name="total_aulas" class="form-control"
+                                            value="<?php echo $aulas_atual ?>" min="0">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="mt-5">
-                                <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold shadow-sm">
+                                <button type="submit" id="btn-salvar"
+                                    class="btn btn-primary btn-block py-2 font-weight-bold shadow-sm">
                                     <i class="fas fa-check-circle mr-2"></i>SALVAR ALTERAÇÕES
                                 </button>
                                 <a href="usuarios.php" class="btn btn-light btn-block border mt-2">
-                                    <i class="fas fa-arrow-left mr-1"></i> Voltar
+                                    <i class="fas fa-arrow-left mr-1"></i> Voltar para Lista
                                 </a>
                             </div>
+
+                            <div id="mensagem" class="text-center"></div>
                         </form>
                     </div>
                 </div>
@@ -204,14 +225,59 @@ if ($id_usuario != "") {
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
     <script>
-        // Lógica para mostrar/esconder graduação baseado no nível
-        $('input[name="nivel"]').change(function() {
-            if ($(this).val() == 'Cliente') {
-                $('#secao_graduacao').fadeIn();
-            } else {
-                $('#secao_graduacao').fadeOut();
-            }
+        $(document).ready(function() {
+            // Máscaras para melhorar a experiência
+            $('#cpf').mask('000.000.000-00');
+            $('#telefone').mask('(00) 00000-0000');
+
+            // Lógica para mostrar/esconder graduação baseado no nível
+            $('input[name="nivel"]').change(function() {
+                if ($(this).val() == 'Cliente') {
+                    $('#secao_graduacao').fadeIn();
+                } else {
+                    $('#secao_graduacao').fadeOut();
+                }
+            });
+
+            // AJAX PARA SALVAR SEM RECARREGAR A PÁGINA
+            $("#form-editar").submit(function(e) {
+                e.preventDefault();
+                $('#mensagem').html('<b>Processando...</b>');
+                $('#btn-salvar').attr('disabled', true);
+
+                $.ajax({
+                    url: "salvar-usuario.php",
+                    method: "POST",
+                    data: $(this).serialize(),
+                    success: function(retorno) {
+                        if (retorno.trim() === "Salvo com Sucesso") {
+                            $('#mensagem').html(
+                                '<div class="alert alert-success">Alterações salvas com sucesso!</div>'
+                            );
+
+                            // Opcional: Redirecionar após 2 segundos
+                            /*
+                            setTimeout(function(){
+                                window.location = "usuarios.php";
+                            }, 2000);
+                            */
+                        } else {
+                            $('#mensagem').html('<div class="alert alert-danger">' + retorno +
+                                '</div>');
+                        }
+                        $('#btn-salvar').attr('disabled', false);
+                    },
+                    error: function() {
+                        $('#mensagem').html(
+                            '<div class="alert alert-danger">Erro ao conectar com o servidor.</div>'
+                        );
+                        $('#btn-salvar').attr('disabled', false);
+                    }
+                });
+            });
         });
     </script>
 </body>
