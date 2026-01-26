@@ -17,31 +17,67 @@ $total_alunos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente'")->
 $total_staff = $pdo->query("SELECT id FROM usuarios WHERE (nivel = 'Professor' OR nivel = 'Balconista')")->rowCount();
 $total_adm = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Admin'")->rowCount();
 
-// --- CORREÇÃO DE COLUNAS: Usando professor_id e observacoes conforme seu banco ---
+// --- CORREÇÃO DE COLUNAS ---
 $total_experimentais = $pdo->query("SELECT id FROM aulas_particulares WHERE professor_id = '0' AND observacoes LIKE '%EXPERIMENTAL%'")->rowCount();
 
-// --- LÓGICA DO GRÁFICO DE FAIXAS (AGRUPAMENTO) ---
+// --- LÓGICA DO GRÁFICO DE FAIXAS (CORRIGIDA) ---
+// Buscamos a última graduação registrada para cada aluno
 $query_f = $pdo->query("SELECT cor_faixa, COUNT(*) as qtd FROM graduacoes GROUP BY cor_faixa");
 $dados_f = $query_f->fetchAll(PDO::FETCH_ASSOC);
 
-$consolidado = [];
-$traducao = ['branca' => 'Branca', 'white' => 'Branca', 'azul' => 'Azul', 'blue' => 'Azul', 'roxa' => 'Roxa', 'purple' => 'Roxa', 'marrom' => 'Marrom', 'brown' => 'Marrom', 'preta' => 'Preta', 'black' => 'Preta'];
-$mapa_cores = ['Branca' => '#FFFFFF', 'Azul' => '#007bff', 'Roxa' => '#6f42c1', 'Marrom' => '#6d4c41', 'Preta' => '#212529'];
+$consolidado = [
+    'Branca' => 0,
+    'Azul'   => 0,
+    'Roxa'   => 0,
+    'Marrom' => 0,
+    'Preta'  => 0
+];
+
+// Dicionário de normalização
+$mapa_nomes = [
+    'branca' => 'Branca',
+    'white' => 'Branca',
+    'azul'   => 'Azul',
+    'blue'  => 'Azul',
+    'roxa'   => 'Roxa',
+    'purple' => 'Roxa',
+    'marrom' => 'Marrom',
+    'brown' => 'Marrom',
+    'preta'  => 'Preta',
+    'black' => 'Preta'
+];
 
 foreach ($dados_f as $row) {
-    $cor_banco = strtolower(trim($row['cor_faixa'] ?? ''));
-    if ($cor_banco == '') continue;
-    $label_final = isset($traducao[$cor_banco]) ? $traducao[$cor_banco] : ucfirst($cor_banco);
-    if (!isset($consolidado[$label_final])) {
-        $consolidado[$label_final] = 0;
+    $cor_bruta = strtolower(trim($row['cor_faixa'] ?? ''));
+    if (isset($mapa_nomes[$cor_bruta])) {
+        $label = $mapa_nomes[$cor_bruta];
+        $consolidado[$label] += $row['qtd'];
+    } else if ($cor_bruta != '') {
+        // Para faixas infantis ou outras não mapeadas
+        $label_outros = ucfirst($cor_bruta);
+        if (!isset($consolidado[$label_outros])) $consolidado[$label_outros] = 0;
+        $consolidado[$label_outros] += $row['qtd'];
     }
-    $consolidado[$label_final] += $row['qtd'];
 }
+
+// Remove categorias zeradas para o gráfico ficar limpo
+$consolidado = array_filter($consolidado);
+
 $labels_faixas = array_keys($consolidado);
 $valores_faixas = array_values($consolidado);
+
+// Cores hexadecimais correspondentes aos labels
+$cores_referencia = [
+    'Branca' => '#f8f9fa',
+    'Azul'   => '#007bff',
+    'Roxa'   => '#6f42c1',
+    'Marrom' => '#6d4c41',
+    'Preta'  => '#212529'
+];
+
 $cores_js = [];
 foreach ($labels_faixas as $l) {
-    $cores_js[] = isset($mapa_cores[$l]) ? $mapa_cores[$l] : '#cccccc';
+    $cores_js[] = isset($cores_referencia[$l]) ? $cores_referencia[$l] : '#adb5bd';
 }
 
 // --- LÓGICA DE MENSALIDADES ---
@@ -160,7 +196,6 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                         de Aulas</a>
                 </div>
 
-
                 <div class="sidebar-footer">
                     <div class="divider"></div>
                     <small class="px-3 text-muted d-block mb-2">COBRANÇA & RETENÇÃO</small>
@@ -231,8 +266,8 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 <div class="row">
                     <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
-                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold">DISTRIBUIÇÃO POR
-                                FAIXA</div>
+                            <div class="card-header bg-white border-bottom p-3 small font-weight-bold text-center">
+                                DISTRIBUIÇÃO POR FAIXA</div>
                             <div class="card-body">
                                 <div class="chart-container"><canvas id="chartFaixas"></canvas></div>
                             </div>
@@ -276,6 +311,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
     </div>
 
     <script>
+        // Gráfico de Faixas (Pizza)
         new Chart(document.getElementById('chartFaixas'), {
             type: 'pie',
             data: {
@@ -283,7 +319,7 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                 datasets: [{
                     data: <?php echo json_encode($valores_faixas); ?>,
                     backgroundColor: <?php echo json_encode($cores_js); ?>,
-                    borderColor: '#dee2e6',
+                    borderColor: '#ced4da',
                     borderWidth: 1
                 }]
             },
@@ -293,9 +329,10 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
                     legend: {
                         position: 'bottom',
                         labels: {
-                            boxWidth: 10,
+                            boxWidth: 12,
+                            padding: 15,
                             font: {
-                                size: 10
+                                size: 11
                             }
                         }
                     }
@@ -303,25 +340,27 @@ $inativos = $pdo->query("SELECT id FROM usuarios WHERE nivel = 'Cliente' AND ati
             }
         });
 
+        // Gráfico Financeiro (Donut)
         new Chart(document.getElementById('chartMensalidade'), {
             type: 'doughnut',
             data: {
                 labels: ['Em Dia', 'Atrasado', 'Inativo'],
                 datasets: [{
                     data: [<?php echo $pagos ?>, <?php echo $atrasados ?>, <?php echo $inativos ?>],
-                    backgroundColor: ['#28a745', '#dc3545', '#adb5bd']
+                    backgroundColor: ['#28a745', '#dc3545', '#6c757d']
                 }]
             },
             options: {
                 maintainAspectRatio: false,
-                cutout: '75%',
+                cutout: '70%',
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
-                            boxWidth: 10,
+                            boxWidth: 12,
+                            padding: 15,
                             font: {
-                                size: 10
+                                size: 11
                             }
                         }
                     }
