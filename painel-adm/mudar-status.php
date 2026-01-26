@@ -11,19 +11,12 @@ if (@$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Pr
 // Captura de parâmetros
 $id = isset($_GET['id']) ? $_GET['id'] : null;
 $acao = isset($_GET['acao']) ? $_GET['acao'] : null;
+$data_manual = isset($_GET['data']) ? $_GET['data'] : null; // Nova captura de data manual
 $usuario_logado = isset($_SESSION['nome_usuario']) ? $_SESSION['nome_usuario'] : 'Sistema';
 
 // --- BLOCO DE MANUTENÇÃO AUTOMÁTICA (REGRAS DE NEGÓCIO) ---
-
-// 1. REGRA: Mais de 30 dias de atraso -> Torna Inativo automaticamente
-// (Compara a data de vencimento com a data atual menos 30 dias)
 $pdo->query("UPDATE usuarios SET ativo = 'Não' WHERE data_venc < DATE_SUB(NOW(), INTERVAL 30 DAY) AND nivel = 'Cliente' AND ativo = 'Sim'");
-
-// 2. REGRA: Mais de 1 ano (365 dias) inativo -> Exclui o cadastro permanentemente
-// (Usando o vencimento como base: se venceu há mais de um ano e está inativo, deleta)
 $pdo->query("DELETE FROM usuarios WHERE data_venc < DATE_SUB(NOW(), INTERVAL 365 DAY) AND ativo = 'Não' AND nivel = 'Cliente'");
-
-// ---------------------------------------------------------
 
 if (!$id || !$acao) {
     echo "<script>window.location='usuarios.php';</script>";
@@ -40,17 +33,22 @@ $query_u->execute();
 $dados_u = $query_u->fetch(PDO::FETCH_ASSOC);
 $nome_aluno = ($dados_u) ? $dados_u['nome'] : "ID: " . $id;
 
-
 // 1. AÇÃO DE RENOVAR MENSALIDADE
 if ($acao == 'renovar') {
-    $novo_vencimento = date('Y-m-d', strtotime('+30 days'));
+    // Se a data manual foi enviada e for válida, usa ela. Caso contrário, +30 dias.
+    if ($data_manual && strtotime($data_manual)) {
+        $novo_vencimento = $data_manual;
+    } else {
+        $novo_vencimento = date('Y-m-d', strtotime('+30 days'));
+    }
+
     $query = $pdo->prepare("UPDATE usuarios SET data_venc = :venc, ativo = 'Sim' WHERE id = :id");
     $query->bindValue(":venc", $novo_vencimento);
     $query->bindValue(":id", $id);
     $query->execute();
 
     $msg = "Mensalidade renovada para " . date('d/m/Y', strtotime($novo_vencimento)) . "!";
-    $log_acao = "Renovou mensalidade do aluno: $nome_aluno";
+    $log_acao = "Renovou mensalidade do aluno: $nome_aluno para $novo_vencimento";
 }
 
 // 2. AÇÃO DE DEFINIR COMO ATRASADO
@@ -96,7 +94,6 @@ if ($log_acao != "") {
     }
 }
 
-// Retorno
 if ($msg != "") {
     echo "<script>alert('$msg'); window.location='usuarios.php';</script>";
 } else {

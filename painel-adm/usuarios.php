@@ -350,19 +350,38 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                                                     <a class="dropdown-item text-primary"
                                                         href="mudar-status.php?id=<?php echo $id ?>&acao=renovar"><i
                                                             class="fas fa-calendar-check mr-2"></i> Renovar</a>
+                                                    <a class="dropdown-item text-primary" href="#"
+                                                        onclick="renovarComData(<?php echo $id ?>, '<?php echo addslashes($usu['nome']) ?>', '<?php echo $usu['telefone'] ?>')">
+                                                        <i class="fas fa-calendar-check mr-2"></i> Renovar com Data
+                                                    </a>
                                                     <a class="dropdown-item text-danger"
                                                         href="mudar-status.php?id=<?php echo $id ?>&acao=atrasar"><i
                                                             class="fas fa-hand-holding-usd mr-2"></i> Definir Atrasado</a>
                                                     <a class="dropdown-item" href="#"
                                                         onclick="darPresenca(<?php echo $id ?>, '<?php echo addslashes($usu['nome']) ?>')"><i
                                                             class="fas fa-check mr-2 text-success"></i> Dar Presença</a>
+                                                    <div class="dropdown-divider"></div>
                                                 <?php endif; ?>
+
+                                                <?php if ($usu['ativo'] == 'Sim'): ?>
+                                                    <a class="dropdown-item text-secondary"
+                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=inativar"
+                                                        onclick="return confirm('Deseja realmente inativar este usuário?')">
+                                                        <i class="fas fa-user-slash mr-2"></i> Inativar Usuário
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a class="dropdown-item text-success"
+                                                        href="mudar-status.php?id=<?php echo $id ?>&acao=ativar">
+                                                        <i class="fas fa-user-check mr-2"></i> Ativar Usuário
+                                                    </a>
+                                                <?php endif; ?>
+
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item" href="editar-usuario.php?id=<?php echo $id ?>"><i
                                                         class="fas fa-edit mr-2 text-info"></i> Editar</a>
                                                 <a class="dropdown-item text-danger"
                                                     href="excluir-usuario.php?id=<?php echo $id ?>"
-                                                    onclick="return confirm('Deseja realmente excluir este usuário?')"><i
+                                                    onclick="return confirm('Deseja realmente excluir este usuário permanentemente?')"><i
                                                         class="fas fa-trash-alt mr-2"></i> Excluir</a>
                                             </div>
                                         </div>
@@ -569,7 +588,45 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                 alert("Por favor, insira um número válido.");
             }
         }
+
+        function renovarComData(id, nome, telefone) {
+            // Define a data padrão (+30 dias)
+            let dataPadrao = new Date();
+            dataPadrao.setDate(dataPadrao.getDate() + 30);
+            let dataFormatada = dataPadrao.toISOString().split('T')[0];
+
+            let novaData = prompt("Defina a data de vencimento para " + nome + ":", dataFormatada);
+
+            if (novaData !== null && novaData !== "") {
+                // Formata a data para o padrão brasileiro (DD/MM/AAAA) para exibir na mensagem
+                let partes = novaData.split('-');
+                let dataBR = partes[2] + '/' + partes[1] + '/' + partes[0];
+
+                // Monta a mensagem para o WhatsApp
+                let saudacao = "Olá *" + nome + "*! 🥋";
+                let mensagem = saudacao +
+                    "\n\nPassando para informar que sua *renovação* foi confirmada no sistema.\n\n🗓️ Seu novo vencimento é: *" +
+                    dataBR + "*\n\nBons treinos! OSS!";
+
+                // Se o aluno tiver telefone, gera o link. Caso contrário, apenas processa a renovação.
+                let linkZap = "";
+                if (telefone && telefone.length >= 10) {
+                    let numLimpo = telefone.replace(/\D/g, '');
+                    linkZap = "https://api.whatsapp.com/send?phone=55" + numLimpo + "&text=" + encodeURIComponent(mensagem);
+                }
+
+                // Envia para o processamento PHP e anexa o link do Zap se existir
+                let url = "mudar-status.php?id=" + id + "&acao=renovar&data=" + novaData;
+                if (linkZap !== "") {
+                    window.open(linkZap, '_blank'); // Abre o WhatsApp em nova aba
+                }
+
+                // Redireciona a página atual para salvar no banco
+                window.location.href = url;
+            }
+        }
     </script>
+
 </body>
 
 </html>
