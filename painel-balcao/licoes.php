@@ -163,7 +163,7 @@ try {
                                     <span class="badge badge-warning badge-step mr-2 text-white">1</span>
                                     Aquecimento / Fundamento
                                 </h6>
-                                <div class="list-selectable">
+                                <div class="list-selectable mt-2">
                                     <?php foreach ($aquecimentos as $aq): ?>
                                         <input type="radio" name="aquecimento_id" id="aq_<?php echo $aq['id']; ?>"
                                             value="<?php echo $aq['id']; ?>"
@@ -185,7 +185,7 @@ try {
                                     <span class="badge badge-info badge-step mr-2 text-white">2</span>
                                     Educativo / Alongamento
                                 </h6>
-                                <div class="list-selectable">
+                                <div class="list-selectable mt-2">
                                     <?php foreach ($educativos as $ed): ?>
                                         <input type="radio" name="educativo_id" id="ed_<?php echo $ed['id']; ?>"
                                             value="<?php echo $ed['id']; ?>"
@@ -207,14 +207,13 @@ try {
                                     <span class="badge badge-primary badge-step mr-2 text-white">3</span>
                                     Lição Técnica (Matriz)
                                 </h6>
-                                <div class="list-selectable">
+                                <div class="list-selectable mt-2">
                                     <?php foreach ($licoes as $li):
-                                        $cor_nivel = "text-muted";
-                                        $nivel_txt = "Iniciante";
-                                        if ($li['numero'] <= 20) {
+                                        $numero = (int)$li['numero'];
+                                        if ($numero <= 20) {
                                             $cor_nivel = "text-success";
                                             $nivel_txt = "Iniciante";
-                                        } elseif ($li['numero'] <= 50) {
+                                        } elseif ($numero <= 50) {
                                             $cor_nivel = "text-primary";
                                             $nivel_txt = "Intermediário";
                                         } else {
@@ -312,7 +311,7 @@ try {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Atualiza Resumo em tempo real baseado nos atributos DATA
+        // Função para atualizar o Resumo
         $(document).on('change', '.radio-dinamico, .status-check', function() {
             const aq = $('input[name="aquecimento_id"]:checked').data('titulo') || '---';
             const ed = $('input[name="educativo_id"]:checked').data('titulo') || '---';
@@ -334,7 +333,7 @@ try {
                         <small class="text-muted d-block font-weight-bold">EDUCATIVO:</small>
                         <span class="text-dark">⚙️ ${ed}</span>
                     </div>
-                    <div class="mb-3 p-3 border rounded shadow-sm">
+                    <div class="mb-3 p-3 border rounded shadow-sm bg-white">
                         <small class="text-primary d-block font-weight-bold mb-1 text-uppercase">Técnica Principal (L${li_num}):</small>
                         <h6 class="font-weight-bold mb-2">${li_titulo}</h6>
                         <div class="small text-muted" style="line-height: 1.4; white-space: pre-wrap;">${li_desc}</div>
@@ -368,14 +367,14 @@ try {
             }
         });
 
-        // Validação
+        // Validação de Envio
         $('#formPlano').submit(function() {
             if ($('input[name="licao_id"]:checked').length === 0) {
-                alert("Selecione a Lição Técnica.");
+                alert("Por favor, selecione a Lição Técnica.");
                 return false;
             }
             if ($('input[name="alunos[]"]:checked').length === 0) {
-                alert("Selecione os alunos presentes.");
+                alert("Por favor, selecione ao menos um aluno presente.");
                 return false;
             }
             $('#btnSalvar').html('<i class="fas fa-spinner fa-spin mr-2"></i> PROCESSANDO...').attr('disabled',
