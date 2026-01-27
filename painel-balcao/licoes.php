@@ -2,39 +2,23 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. VALIDAÇÃO DE SEGURANÇA
 if (@$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Admin') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
 }
 
-// --- BUSCA DINÂMICA DE COMPONENTES ---
-
 try {
-    // 1. Lições (Técnicas principais)
+    // 1. Lições (Técnicas principais) - Buscando categorias para separar no rádio
     $licoes = $pdo->query("SELECT * FROM licoes ORDER BY numero ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-    // 2. Aquecimentos e Educativos
-    // Nota: Ajustamos para buscar da tabela 'tecnicas'. 
-    // Se a coluna no seu banco for 'posicao' em vez de 'categoria', o código abaixo trata isso.
-
-    // Verificamos se a coluna 'posicao' existe para evitar novo erro 1054
+    // 2. Aquecimentos e Educativos da tabela 'tecnicas'
     $res_col = $pdo->query("SHOW COLUMNS FROM tecnicas LIKE 'posicao'");
     $tem_coluna_posicao = $res_col->rowCount() > 0;
 
     if ($tem_coluna_posicao) {
-        $aquecimentos = $pdo->query("SELECT * FROM tecnicas WHERE posicao = 'Aquecimento' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $aquecimentos = $pdo->query("SELECT * FROM tecnicas WHERE posicao = 'Aquecimento' OR posicao = 'Fundamento' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
         $educativos = $pdo->query("SELECT * FROM tecnicas WHERE posicao = 'Educativo' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Se as listas acima vierem vazias, carregamos todas para não deixar o select em branco
-        if (count($aquecimentos) == 0) {
-            $aquecimentos = $pdo->query("SELECT * FROM tecnicas ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
-        }
-        if (count($educativos) == 0) {
-            $educativos = $aquecimentos;
-        }
     } else {
-        // Se não houver coluna de filtro, carrega a lista geral em ambos
         $aquecimentos = $pdo->query("SELECT * FROM tecnicas ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
         $educativos = $aquecimentos;
     }
@@ -69,32 +53,84 @@ try {
         }
 
         .list-selectable {
-            max-height: 350px;
+            max-height: 250px;
             overflow-y: auto;
             border: 1px solid #dee2e6;
             border-radius: 8px;
+            padding: 5px;
+            background: #f8f9fa;
         }
 
+        /* Estilo Radio Card */
         .item-check {
             display: none;
         }
 
         .item-label {
             display: block;
-            padding: 10px 15px;
+            padding: 8px 12px;
             margin-bottom: 5px;
             border-radius: 6px;
             cursor: pointer;
             border: 1px solid #eee;
             transition: 0.2s;
-            background: #fdfdfd;
+            background: #fff;
+            font-size: 0.9rem;
         }
 
         .item-check:checked+.item-label {
             background: #28a745;
             color: #fff;
             border-color: #28a745;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-check:checked+.label-primary {
+            background: #007bff;
+            border-color: #007bff;
+        }
+
+        /* Status Radio Quadrado */
+        .status-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-card {
+            flex: 1;
+            text-align: center;
+        }
+
+        .status-check {
+            display: none;
+        }
+
+        .status-label {
+            display: block;
+            padding: 15px 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .status-check:checked+.label-estudo {
+            border-color: #ffc107;
+            background: #fff9e6;
+            color: #856404;
+        }
+
+        .status-check:checked+.label-revisao {
+            border-color: #17a2b8;
+            background: #e7f3f5;
+            color: #0c5460;
+        }
+
+        .status-check:checked+.label-concluido {
+            border-color: #28a745;
+            background: #eaf5ea;
+            color: #155724;
         }
 
         .preview-plano {
@@ -113,10 +149,6 @@ try {
             justify-content: center;
             font-size: 12px;
         }
-
-        .aluno-row {
-            margin-bottom: 2px;
-        }
     </style>
 </head>
 
@@ -133,42 +165,52 @@ try {
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <div class="select-step">
+                            <div class="select-step shadow-sm">
                                 <h6 class="font-weight-bold text-warning"><span
-                                        class="badge badge-warning badge-step mr-2 text-white">1</span> Aquecimento</h6>
-                                <select name="aquecimento_id" class="form-control mb-2 select-dinamico">
-                                    <option value="">Nenhum selecionado</option>
+                                        class="badge badge-warning badge-step mr-2 text-white">1</span>
+                                    Aquecimento/Fundamento</h6>
+                                <div class="list-selectable">
                                     <?php foreach ($aquecimentos as $aq): ?>
-                                        <option value="<?php echo $aq['id']; ?>"><?php echo $aq['nome']; ?></option>
+                                        <input type="radio" name="aquecimento_id" id="aq_<?php echo $aq['id']; ?>"
+                                            value="<?php echo $aq['id']; ?>" class="item-check radio-dinamico">
+                                        <label for="aq_<?php echo $aq['id']; ?>"
+                                            class="item-label"><?php echo $aq['nome']; ?></label>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                             </div>
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <div class="select-step">
+                            <div class="select-step shadow-sm">
                                 <h6 class="font-weight-bold text-info"><span
-                                        class="badge badge-info badge-step mr-2">2</span> Educativo</h6>
-                                <select name="educativo_id" class="form-control mb-2 select-dinamico">
-                                    <option value="">Nenhum selecionado</option>
+                                        class="badge badge-info badge-step mr-2 text-white">2</span> Educativos</h6>
+                                <div class="list-selectable">
                                     <?php foreach ($educativos as $ed): ?>
-                                        <option value="<?php echo $ed['id']; ?>"><?php echo $ed['nome']; ?></option>
+                                        <input type="radio" name="educativo_id" id="ed_<?php echo $ed['id']; ?>"
+                                            value="<?php echo $ed['id']; ?>" class="item-check radio-dinamico">
+                                        <label for="ed_<?php echo $ed['id']; ?>"
+                                            class="item-label"><?php echo $ed['nome']; ?></label>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                             </div>
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <div class="select-step">
+                            <div class="select-step shadow-sm">
                                 <h6 class="font-weight-bold text-primary"><span
-                                        class="badge badge-primary badge-step mr-2">3</span> Lição Técnica</h6>
-                                <select name="licao_id" class="form-control mb-2 select-dinamico" required>
-                                    <option value="">Selecione a Lição...</option>
+                                        class="badge badge-primary badge-step mr-2 text-white">3</span> Lição Técnica
+                                </h6>
+                                <div class="list-selectable">
                                     <?php foreach ($licoes as $li): ?>
-                                        <option value="<?php echo $li['numero']; ?>">Lição <?php echo $li['numero']; ?> -
-                                            <?php echo @$li['categoria'] ?: @$li['posicao']; ?></option>
+                                        <input type="radio" name="licao_id" id="li_<?php echo $li['id']; ?>"
+                                            value="<?php echo $li['numero']; ?>" class="item-check radio-dinamico" required>
+                                        <label for="li_<?php echo $li['id']; ?>" class="item-label label-primary">
+                                            <b>L<?php echo $li['numero']; ?></b> - <?php echo $li['nome']; ?>
+                                            <small
+                                                class="d-block text-muted"><?php echo @$li['categoria'] ?: @$li['posicao']; ?></small>
+                                        </label>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -179,13 +221,10 @@ try {
                                 <h6 class="font-weight-bold mb-3"><i class="fas fa-users mr-2 text-primary"></i> Alunos
                                     Presentes</h6>
                                 <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
-                                    </div>
                                     <input type="text" id="buscaAluno" class="form-control"
                                         placeholder="Filtrar por nome...">
                                 </div>
-                                <div class="list-selectable p-2 bg-light">
+                                <div class="list-selectable p-2 bg-light" style="max-height: 300px;">
                                     <?php
                                     $alunos = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
                                     foreach ($alunos as $aluno): ?>
@@ -206,34 +245,38 @@ try {
                         <div class="col-md-6">
                             <div class="preview-plano h-100">
                                 <h6 class="font-weight-bold text-uppercase border-bottom border-secondary pb-2 mb-3">
-                                    <i class="fas fa-clipboard-list mr-2"></i> Resumo do Lançamento
-                                </h6>
-                                <div id="resumo-conteudo" class="mb-4">
-                                    <p class="text-muted font-italic">Nenhum componente selecionado.</p>
+                                    Resumo e Status</h6>
+
+                                <div class="status-group mb-4">
+                                    <div class="status-card">
+                                        <input type="radio" name="status" value="Em Estudo" id="st_estudo"
+                                            class="status-check" checked>
+                                        <label for="st_estudo" class="status-label label-estudo">🟡<br>EM ESTUDO</label>
+                                    </div>
+                                    <div class="status-card">
+                                        <input type="radio" name="status" value="Revisão" id="st_revisao"
+                                            class="status-check">
+                                        <label for="st_revisao" class="status-label label-revisao">🔵<br>REVISÃO</label>
+                                    </div>
+                                    <div class="status-card">
+                                        <input type="radio" name="status" value="Concluído" id="st_concluido"
+                                            class="status-check">
+                                        <label for="st_concluido"
+                                            class="status-label label-concluido">🟢<br>CONCLUÍDO</label>
+                                    </div>
                                 </div>
 
-                                <div class="card bg-white shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="font-weight-bold small text-muted text-uppercase mb-3">Status do
-                                            Progresso:</h6>
-                                        <select name="status" class="form-control form-control-lg border-primary">
-                                            <option value="Em Estudo">🟡 Em Estudo</option>
-                                            <option value="Revisão">🔵 Revisão</option>
-                                            <option value="Concluído">🟢 Concluído (Selo Ouro)</option>
-                                        </select>
-                                        <p class="small text-muted mt-2 mb-0">Isso definirá a cor do selo no painel do
-                                            aluno.</p>
-                                    </div>
+                                <div id="resumo-conteudo">
+                                    <p class="text-muted font-italic">Selecione as técnicas acima.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-footer bg-white p-3">
-                    <button type="submit" class="btn btn-success btn-lg btn-block py-3 font-weight-bold shadow-lg"
-                        id="btnSalvar">
-                        <i class="fas fa-save mr-2"></i> FINALIZAR E NOTIFICAR ALUNOS
+                <div class="card-footer bg-white p-3 text-center">
+                    <button type="submit" class="btn btn-success btn-lg px-5 font-weight-bold shadow" id="btnSalvar">
+                        <i class="fas fa-save mr-2"></i> FINALIZAR AULA
                     </button>
                 </div>
             </div>
@@ -242,29 +285,21 @@ try {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Atualiza o Resumo em tempo real
-        $('.select-dinamico').change(function() {
-            const aq = $('select[name="aquecimento_id"] option:selected').val() ? $(
-                'select[name="aquecimento_id"] option:selected').text() : null;
-            const ed = $('select[name="educativo_id"] option:selected').val() ? $(
-                'select[name="educativo_id"] option:selected').text() : null;
-            const li = $('select[name="licao_id"] option:selected').val() ? $(
-                'select[name="licao_id"] option:selected').text() : null;
+        // Atualiza Resumo em tempo real para Rádios
+        $('.radio-dinamico, .status-check').change(function() {
+            const aq = $('input[name="aquecimento_id"]:checked').next('label').text() || '---';
+            const ed = $('input[name="educativo_id"]:checked').next('label').text() || '---';
+            const li = $('input[name="licao_id"]:checked').next('label').text() || '---';
+            const st = $('input[name="status"]:checked').val();
 
-            let html = '<div class="list-group list-group-flush">';
-            if (aq) html +=
-                `<div class="list-group-item bg-transparent px-0"><i class="fas fa-fire text-warning mr-2"></i> <b>Aquecimento:</b> ${aq}</div>`;
-            if (ed) html +=
-                `<div class="list-group-item bg-transparent px-0"><i class="fas fa-cogs text-info mr-2"></i> <b>Educativo:</b> ${ed}</div>`;
-            if (li) html +=
-                `<div class="list-group-item bg-transparent px-0"><i class="fas fa-book text-primary mr-2"></i> <b>Lição:</b> ${li}</div>`;
-            html += '</div>';
-
-            if (!aq && !ed && !li) {
-                $('#resumo-conteudo').html('<p class="text-muted font-italic">Nenhum componente selecionado.</p>');
-            } else {
-                $('#resumo-conteudo').html(html);
-            }
+            let html = `
+                <div class="small">
+                    <p class="mb-1 text-warning"><b>🔥 Aquecimento:</b> ${aq}</p>
+                    <p class="mb-1 text-info"><b>⚙️ Educativo:</b> ${ed}</p>
+                    <p class="mb-1 text-primary"><b>📖 Lição:</b> ${li}</p>
+                    <p class="mb-0 text-dark"><b>📌 Status:</b> ${st}</p>
+                </div>`;
+            $('#resumo-conteudo').html(html);
         });
 
         // Filtro de Alunos
@@ -275,7 +310,7 @@ try {
             });
         });
 
-        // Estética dos Checkboxes e Contador
+        // Checkbox Alunos
         $('input[name="alunos[]"]').change(function() {
             const label = $(this).next('label');
             if ($(this).is(':checked')) {
@@ -289,10 +324,10 @@ try {
 
         $('#formPlano').submit(function() {
             if ($('input[name="alunos[]"]:checked').length === 0) {
-                alert("Por favor, selecione pelo menos um aluno presente.");
+                alert("Selecione os alunos presentes.");
                 return false;
             }
-            $('#btnSalvar').html('<i class="fas fa-spinner fa-spin mr-2"></i> GRAVANDO...').attr('disabled', true);
+            $('#btnSalvar').html('<i class="fas fa-spinner fa-spin mr-2"></i> SALVANDO...').attr('disabled', true);
             return true;
         });
     </script>
