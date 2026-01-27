@@ -28,6 +28,9 @@ if ($nivel_logado != 'Cliente' && $nivel_logado != 'Atleta') {
 
 $id_usuario = $_SESSION['id_usuario'];
 
+// Captura a página atual
+$pag = @$_GET['pag'];
+
 // Busca status de graduação
 $status = verificarRequisitos($pdo, $id_usuario);
 
@@ -131,7 +134,6 @@ $porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_atuais / $meta_aulas) * 100
             right: 30px;
             display: flex;
             flex-direction: row-reverse;
-            /* INVERTE A ORDEM: Direita para Esquerda */
             justify-content: flex-start;
             align-items: center;
             padding: 0 5px;
@@ -143,7 +145,6 @@ $porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_atuais / $meta_aulas) * 100
             background-color: #fff;
             margin: 0 3px;
             border-radius: 1px;
-            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         #reader {
@@ -199,123 +200,134 @@ $porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_atuais / $meta_aulas) * 100
             <section class="content pt-3">
                 <div class="container-fluid">
 
-                    <?php if ($status['pode'] ?? false): ?>
-                        <div class="alert alert-success shadow border-0 mt-3 pulse">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-medal fa-2x mr-3 text-success"></i>
-                                <div>
-                                    <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
-                                    <small><?php echo htmlspecialchars($status['mensagem'] ?? ''); ?></small>
+                    <?php
+                    // --- LÓGICA DE CARREGAMENTO DE PÁGINAS ---
+                    if ($pag == 'ver-perfil-aluno') {
+                        include_once("ver-perfil-aluno.php");
+                    } else {
+                        // CONTEÚDO PADRÃO (HOME)
+                    ?>
+
+                        <?php if ($status['pode'] ?? false): ?>
+                            <div class="alert alert-success shadow border-0 mt-3 pulse">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-medal fa-2x mr-3 text-success"></i>
+                                    <div>
+                                        <h6 class="mb-0"><b>PRONTO PARA A GRADUAÇÃO!</b></h6>
+                                        <small><?php echo htmlspecialchars($status['mensagem'] ?? ''); ?></small>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <div id="resultado_pesquisa" style="display:none;" class="mb-4"></div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card card-outline card-dark shadow-sm">
+                                    <div class="card-header bg-dark">
+                                        <h3 class="card-title font-weight-bold">Minha Jornada</h3>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <h5 class="text-muted text-uppercase">Faixa:
+                                            <b><?php echo ($status['faixa'] ?? 'BRANCA'); ?></b>
+                                        </h5>
+
+                                        <div class="bjj-belt">
+                                            <div class="belt-bar">
+                                                <?php for ($i = 0; $i < ($status['grau'] ?? 0); $i++): ?>
+                                                    <div class="belt-stripe"></div>
+                                                <?php endfor; ?>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 text-left">
+                                            <div class="d-flex justify-content-between mb-1 font-weight-bold">
+                                                <span>Frequência</span>
+                                                <span><?php echo $aulas_atuais; ?> / <?php echo $meta_aulas; ?> Aulas</span>
+                                            </div>
+                                            <div class="progress mb-3" style="height: 15px; border-radius: 10px;">
+                                                <div class="progress-bar bg-success"
+                                                    style="width: <?php echo $porcentagem_progresso ?>%">
+                                                    <?php echo round($porcentagem_progresso); ?>%</div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between mb-1 font-weight-bold">
+                                                <span>Maestria Técnica</span>
+                                                <span><?php echo $tecnicas_concluidas; ?> /
+                                                    <?php echo $total_geral_tecnicas; ?></span>
+                                            </div>
+                                            <div class="progress" style="height: 15px; border-radius: 10px;">
+                                                <div class="progress-bar bg-primary"
+                                                    style="width: <?php echo $progresso_maestria; ?>%">
+                                                    <?php echo round($progresso_maestria); ?>%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-white">
+                                        <?php if ($status['pode'] ?? false): ?>
+                                            <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
+                                                class="btn btn-success btn-block font-weight-bold"><i
+                                                    class="fas fa-qrcode mr-2"></i> VALIDAR GRADUAÇÃO</button>
+                                        <?php else: ?>
+                                            <button class="btn btn-secondary btn-block disabled" disabled><i
+                                                    class="fas fa-lock mr-2"></i> FALTAM
+                                                <?php echo ($meta_aulas - $aulas_atuais); ?> AULAS</button>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    <?php endif; ?>
 
-                    <div id="resultado_pesquisa" style="display:none;" class="mb-4"></div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="card card-outline card-dark shadow-sm">
-                                <div class="card-header bg-dark">
-                                    <h3 class="card-title font-weight-bold">Minha Jornada</h3>
-                                </div>
-                                <div class="card-body text-center">
-                                    <h5 class="text-muted text-uppercase">Faixa:
-                                        <b><?php echo ($status['faixa'] ?? 'BRANCA'); ?></b>
-                                    </h5>
-
-                                    <div class="bjj-belt">
-                                        <div class="belt-bar">
-                                            <?php for ($i = 0; $i < ($status['grau'] ?? 0); $i++): ?>
-                                                <div class="belt-stripe"></div>
-                                            <?php endfor; ?>
-                                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card shadow-sm border-0 mb-4">
+                                    <div class="card-header bg-dark">
+                                        <h3 class="card-title font-weight-bold"><i
+                                                class="fas fa-medal mr-2 text-warning"></i>Meus Selos</h3>
                                     </div>
+                                    <div class="card-body bg-light p-3">
+                                        <?php
+                                        $query_hab = $pdo->prepare("SELECT * FROM habilidades WHERE usuario_id = :id ORDER BY posicao ASC, tecnica ASC");
+                                        $query_hab->bindValue(":id", $id_usuario);
+                                        $query_hab->execute();
+                                        $res_hab = $query_hab->fetchAll(PDO::FETCH_ASSOC);
 
-                                    <div class="mt-4 text-left">
-                                        <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span>Frequência</span>
-                                            <span><?php echo $aulas_atuais; ?> / <?php echo $meta_aulas; ?> Aulas</span>
-                                        </div>
-                                        <div class="progress mb-3" style="height: 15px; border-radius: 10px;">
-                                            <div class="progress-bar bg-success progress-bar-animated"
-                                                style="width: <?php echo $porcentagem_progresso ?>%">
-                                                <?php echo round($porcentagem_progresso); ?>%</div>
-                                        </div>
+                                        $grupos = [];
+                                        foreach ($res_hab as $hab) {
+                                            $posicao = $hab['posicao'] ?: 'OUTRAS';
+                                            $grupos[$posicao][] = $hab;
+                                        }
 
-                                        <div class="d-flex justify-content-between mb-1 font-weight-bold">
-                                            <span>Maestria Técnica</span>
-                                            <span><?php echo $tecnicas_concluidas; ?> /
-                                                <?php echo $total_geral_tecnicas; ?></span>
-                                        </div>
-                                        <div class="progress" style="height: 15px; border-radius: 10px;">
-                                            <div class="progress-bar bg-primary progress-bar-animated"
-                                                style="width: <?php echo $progresso_maestria; ?>%">
-                                                <?php echo round($progresso_maestria); ?>%</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-white">
-                                    <?php if ($status['pode'] ?? false): ?>
-                                        <button onclick="abrirLeitorQR('graduacao', 'PROMOÇÃO')"
-                                            class="btn btn-success btn-block font-weight-bold"><i
-                                                class="fas fa-qrcode mr-2"></i> VALIDAR GRADUAÇÃO</button>
-                                    <?php else: ?>
-                                        <button class="btn btn-secondary btn-block disabled" disabled><i
-                                                class="fas fa-lock mr-2"></i> FALTAM
-                                            <?php echo ($meta_aulas - $aulas_atuais); ?> AULAS</button>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="card shadow-sm border-0 mb-4">
-                                <div class="card-header bg-dark">
-                                    <h3 class="card-title font-weight-bold"><i
-                                            class="fas fa-medal mr-2 text-warning"></i>Meus Selos</h3>
-                                </div>
-                                <div class="card-body bg-light p-3">
-                                    <?php
-                                    $query_hab = $pdo->prepare("SELECT * FROM habilidades WHERE usuario_id = :id ORDER BY posicao ASC, tecnica ASC");
-                                    $query_hab->bindValue(":id", $id_usuario);
-                                    $query_hab->execute();
-                                    $res_hab = $query_hab->fetchAll(PDO::FETCH_ASSOC);
-
-                                    $grupos = [];
-                                    foreach ($res_hab as $hab) {
-                                        $posicao = $hab['posicao'] ?: 'OUTRAS';
-                                        $grupos[$posicao][] = $hab;
-                                    }
-
-                                    foreach ($grupos as $titulo => $tecs): ?>
-                                        <h6 class="text-uppercase font-weight-bold border-bottom pb-1 mt-3">
-                                            <?php echo $titulo; ?></h6>
-                                        <div class="row">
-                                            <?php foreach ($tecs as $h):
-                                                $check = (mb_strtolower($h['status']) == 'dominado' || mb_strtolower($h['status']) == 'concluído');
-                                            ?>
-                                                <div class="col-6 col-md-3 mb-2">
-                                                    <div class="card h-100 p-2 text-center border shadow-none">
-                                                        <small
-                                                            class="font-weight-bold text-truncate d-block"><?php echo $h['tecnica']; ?></small>
-                                                        <span
-                                                            class="badge <?php echo $check ? 'badge-success' : 'badge-warning'; ?> my-1"><?php echo strtoupper($h['status']); ?></span>
-                                                        <?php if (!$check): ?>
-                                                            <button class="btn btn-xs btn-primary"
-                                                                onclick="abrirLeitorQR('tecnica', '<?php echo $h['tecnica']; ?>', '<?php echo $h['id']; ?>')">VALIDAR</button>
-                                                        <?php endif; ?>
+                                        foreach ($grupos as $titulo => $tecs): ?>
+                                            <h6 class="text-uppercase font-weight-bold border-bottom pb-1 mt-3">
+                                                <?php echo $titulo; ?></h6>
+                                            <div class="row">
+                                                <?php foreach ($tecs as $h):
+                                                    $check = (mb_strtolower($h['status']) == 'dominado' || mb_strtolower($h['status']) == 'concluído');
+                                                ?>
+                                                    <div class="col-6 col-md-3 mb-2">
+                                                        <div class="card h-100 p-2 text-center border shadow-none">
+                                                            <small
+                                                                class="font-weight-bold text-truncate d-block"><?php echo $h['tecnica']; ?></small>
+                                                            <span
+                                                                class="badge <?php echo $check ? 'badge-success' : 'badge-warning'; ?> my-1"><?php echo strtoupper($h['status']); ?></span>
+                                                            <?php if (!$check): ?>
+                                                                <button class="btn btn-xs btn-primary"
+                                                                    onclick="abrirLeitorQR('tecnica', '<?php echo $h['tecnica']; ?>', '<?php echo $h['id']; ?>')">VALIDAR</button>
+                                                            <?php endif; ?>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php endforeach; ?>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+
+                    <?php } // FIM DO ELSE DO CONTEÚDO PADRÃO 
+                    ?>
 
                 </div>
             </section>

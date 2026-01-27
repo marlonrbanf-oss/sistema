@@ -117,7 +117,8 @@ if ($pag == null) {
 
             <div class="row">
                 <div class="col-md mb-4">
-                    <a href="#" onclick="window.open('gerar-qr.php', 'Gerar QR', 'width=500,height=600');" class="text-decoration-none">
+                    <a href="#" onclick="window.open('gerar-qr.php', 'Gerar QR', 'width=500,height=600');"
+                        class="text-decoration-none">
                         <div class="card card-menu shadow-sm p-3 text-center bg-qr">
                             <i class="fas fa-qrcode fa-2x mb-2"></i>
                             <h6 class="font-weight-bold">QR Validador</h6>
@@ -128,7 +129,8 @@ if ($pag == null) {
 
                 <div class="col-md mb-4">
                     <a href="index.php?pag=licoes" class="text-decoration-none text-dark">
-                        <div class="card card-menu shadow-sm p-3 text-center border-top" style="border-top: 5px solid #28a745 !important;">
+                        <div class="card card-menu shadow-sm p-3 text-center border-top"
+                            style="border-top: 5px solid #28a745 !important;">
                             <i class="fas fa-chalkboard-teacher fa-2x mb-2 text-success"></i>
                             <h6 class="font-weight-bold">Lição do Dia</h6>
                             <p class="text-muted small mb-0">Lançar Coletivo</p>
@@ -138,7 +140,8 @@ if ($pag == null) {
 
                 <div class="col-md mb-4">
                     <a href="index.php?pag=usuarios" class="text-decoration-none text-dark">
-                        <div class="card card-menu shadow-sm p-3 text-center border-top" style="border-top: 5px solid #007bff !important;">
+                        <div class="card card-menu shadow-sm p-3 text-center border-top"
+                            style="border-top: 5px solid #007bff !important;">
                             <i class="fas fa-user-check fa-2x mb-2 text-primary"></i>
                             <h6 class="font-weight-bold">Presenças/Selos</h6>
                             <p class="text-muted small mb-0">Gerenciar Alunos</p>
@@ -148,7 +151,8 @@ if ($pag == null) {
 
                 <div class="col-md mb-4">
                     <a href="index.php?pag=pedidos-aulas" class="text-decoration-none text-dark">
-                        <div class="card card-menu shadow-sm p-3 text-center border-top" style="border-top: 5px solid #6f42c1 !important;">
+                        <div class="card card-menu shadow-sm p-3 text-center border-top"
+                            style="border-top: 5px solid #6f42c1 !important;">
                             <?php if ($total_aulas_pendentes > 0): ?>
                                 <span class="badge badge-danger badge-notif"><?php echo $total_aulas_pendentes ?></span>
                             <?php endif; ?>
@@ -161,7 +165,8 @@ if ($pag == null) {
 
                 <div class="col-md mb-4">
                     <a href="index.php?pag=usuarios&status=atrasado" class="text-decoration-none text-dark">
-                        <div class="card card-menu shadow-sm p-3 text-center border-top" style="border-top: 5px solid #dc3545 !important;">
+                        <div class="card card-menu shadow-sm p-3 text-center border-top"
+                            style="border-top: 5px solid #dc3545 !important;">
                             <?php if ($total_atrasados > 0): ?>
                                 <span class="badge badge-danger badge-notif"><?php echo $total_atrasados ?></span>
                             <?php endif; ?>
@@ -197,10 +202,13 @@ if ($pag == null) {
                                         ?>
                                                 <tr>
                                                     <td><b><?php echo $p['nome'] ?></b></td>
-                                                    <td><?php echo date('d/m/Y', strtotime($p['data_aula'])) ?> às <?php echo date('H:i', strtotime($p['horario_aula'])) ?></td>
+                                                    <td><?php echo date('d/m/Y', strtotime($p['data_aula'])) ?> às
+                                                        <?php echo date('H:i', strtotime($p['horario_aula'])) ?></td>
                                                     <td>
-                                                        <a href="index.php?acao_aula=aprovar&id_p=<?php echo $p['id'] ?>" class="btn btn-success btn-sm"><i class="fas fa-check"></i></a>
-                                                        <a href="index.php?acao_aula=recusar&id_p=<?php echo $p['id'] ?>" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></a>
+                                                        <a href="index.php?acao_aula=aprovar&id_p=<?php echo $p['id'] ?>"
+                                                            class="btn btn-success btn-sm"><i class="fas fa-check"></i></a>
+                                                        <a href="index.php?acao_aula=recusar&id_p=<?php echo $p['id'] ?>"
+                                                            class="btn btn-danger btn-sm"><i class="fas fa-times"></i></a>
                                                     </td>
                                                 </tr>
                                             <?php }
@@ -262,8 +270,14 @@ if ($pag == null) {
             </div>
 
         <?php } else {
-            // CARREGA A PÁGINA SOLICITADA (Ex: usuarios.php, licoes.php)
-            include_once($pag . ".php");
+            // CARREGA A PÁGINA SOLICITADA COM VALIDAÇÃO DE EXISTÊNCIA
+            $arquivo = $pag . ".php";
+            if (file_exists($arquivo)) {
+                include_once($arquivo);
+            } else {
+                echo "<div class='alert alert-danger'>Página (<b>$arquivo</b>) não encontrada no servidor!</div>";
+                echo "<a href='index.php' class='btn btn-dark'>Voltar ao Início</a>";
+            }
         } ?>
 
     </div>

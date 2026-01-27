@@ -3,7 +3,6 @@
 require_once("../conexao.php");
 
 // 1. VALIDAÇÃO DE SEGURANÇA
-// Garante que apenas níveis autorizados acessem a lista
 if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
@@ -162,7 +161,6 @@ if (!function_exists('tratarCorFaixa')) {
                                 $id = $aluno['id'];
                                 $cor_banco = $aluno['cor_faixa'] ?? 'Branca';
                                 $cor_css = tratarCorFaixa($cor_banco);
-                                // Lógica de cor do texto da badge baseada no fundo
                                 $texto_cor = (in_array($cor_css, ['white', '#FFFF00', 'yellow', 'amarela'])) ? '#000' : '#fff';
 
                                 $data_venc = $aluno['data_venc'];
@@ -171,17 +169,17 @@ if (!function_exists('tratarCorFaixa')) {
                                 <tr class="<?php echo $vencido ? 'status-atrasado' : ''; ?>">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="mr-3">
-                                                <i class="fas fa-user-circle fa-2x text-secondary"></i>
-                                            </div>
+                                            <div class="mr-3"><i class="fas fa-user-circle fa-2x text-secondary"></i></div>
                                             <div>
-                                                <span class="font-weight-bold text-dark"><?php echo mb_strtoupper($aluno['nome']) ?></span><br>
+                                                <span
+                                                    class="font-weight-bold text-dark"><?php echo mb_strtoupper($aluno['nome']) ?></span><br>
                                                 <small class="text-muted"><?php echo $aluno['usuario'] ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge <?php echo $vencido ? 'badge-danger' : 'badge-light'; ?> p-2 shadow-sm">
+                                        <span
+                                            class="badge <?php echo $vencido ? 'badge-danger' : 'badge-light'; ?> p-2 shadow-sm">
                                             <?php echo date('d/m/Y', strtotime($data_venc)) ?>
                                         </span>
                                     </td>
@@ -198,24 +196,18 @@ if (!function_exists('tratarCorFaixa')) {
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <a href="index.php?pag=registrar-presenca&id=<?php echo $id ?>"
-                                                class="btn btn-success btn-sm" title="Registrar Aula">
-                                                <i class="fas fa-check"></i>
-                                            </a>
-
+                                                class="btn btn-success btn-sm" title="Registrar Aula"><i
+                                                    class="fas fa-check"></i></a>
                                             <a href="index.php?pag=lancar-tecnica&id=<?php echo $id ?>"
-                                                class="btn btn-selo btn-sm" title="Lançar Selo Individual">
-                                                <i class="fas fa-stamp"></i>
-                                            </a>
-
+                                                class="btn btn-selo btn-sm" title="Lançar Selo Individual"><i
+                                                    class="fas fa-stamp"></i></a>
                                             <a href="index.php?pag=relatorio-graduacao&id=<?php echo $id ?>"
-                                                class="btn btn-warning btn-sm" title="Análise de Graduação">
-                                                <i class="fas fa-chart-line"></i>
-                                            </a>
+                                                class="btn btn-warning btn-sm" title="Análise de Graduação"><i
+                                                    class="fas fa-chart-line"></i></a>
 
-                                            <a href="index.php?pag=editar-perfil-aluno&id=<?php echo $id ?>"
-                                                class="btn btn-info btn-sm" title="Perfil do Aluno">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
+                                            <a href="index.php?pag=ver-perfil-aluno&id=<?php echo $id ?>"
+                                                class="btn btn-info btn-sm" title="Perfil do Aluno"><i
+                                                    class="fas fa-eye"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -244,10 +236,8 @@ if (!function_exists('tratarCorFaixa')) {
                         }
                     });
                 } else {
-                    // Mantém o estado do filtro ao limpar a busca
                     var urlParams = new URLSearchParams(window.location.search);
-                    var status = urlParams.get('status');
-                    if (status == 'atrasado') {
+                    if (urlParams.get('status') == 'atrasado') {
                         window.location.href = 'index.php?pag=usuarios&status=atrasado';
                     } else {
                         window.location.href = 'index.php?pag=usuarios';
