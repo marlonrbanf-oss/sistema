@@ -3,6 +3,7 @@
 require_once("../conexao.php");
 
 // 1. VALIDAÇÃO DE SEGURANÇA
+// Garante que apenas níveis autorizados acessem a lista
 if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] != 'Admin' && @$_SESSION['nivel_usuario'] != 'Professor') {
     echo "<script language='javascript'>window.location='../login.php'; </script>";
     exit();
@@ -12,21 +13,23 @@ $hoje = date('Y-m-d');
 $status_filtro = isset($_GET['status']) ? $_GET['status'] : '';
 
 // Função para converter o nome da cor do banco em CSS válido
-function tratarCorFaixa($cor)
-{
-    $c = mb_strtolower(trim($cor));
-    $mapa = [
-        'branca'   => 'white',
-        'azul'     => '#0000FF',
-        'roxa'     => '#8A2BE2',
-        'marrom'   => '#5D2E11',
-        'preta'    => 'black',
-        'verde'    => '#008000',
-        'amarela'  => '#FFFF00',
-        'laranja'  => '#FFA500',
-        'cinza'    => '#808080'
-    ];
-    return $mapa[$c] ?? $c;
+if (!function_exists('tratarCorFaixa')) {
+    function tratarCorFaixa($cor)
+    {
+        $c = mb_strtolower(trim($cor));
+        $mapa = [
+            'branca'   => 'white',
+            'azul'     => '#0000FF',
+            'roxa'     => '#8A2BE2',
+            'marrom'   => '#5D2E11',
+            'preta'    => 'black',
+            'verde'    => '#008000',
+            'amarela'  => '#FFFF00',
+            'laranja'  => '#FFA500',
+            'cinza'    => '#808080'
+        ];
+        return $mapa[$c] ?? $c;
+    }
 }
 ?>
 
@@ -52,17 +55,6 @@ function tratarCorFaixa($cor)
 
         .btn-selo:hover {
             background-color: #5a32a3;
-            color: white;
-        }
-
-        .btn-analise {
-            background-color: #28a745;
-            color: white;
-            border: none;
-        }
-
-        .btn-analise:hover {
-            background-color: #218838;
             color: white;
         }
 
@@ -154,9 +146,9 @@ function tratarCorFaixa($cor)
                         <tbody>
                             <?php
                             $sql = "SELECT u.id, u.nome, u.usuario, u.data_venc, g.cor_faixa, g.graus, g.total_aulas 
-                                FROM usuarios u 
-                                LEFT JOIN graduacoes g ON u.id = g.usuario_id 
-                                WHERE u.nivel = 'Cliente' AND u.ativo = 'Sim'";
+                                    FROM usuarios u 
+                                    LEFT JOIN graduacoes g ON u.id = g.usuario_id 
+                                    WHERE u.nivel = 'Cliente' AND u.ativo = 'Sim'";
 
                             if ($status_filtro == 'atrasado') {
                                 $sql .= " AND u.data_venc < '$hoje'";
@@ -170,6 +162,7 @@ function tratarCorFaixa($cor)
                                 $id = $aluno['id'];
                                 $cor_banco = $aluno['cor_faixa'] ?? 'Branca';
                                 $cor_css = tratarCorFaixa($cor_banco);
+                                // Lógica de cor do texto da badge baseada no fundo
                                 $texto_cor = (in_array($cor_css, ['white', '#FFFF00', 'yellow', 'amarela'])) ? '#000' : '#fff';
 
                                 $data_venc = $aluno['data_venc'];
@@ -182,15 +175,13 @@ function tratarCorFaixa($cor)
                                                 <i class="fas fa-user-circle fa-2x text-secondary"></i>
                                             </div>
                                             <div>
-                                                <span
-                                                    class="font-weight-bold text-dark"><?php echo mb_strtoupper($aluno['nome']) ?></span><br>
+                                                <span class="font-weight-bold text-dark"><?php echo mb_strtoupper($aluno['nome']) ?></span><br>
                                                 <small class="text-muted"><?php echo $aluno['usuario'] ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span
-                                            class="badge <?php echo $vencido ? 'badge-danger' : 'badge-light'; ?> p-2 shadow-sm">
+                                        <span class="badge <?php echo $vencido ? 'badge-danger' : 'badge-light'; ?> p-2 shadow-sm">
                                             <?php echo date('d/m/Y', strtotime($data_venc)) ?>
                                         </span>
                                     </td>
@@ -253,8 +244,10 @@ function tratarCorFaixa($cor)
                         }
                     });
                 } else {
+                    // Mantém o estado do filtro ao limpar a busca
                     var urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.get('status') == 'atrasado') {
+                    var status = urlParams.get('status');
+                    if (status == 'atrasado') {
                         window.location.href = 'index.php?pag=usuarios&status=atrasado';
                     } else {
                         window.location.href = 'index.php?pag=usuarios';
