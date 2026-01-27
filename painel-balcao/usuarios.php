@@ -112,11 +112,11 @@ function tratarCorFaixa($cor)
                     <i class="fas fa-history"></i> Histórico Promoções
                 </a>
                 <?php if ($status_filtro != 'atrasado'): ?>
-                    <a href="usuarios.php?status=atrasado" class="btn btn-danger btn-sm shadow-sm">
+                    <a href="index.php?pag=usuarios&status=atrasado" class="btn btn-danger btn-sm shadow-sm">
                         <i class="fas fa-exclamation-triangle"></i> Ver Atrasados
                     </a>
                 <?php else: ?>
-                    <a href="usuarios.php" class="btn btn-primary btn-sm shadow-sm">
+                    <a href="index.php?pag=usuarios" class="btn btn-primary btn-sm shadow-sm">
                         <i class="fas fa-list"></i> Ver Todos
                     </a>
                 <?php endif; ?>
@@ -254,10 +254,10 @@ function tratarCorFaixa($cor)
                     });
                 } else {
                     var urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.has('status')) {
-                        window.location.href = 'usuarios.php?status=atrasado';
+                    if (urlParams.get('status') == 'atrasado') {
+                        window.location.href = 'index.php?pag=usuarios&status=atrasado';
                     } else {
-                        window.location.reload();
+                        window.location.href = 'index.php?pag=usuarios';
                     }
                 }
             });
