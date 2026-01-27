@@ -1,3 +1,13 @@
+O erro estava ocorrendo porque o JavaScript tentava capturar o texto dos rótulos (`label`) que contêm muitos espaços em
+branco e elementos internos (ícones), ou buscava atributos que não estavam mapeados para todos os campos.
+
+Ajustei o código para que o **Aquecimento** e o **Educativo** também utilizem atributos `data-nome`, garantindo que o
+texto apareça limpo e imediato no resumo. Também incluí a estilização para que a descrição técnica da lição seja exibida
+com clareza.
+
+Aqui está o código completo e corrigido:
+
+```php
 <?php
 @session_start();
 require_once("../conexao.php");
@@ -131,6 +141,8 @@ try {
             border-radius: 10px;
             padding: 20px;
             border: 1px solid #dee2e6;
+            position: sticky;
+            top: 20px;
         }
 
         .badge-step {
@@ -170,7 +182,9 @@ try {
                                 <div class="list-selectable mt-2">
                                     <?php foreach ($aquecimentos as $aq): ?>
                                         <input type="radio" name="aquecimento_id" id="aq_<?php echo $aq['id']; ?>"
-                                            value="<?php echo $aq['id']; ?>" class="item-check radio-dinamico">
+                                            value="<?php echo $aq['id']; ?>"
+                                            data-nome="<?php echo htmlspecialchars($aq['nome']); ?>"
+                                            class="item-check radio-dinamico">
                                         <label for="aq_<?php echo $aq['id']; ?>"
                                             class="item-label"><?php echo $aq['nome']; ?></label>
                                     <?php endforeach; ?>
@@ -185,7 +199,9 @@ try {
                                 <div class="list-selectable mt-2">
                                     <?php foreach ($educativos as $ed): ?>
                                         <input type="radio" name="educativo_id" id="ed_<?php echo $ed['id']; ?>"
-                                            value="<?php echo $ed['id']; ?>" class="item-check radio-dinamico">
+                                            value="<?php echo $ed['id']; ?>"
+                                            data-nome="<?php echo htmlspecialchars($ed['nome']); ?>"
+                                            class="item-check radio-dinamico">
                                         <label for="ed_<?php echo $ed['id']; ?>"
                                             class="item-label"><?php echo $ed['nome']; ?></label>
                                     <?php endforeach; ?>
@@ -211,8 +227,7 @@ try {
                                 <div class="list-selectable">
                                     <?php foreach ($licoes as $li):
                                         $nivel_li = $li['nivel'] ?? 'Iniciante';
-                                        // Limpamos a descrição para o atributo data
-                                        $desc_li = htmlspecialchars(strip_tags($li['descricao'] ?? 'Sem detalhes técnicos cadastrados.'));
+                                        $desc_li = htmlspecialchars(strip_tags($li['descricao'] ?? 'Sem detalhes cadastrados.'));
                                     ?>
                                         <div class="licao-item" data-nivel="<?php echo $nivel_li; ?>"
                                             style="<?php echo ($nivel_li != 'Iniciante') ? 'display:none' : ''; ?>">
@@ -241,7 +256,7 @@ try {
                                     <input type="text" id="buscaAluno" class="form-control"
                                         placeholder="Filtrar por nome...">
                                 </div>
-                                <div class="list-selectable p-2 bg-light" style="max-height: 300px;">
+                                <div class="list-selectable p-2 bg-light" style="max-height: 400px;">
                                     <?php
                                     $alunos = $pdo->query("SELECT id, nome FROM usuarios WHERE nivel = 'Cliente' AND ativo = 'Sim' ORDER BY nome ASC")->fetchAll(PDO::FETCH_ASSOC);
                                     foreach ($alunos as $aluno): ?>
@@ -262,7 +277,7 @@ try {
                         <div class="col-md-6">
                             <div class="preview-plano shadow-sm h-100">
                                 <h6 class="font-weight-bold text-uppercase border-bottom pb-2 mb-3 text-dark">
-                                    <i class="fas fa-clipboard-list mr-2"></i>Resumo e Conteúdo da Aula
+                                    <i class="fas fa-clipboard-list mr-2"></i>Visão Geral do Plano
                                 </h6>
                                 <div class="status-group mb-4">
                                     <div class="status-card">
@@ -283,8 +298,7 @@ try {
                                     </div>
                                 </div>
                                 <div id="resumo-conteudo">
-                                    <p class="text-muted font-italic">Selecione as técnicas acima para visualizar os
-                                        detalhes técnicos.</p>
+                                    <p class="text-muted font-italic">Aguardando seleção das técnicas...</p>
                                 </div>
                             </div>
                         </div>
@@ -302,49 +316,65 @@ try {
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Filtro de Nível
+        // Lógica de Filtro de Nível (Iniciante, Intermediário, Avançado)
         $('.btn-filtro-nivel').click(function() {
-            const nivel = $(this).data('nivel');
+            const nivelSelecionado = $(this).data('nivel');
             $('.btn-filtro-nivel').removeClass('active');
             $(this).addClass('active');
+
             $('.licao-item').hide();
-            $(`.licao-item[data-nivel="${nivel}"]`).show();
-            // Desmarcar rádio ao trocar filtro para obrigar nova seleção
+            $(`.licao-item[data-nivel="${nivelSelecionado}"]`).show();
+
+            // Limpa a lição selecionada ao trocar de nível
             $(`input[name="licao_id"]`).prop('checked', false);
             atualizarResumo();
         });
 
+        // Função Principal para Atualizar o Resumo na Tela
         function atualizarResumo() {
-            const aq = $('input[name="aquecimento_id"]:checked').next('label').text() || '---';
-            const ed = $('input[name="educativo_id"]:checked').next('label').text() || '---';
+            // Captura os nomes através dos atributos data-nome definidos nos inputs
+            const aq_nome = $('input[name="aquecimento_id"]:checked').data('nome') ||
+                '<span class="text-danger">Não selecionado</span>';
+            const ed_nome = $('input[name="educativo_id"]:checked').data('nome') ||
+                '<span class="text-danger">Não selecionado</span>';
 
-            // Dados da Lição
             const licaoInput = $('input[name="licao_id"]:checked');
-            const li_nome = licaoInput.data('nome') || '---';
+            const li_nome = licaoInput.data('nome') || '<span class="text-danger">Não selecionada</span>';
+            const li_desc = licaoInput.data('descricao') || '';
             const li_num = licaoInput.val() || '';
-            const li_desc = licaoInput.data('descricao') || 'Selecione uma lição para ver as técnicas.';
 
-            const st = $('input[name="status"]:checked').val();
+            const status = $('input[name="status"]:checked').val();
 
             let html = `
-                <div class="alert alert-secondary p-2 mb-3">
-                    <p class="mb-1"><b>🔥 Aquecimento:</b> ${aq}</p>
-                    <p class="mb-0"><b>⚙️ Educativo:</b> ${ed}</p>
+                <div class="mb-3">
+                    <h6 class="font-weight-bold text-warning mb-1">🔥 Aquecimento:</h6>
+                    <p class="border-left border-warning pl-2 ml-1">${aq_nome}</p>
                 </div>
-                <div class="bg-light p-3 border rounded">
-                    <h6 class="text-primary font-weight-bold mb-2">📖 Lição Técnica: ${li_num ? 'L'+li_num+' - ' : ''}${li_nome}</h6>
-                    <div style="white-space: pre-wrap; font-size: 0.9rem; color: #555;">${li_desc}</div>
+                <div class="mb-3">
+                    <h6 class="font-weight-bold text-info mb-1">⚙️ Educativo:</h6>
+                    <p class="border-left border-info pl-2 ml-1">${ed_nome}</p>
                 </div>
-                <div class="mt-3">
-                    <p class="mb-0 text-dark"><b>📌 Status Final:</b> ${st}</p>
-                </div>`;
+                <div class="mb-3">
+                    <h6 class="font-weight-bold text-primary mb-1">📖 Lição Técnica: ${li_num ? 'L'+li_num : ''}</h6>
+                    <div class="p-2 bg-light border rounded">
+                        <p class="font-weight-bold mb-1">${li_nome}</p>
+                        <div class="small text-muted" style="white-space: pre-wrap;">${li_desc}</div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-2 border-top">
+                    <p class="mb-0"><strong>Status Final:</strong> <span class="badge badge-dark">${status}</span></p>
+                </div>
+            `;
 
             $('#resumo-conteudo').html(html);
         }
 
-        $(document).on('change', '.radio-dinamico, .status-check', atualizarResumo);
+        // Gatilhos de atualização
+        $(document).on('change', '.radio-dinamico, .status-check', function() {
+            atualizarResumo();
+        });
 
-        // Filtro de Alunos
+        // Filtro de Alunos (Busca por nome)
         $("#buscaAluno").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             $(".aluno-row").filter(function() {
@@ -352,7 +382,7 @@ try {
             });
         });
 
-        // Toggle Visual Checkbox Alunos
+        // Estilização visual dos Checkboxes de Alunos
         $('input[name="alunos[]"]').change(function() {
             const label = $(this).next('label');
             if ($(this).is(':checked')) {
@@ -366,21 +396,22 @@ try {
             }
         });
 
-        // Validação Final
+        // Validação antes de enviar
         $('#formPlano').submit(function() {
             if ($('input[name="licao_id"]:checked').length === 0) {
-                alert("Por favor, selecione uma Lição Técnica.");
+                alert("Selecione uma Lição Técnica antes de finalizar.");
                 return false;
             }
             if ($('input[name="alunos[]"]:checked').length === 0) {
-                alert("Por favor, selecione pelo menos um aluno presente.");
+                alert("Selecione ao menos um aluno presente.");
                 return false;
             }
-            $('#btnSalvar').html('<i class="fas fa-spinner fa-spin mr-2"></i> PROCESSANDO...').attr('disabled',
-                true);
+            $('#btnSalvar').html('<i class="fas fa-spinner fa-spin mr-2"></i> SALVANDO...').attr('disabled', true);
             return true;
         });
     </script>
 </body>
 
 </html>
+
+```
