@@ -10,10 +10,29 @@ if (@$_SESSION['nivel_usuario'] != 'Balconista' && @$_SESSION['nivel_usuario'] !
 
 // 2. RECUPERA O ID DO ALUNO
 $id_aluno = @$_GET['id'];
-
 if ($id_aluno == "") {
     echo "<div class='alert alert-danger'>Erro: ID do aluno não informado.</div>";
     exit();
+}
+
+// --- LÓGICA DE PROMOÇÃO DE GRADUAÇÃO (POST) ---
+if (isset($_POST['nova_faixa'])) {
+    $n_faixa = $_POST['nova_faixa'];
+    $n_graus = $_POST['novo_grau'];
+
+    $res = $pdo->prepare("UPDATE graduacoes SET cor_faixa = :f, graus = :g WHERE usuario_id = :id");
+    $res->bindValue(":f", $n_faixa);
+    $res->bindValue(":g", $n_graus);
+    $res->bindValue(":id", $id_aluno);
+    $res->execute();
+
+    // Log da promoção
+    $res_log = $pdo->prepare("INSERT INTO logs (acao, data, usuario) VALUES (:acao, NOW(), :user)");
+    $res_log->bindValue(":acao", "O professor promoveu o aluno para " . strtoupper($n_faixa) . " " . $n_graus . "G");
+    $res_log->bindValue(":user", $_SESSION['id_usuario']);
+    $res_log->execute();
+
+    echo "<script>alert('Graduação Atualizada!'); window.location='index.php?pag=ver-perfil-aluno&id=$id_aluno';</script>";
 }
 
 // 3. BUSCA DADOS DO ALUNO
@@ -43,27 +62,89 @@ $query_h->bindValue(":id", $id_aluno);
 $query_h->execute();
 $habilidades = $query_h->fetchAll(PDO::FETCH_ASSOC);
 
-// 6. DADOS PARA O GRÁFICO (Agrupado por posição)
+$dominados = 0;
+foreach ($habilidades as $h) {
+    if (mb_strtolower($h['status']) == 'dominado' || mb_strtolower($h['status']) == 'concluído') $dominados++;
+}
+
+// 6. DADOS PARA O GRÁFICO
 $query_chart = $pdo->prepare("SELECT posicao, COUNT(*) as total FROM habilidades WHERE usuario_id = :id GROUP BY posicao");
 $query_chart->bindValue(":id", $id_aluno);
 $query_chart->execute();
 $dados_grafico = $query_chart->fetchAll(PDO::FETCH_ASSOC);
-
 $labels = [];
 $valores = [];
 foreach ($dados_grafico as $dg) {
     $labels[] = $dg['posicao'] ?: 'Geral';
     $valores[] = $dg['total'];
 }
+
+// --- PREPARAÇÃO DA MENSAGEM WHATSAPP ---
+$telefone_aluno = preg_replace('/[^0-9]/', '', $dados['telefone'] ?? '');
+$texto_whatsapp = "*RELATÓRIO TÉCNICO - NOVA ARTE BJJ*%0A%0A";
+$texto_whatsapp .= "Oss, *" . $dados['nome'] . "*!%0A";
+$texto_whatsapp .= "Confira sua evolução atual:%0A";
+$texto_whatsapp .= "🥋 *Graduação:* " . strtoupper($faixa) . " (" . $graus . " Graus)%0A";
+$texto_whatsapp .= "📈 *Aulas Totais:* " . $aulas . "%0A";
+$texto_whatsapp .= "🏅 *Técnicas Dominadas:* " . $dominados . " de " . count($habilidades) . "%0A%0A";
+$texto_whatsapp .= "_Continue focado na jornada!_";
+$link_whatsapp = "https://api.whatsapp.com/send?phone=55" . $telefone_aluno . "&text=" . $texto_whatsapp;
 ?>
 
+<style>
+    @media print {
+
+        .no-print,
+        .btn,
+        .breadcrumb,
+        #buscaSelo,
+        .main-footer {
+            display: none !important;
+        }
+
+        .content-wrapper {
+            margin-left: 0 !important;
+        }
+
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        text-uppercase;
+        color: #777;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #333;
+    }
+</style>
+
 <div class="container-fluid pt-3">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb bg-transparent p-0">
-            <li class="breadcrumb-item"><a href="index.php?pag=usuarios">Alunos</a></li>
-            <li class="breadcrumb-item active">Perfil Técnico: <?php echo htmlspecialchars($dados['nome']); ?></li>
-        </ol>
-    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <h5 class="m-0 font-weight-bold"><i class="fas fa-user-shield mr-2 text-primary"></i>Perfil de
+            <?php echo $dados['nome']; ?></h5>
+        <div>
+            <button data-toggle="modal" data-target="#modalPromover"
+                class="btn btn-warning shadow-sm rounded-pill mr-2 font-weight-bold">
+                <i class="fas fa-medal mr-1"></i>GRADUAR
+            </button>
+            <a href="<?php echo $link_whatsapp; ?>" target="_blank" class="btn btn-success shadow-sm rounded-pill mr-2">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <button onclick="window.print();" class="btn btn-light shadow-sm border rounded-pill">
+                <i class="fas fa-file-pdf text-danger mr-1"></i>PDF / Imprimir
+            </button>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-md-4">
@@ -71,120 +152,155 @@ foreach ($dados_grafico as $dg) {
                 <div class="card-body text-center">
                     <img src="../img/perfis/<?php echo $dados['foto'] ?: 'usuario-icone-claro.png'; ?>"
                         class="img-fluid rounded-circle img-thumbnail mb-3 shadow-sm"
-                        style="width: 120px; height: 120px; object-fit: cover;">
+                        style="width: 130px; height: 130px; object-fit: cover;">
                     <h5 class="font-weight-bold mb-0"><?php echo mb_strtoupper($dados['nome']); ?></h5>
-                    <span class="badge badge-primary mb-3">MATRÍCULA #<?php echo $dados['id']; ?></span>
+                    <span class="badge badge-dark mb-3">MATRÍCULA #<?php echo $dados['id']; ?></span>
 
-                    <div class="row text-center border-top pt-3">
-                        <div class="col-6 border-right">
-                            <small class="text-muted d-block text-uppercase">Faixa</small>
-                            <span class="font-weight-bold"><?php echo strtoupper($faixa); ?></span>
+                    <div class="text-left bg-light p-3 rounded" style="font-size: 0.85rem;">
+                        <div class="mb-2">
+                            <span class="info-label">CPF</span>
+                            <span class="info-value"><?php echo $dados['cpf'] ?: 'Não informado'; ?></span>
                         </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block text-uppercase">Aulas</small>
-                            <span class="font-weight-bold"><?php echo $aulas; ?></span>
+                        <div class="mb-2">
+                            <span class="info-label">E-mail</span>
+                            <span class="info-value"><?php echo $dados['usuario']; ?></span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="info-label">Telefone</span>
+                            <span class="info-value"><?php echo $dados['telefone'] ?: 'N/A'; ?></span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="info-label">Endereço</span>
+                            <span class="info-value"><?php echo $dados['endereco'] ?: 'N/A'; ?></span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card shadow-sm border-0" style="border-radius: 15px;">
-                <div class="card-header bg-white font-weight-bold"><i
-                        class="fas fa-chart-pie mr-2 text-primary"></i>Domínio por Posição</div>
-                <div class="card-body">
-                    <canvas id="graficoTecnicas" height="250"></canvas>
-                </div>
+                <div class="card-header bg-white font-weight-bold small"><i
+                        class="fas fa-chart-pie mr-2 text-primary"></i>Domínio Técnico</div>
+                <div class="card-body"><canvas id="graficoTecnicas" height="200"></canvas></div>
             </div>
         </div>
 
         <div class="col-md-8">
-            <div class="card shadow-sm mb-4 border-0" style="border-radius: 15px;">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-medal mr-2 text-warning"></i>Selos do
-                        Aluno</h6>
-                    <div class="input-group input-group-sm" style="width: 200px;">
-                        <input type="text" id="buscaSelo" class="form-control" placeholder="Filtrar técnica...">
-                        <div class="input-group-append">
-                            <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+            <div class="row no-print">
+                <div class="col-md-6">
+                    <div class="info-box shadow-sm">
+                        <span class="info-box-icon bg-primary"><i class="fas fa-ribbon"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">FAIXA ATUAL</span>
+                            <span class="info-box-number"><?php echo strtoupper($faixa); ?> - <?php echo $graus; ?>º
+                                GRAU</span>
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0" id="tabelaSelos">
-                            <thead class="bg-light sticky-top">
-                                <tr class="small">
-                                    <th>POSIÇÃO</th>
-                                    <th>TÉCNICA</th>
-                                    <th class="text-center">STATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($habilidades as $h):
-                                    $status_check = mb_strtolower($h['status']);
-                                    $dominado = ($status_check == 'dominado' || $status_check == 'concluído');
-                                    $cor_status = $dominado ? 'badge-success' : 'badge-warning';
-                                ?>
-                                    <tr>
-                                        <td class="small font-weight-bold text-muted">
-                                            <?php echo strtoupper($h['posicao']); ?></td>
-                                        <td><span class="nome-tecnica"><?php echo $h['tecnica']; ?></span></td>
-                                        <td class="text-center">
-                                            <span class="badge <?php echo $cor_status; ?> px-2 py-1">
-                                                <?php echo $dominado ? '<i class="fas fa-check mr-1"></i>' : '<i class="fas fa-clock mr-1"></i>'; ?>
-                                                <?php echo strtoupper($h['status']); ?>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                <div class="col-md-6">
+                    <div class="info-box shadow-sm">
+                        <span class="info-box-icon bg-success"><i class="fas fa-calendar-check"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">AULAS COMPUTADAS</span>
+                            <span class="info-box-number"><?php echo $aulas; ?> AULAS</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0" style="border-radius: 15px;">
-                <div class="card-header bg-dark text-white font-weight-bold">
-                    <i class="fas fa-history mr-2"></i>Histórico de Atividades / Disputas
+            <div class="card shadow-sm mb-4 border-0" style="border-radius: 15px;">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-medal mr-2 text-warning"></i>Selos e Habilidades
+                    </h6>
+                    <input type="text" id="buscaSelo" class="form-control form-control-sm no-print"
+                        style="width: 180px;" placeholder="Filtrar técnica...">
                 </div>
+                <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-hover mb-0" id="tabelaSelos">
+                        <thead class="bg-light sticky-top">
+                            <tr class="small text-uppercase">
+                                <th>Posição</th>
+                                <th>Técnica</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            <?php foreach ($habilidades as $h): $dominado = (mb_strtolower($h['status']) == 'dominado' || mb_strtolower($h['status']) == 'concluído'); ?>
+                                <tr>
+                                    <td><b><?php echo $h['posicao']; ?></b></td>
+                                    <td><?php echo $h['tecnica']; ?></td>
+                                    <td class="text-center">
+                                        <span class="badge <?php echo $dominado ? 'badge-success' : 'badge-warning'; ?>">
+                                            <?php echo strtoupper($h['status']); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-header bg-dark text-white font-weight-bold small"><i
+                        class="fas fa-history mr-2"></i>Logs de Evolução</div>
                 <div class="card-body p-0">
-                    <ul class="list-group list-group-flush">
+                    <ul class="list-group list-group-flush small">
                         <?php
-                        $query_l = $pdo->prepare("SELECT * FROM logs WHERE acao LIKE :nome ORDER BY id DESC LIMIT 6");
+                        $query_l = $pdo->prepare("SELECT * FROM logs WHERE acao LIKE :nome ORDER BY id DESC LIMIT 4");
                         $query_l->bindValue(":nome", "%" . $dados['nome'] . "%");
                         $query_l->execute();
                         $logs = $query_l->fetchAll(PDO::FETCH_ASSOC);
-
-                        if (count($logs) > 0) {
-                            foreach ($logs as $l): ?>
-                                <li class="list-group-item small d-flex justify-content-between align-items-center">
-                                    <span><i
-                                            class="fas fa-chevron-right text-primary mr-2"></i><?php echo htmlspecialchars($l['acao']); ?></span>
-                                    <span
-                                        class="badge badge-light text-muted font-weight-normal"><?php echo date('d/m | H:i', strtotime($l['data'])); ?></span>
-                                </li>
-                        <?php endforeach;
-                        } else {
-                            echo "<li class='list-group-item text-muted text-center py-4'>Sem registros de atividades.</li>";
-                        } ?>
+                        foreach ($logs as $l): ?>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span><?php echo htmlspecialchars($l['acao']); ?></span>
+                                <span class="text-muted"><?php echo date('d/m/Y', strtotime($l['data'])); ?></span>
+                            </li>
+                        <?php endforeach; ?>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="text-right py-4">
-        <a href="index.php?pag=usuarios" class="btn btn-dark px-4 shadow-sm" style="border-radius: 20px;">
-            <i class="fas fa-arrow-left mr-2"></i>Voltar para Alunos
-        </a>
+<div class="modal fade" id="modalPromover" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header bg-warning">
+                <h6 class="modal-title font-weight-bold"><i class="fas fa-medal mr-2"></i>Promover Atleta</h6>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small">Nova Faixa</label>
+                        <select class="form-control" name="nova_faixa" required>
+                            <?php
+                            $cores = ['Branca', 'Cinza', 'Amarela', 'Laranja', 'Verde', 'Azul', 'Roxa', 'Marrom', 'Preta'];
+                            foreach ($cores as $c) {
+                                $sel = ($faixa == $c) ? 'selected' : '';
+                                echo "<option value='$c' $sel>$c</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small">Graus (0 a 4)</label>
+                        <input type="number" class="form-control" name="novo_grau" value="<?php echo $graus; ?>" min="0"
+                            max="4" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-warning btn-block font-weight-bold">CONFIRMAR PROMOÇÃO</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <script>
-    // Lógica do Filtro de Selos
     $(document).ready(function() {
         $("#buscaSelo").on("keyup", function() {
             var value = $(this).val().toLowerCase();
@@ -194,21 +310,13 @@ foreach ($dados_grafico as $dg) {
         });
     });
 
-    // Lógica do Gráfico de Rosca
-    const ctx = document.getElementById('graficoTecnicas').getContext('2d');
-    new Chart(ctx, {
+    new Chart(document.getElementById('graficoTecnicas').getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: <?php echo json_encode($labels); ?>,
             datasets: [{
                 data: <?php echo json_encode($valores); ?>,
-                backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e', '#e74a3b', '#36b9cc', '#5a5c69',
-                    '#f8f9fc'
-                ],
-                hoverBackgroundColor: ['#2e59d9', '#17a673', '#dda20a', '#be2617', '#2c9faf', '#373840',
-                    '#dde2e6'
-                ],
-                hoverBorderColor: "rgba(234, 236, 244, 1)",
+                backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e', '#e74a3b', '#36b9cc', '#5a5c69']
             }]
         },
         options: {
@@ -217,25 +325,14 @@ foreach ($dados_grafico as $dg) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        boxWidth: 10,
-                        padding: 15,
+                        boxWidth: 8,
                         font: {
-                            size: 11
+                            size: 9
                         }
                     }
-                },
-                tooltip: {
-                    backgroundColor: "rgb(255,255,255)",
-                    bodyColor: "#858796",
-                    borderColor: '#dddfeb',
-                    borderWidth: 1,
-                    xPadding: 15,
-                    yPadding: 15,
-                    displayColors: false,
-                    caretPadding: 10
                 }
             },
-            cutout: '70%',
+            cutout: '75%'
         }
     });
 </script>
