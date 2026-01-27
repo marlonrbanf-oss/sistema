@@ -86,6 +86,11 @@ function tratarCorFaixa($cor)
             padding-left: 20px;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+
+        .btn-group .btn {
+            margin-right: 2px;
+            border-radius: 4px !important;
+        }
     </style>
 </head>
 
@@ -102,6 +107,9 @@ function tratarCorFaixa($cor)
             <div class="col-md-5 text-md-right mt-2 mt-md-0">
                 <a href="index.php" class="btn btn-outline-dark btn-sm shadow-sm mr-2">
                     <i class="fas fa-home"></i> Painel
+                </a>
+                <a href="index.php?pag=historico-geral" class="btn btn-dark btn-sm shadow-sm mr-2">
+                    <i class="fas fa-history"></i> Histórico Promoções
                 </a>
                 <?php if ($status_filtro != 'atrasado'): ?>
                     <a href="usuarios.php?status=atrasado" class="btn btn-danger btn-sm shadow-sm">
@@ -162,8 +170,7 @@ function tratarCorFaixa($cor)
                                 $id = $aluno['id'];
                                 $cor_banco = $aluno['cor_faixa'] ?? 'Branca';
                                 $cor_css = tratarCorFaixa($cor_banco);
-
-                                $texto_cor = (in_array($cor_css, ['white', '#FFFF00', 'yellow'])) ? '#000' : '#fff';
+                                $texto_cor = (in_array($cor_css, ['white', '#FFFF00', 'yellow', 'amarela'])) ? '#000' : '#fff';
 
                                 $data_venc = $aluno['data_venc'];
                                 $vencido = (strtotime($data_venc) < strtotime($hoje)) ? true : false;
@@ -176,21 +183,22 @@ function tratarCorFaixa($cor)
                                             </div>
                                             <div>
                                                 <span
-                                                    class="font-weight-bold"><?php echo mb_strtoupper($aluno['nome']) ?></span><br>
+                                                    class="font-weight-bold text-dark"><?php echo mb_strtoupper($aluno['nome']) ?></span><br>
                                                 <small class="text-muted"><?php echo $aluno['usuario'] ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge <?php echo $vencido ? 'badge-danger' : 'badge-light'; ?> p-2">
+                                        <span
+                                            class="badge <?php echo $vencido ? 'badge-danger' : 'badge-light'; ?> p-2 shadow-sm">
                                             <?php echo date('d/m/Y', strtotime($data_venc)) ?>
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="badge-faixa"
+                                        <span class="badge-faixa shadow-sm"
                                             style="background-color: <?php echo $cor_css ?>; color: <?php echo $texto_cor ?>;">
                                             <?php echo strtoupper($cor_banco) ?>
-                                            <span class="ml-1 opacity-75 small"><?php echo $aluno['graus'] ?>G</span>
+                                            <span class="ml-1 opacity-75 small"><?php echo ($aluno['graus'] ?? 0) ?>G</span>
                                         </span>
                                     </td>
                                     <td class="text-center font-weight-bold text-primary">
@@ -199,22 +207,22 @@ function tratarCorFaixa($cor)
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <a href="index.php?pag=registrar-presenca&id=<?php echo $id ?>"
-                                                class="btn btn-success btn-sm shadow-sm" title="Registrar Aula">
+                                                class="btn btn-success btn-sm" title="Registrar Aula">
                                                 <i class="fas fa-check"></i>
                                             </a>
 
                                             <a href="index.php?pag=lancar-tecnica&id=<?php echo $id ?>"
-                                                class="btn btn-selo btn-sm shadow-sm" title="Lançar Selo Individual">
+                                                class="btn btn-selo btn-sm" title="Lançar Selo Individual">
                                                 <i class="fas fa-stamp"></i>
                                             </a>
 
                                             <a href="index.php?pag=relatorio-graduacao&id=<?php echo $id ?>"
-                                                class="btn btn-warning btn-sm shadow-sm" title="Análise de Graduação">
+                                                class="btn btn-warning btn-sm" title="Análise de Graduação">
                                                 <i class="fas fa-chart-line"></i>
                                             </a>
 
                                             <a href="index.php?pag=editar-perfil-aluno&id=<?php echo $id ?>"
-                                                class="btn btn-info btn-sm shadow-sm" title="Perfil do Aluno">
+                                                class="btn btn-info btn-sm" title="Perfil do Aluno">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                         </div>

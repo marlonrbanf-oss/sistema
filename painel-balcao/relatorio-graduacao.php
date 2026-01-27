@@ -2,12 +2,13 @@
 @session_start();
 require_once("../conexao.php");
 
-// 1. SEGURANÇA
+// 1. SEGURANÇA - Mantendo sua lógica original
 if (@$_SESSION['nivel_usuario'] != 'Professor' && @$_SESSION['nivel_usuario'] != 'Admin') {
     echo "<script>window.location='../login.php';</script>";
     exit();
 }
 
+// Pega o ID via GET (URL)
 $id_aluno = $_GET['id'];
 
 // 2. BUSCA DADOS DO ALUNO E GRADUAÇÃO
@@ -22,7 +23,10 @@ $habilidades = $query_h->fetchAll(PDO::FETCH_ASSOC);
 
 $stats = ['Concluído' => 0, 'Revisão' => 0, 'Em Estudo' => 0];
 foreach ($habilidades as $h) {
-    $stats[$h['status']] = $h['total'];
+    // Sanitização para evitar erro de índice caso o status venha diferente do esperado
+    if (isset($stats[$h['status']])) {
+        $stats[$h['status']] = $h['total'];
+    }
 }
 
 $total_tecnicas_curriculo = 150;
@@ -30,18 +34,16 @@ $pontuacao_atual = ($stats['Concluído'] * 100) + ($stats['Revisão'] * 60) + ($
 $porcentagem_tecnica = ($total_tecnicas_curriculo > 0) ? round(($pontuacao_atual / ($total_tecnicas_curriculo * 100)) * 100) : 0;
 if ($porcentagem_tecnica > 100) $porcentagem_tecnica = 100;
 
-// Função auxiliar para cor do texto na badge
-$cor_fundo = $aluno['cor_faixa'] ?? 'white';
-$texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'yellow'])) ? '#000' : '#fff';
+// Lógica de cores para a badge
+$cor_banco = $aluno['cor_faixa'] ?? 'Branca';
+$cor_fundo = (strtolower($cor_banco) == 'branca') ? '#fff' : $cor_banco;
+$texto_cor = (in_array(strtolower($cor_banco), ['white', 'branca', 'amarela', 'yellow'])) ? '#000' : '#fff';
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
-    <title>Análise de Graduação - <?php echo $aluno['nome']; ?></title>
-    <link rel="stylesheet" href="../css/bootstrap.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
     <style>
         .card-analise {
             border-radius: 20px;
@@ -81,7 +83,7 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
 
 <body class="bg-light">
 
-    <div class="container mt-4 mb-5">
+    <div class="container mt-2 mb-5">
         <div class="card card-analise shadow">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fas fa-chart-line mr-2"></i> Análise de Prontidão:
@@ -89,14 +91,14 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
                 <div>
                     <button onclick="window.print()" class="btn btn-sm btn-light mr-2"><i
                             class="fas fa-print"></i></button>
-                    <a href="usuarios.php" class="btn btn-sm btn-outline-light">Voltar</a>
+                    <a href="index.php?pag=usuarios" class="btn btn-sm btn-outline-light">Voltar</a>
                 </div>
             </div>
             <div class="card-body">
 
                 <div class="row align-items-center mb-4">
                     <div class="col-md-4 text-center">
-                        <div class="circular-progress shadow-sm">
+                        <div class="circular-progress shadow-sm border">
                             <span class="h4 mb-0 font-weight-bold"><?php echo $porcentagem_tecnica; ?>%</span>
                         </div>
                         <p class="mt-2 font-weight-bold text-muted small">CONHECIMENTO TÉCNICO</p>
@@ -108,7 +110,7 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
                                     <small class="text-muted d-block">FAIXA ATUAL</small>
                                     <span class="badge-faixa-analise"
                                         style="background: <?php echo $cor_fundo; ?>; color: <?php echo $texto_cor; ?>;">
-                                        <?php echo strtoupper($aluno['cor_faixa'] ?? 'Branca'); ?>
+                                        <?php echo strtoupper($cor_banco); ?>
                                     </span>
                                 </div>
                             </div>
@@ -128,9 +130,13 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
                             <div class="col-6">
                                 <div class="meta-box shadow-sm">
                                     <small class="text-muted d-block">MENSALIDADE</small>
+                                    <?php
+                                    $hoje = strtotime(date('Y-m-d'));
+                                    $venc = strtotime($aluno['data_venc']);
+                                    ?>
                                     <span
-                                        class="badge <?php echo (strtotime($aluno['data_venc']) < time()) ? 'badge-danger' : 'badge-success'; ?>">
-                                        <?php echo (strtotime($aluno['data_venc']) < time()) ? 'EM ATRASO' : 'OK'; ?>
+                                        class="badge <?php echo ($venc < $hoje) ? 'badge-danger' : 'badge-success'; ?>">
+                                        <?php echo ($venc < $hoje) ? 'EM ATRASO' : 'OK'; ?>
                                     </span>
                                 </div>
                             </div>
@@ -155,7 +161,7 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
                         </tr>
                         <tr>
                             <td><i class="fas fa-info-circle text-primary mr-2"></i> Disciplina e Atitude</td>
-                            <td class="text-right text-muted">Avaliável pelo Professor</td>
+                            <td class="text-right text-muted small italic">Avaliável pelo Professor</td>
                         </tr>
                     </table>
                 </div>
@@ -180,7 +186,9 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title">Promover Aluno: <?php echo $aluno['nome']; ?></h5>
-                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <form id="form-promover">
                     <div class="modal-body">
@@ -192,7 +200,7 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
                                 <?php
                                 $faixas = ['Branca', 'Cinza', 'Amarela', 'Laranja', 'Verde', 'Azul', 'Roxa', 'Marrom', 'Preta'];
                                 foreach ($faixas as $f) {
-                                    $sel = ($aluno['cor_faixa'] == $f) ? 'selected' : '';
+                                    $sel = (strtolower($cor_banco) == strtolower($f)) ? 'selected' : '';
                                     echo "<option value='$f' $sel>$f</option>";
                                 }
                                 ?>
@@ -205,8 +213,8 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
                                 value="<?php echo ($aluno['graus'] ?? 0); ?>" min="0" max="4">
                         </div>
 
-                        <div class="alert alert-info py-2">
-                            <small><i class="fas fa-info-circle mr-1"></i> Ao confirmar, o contador de <b>Aulas
+                        <div class="alert alert-warning py-2">
+                            <small><i class="fas fa-exclamation-triangle mr-1"></i> Ao confirmar, o contador de <b>Aulas
                                     Atuais</b> será resetado para 0.</small>
                         </div>
                     </div>
@@ -220,28 +228,28 @@ $texto_cor = (in_array(strtolower($cor_fundo), ['white', 'branca', 'amarela', 'y
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        $('#form-promover').submit(function(e) {
-            e.preventDefault();
-            $('#btn_confirmar').html('<i class="fas fa-spinner fa-spin"></i> Processando...').prop('disabled',
-                true);
+        $(document).ready(function() {
+            $('#form-promover').submit(function(e) {
+                e.preventDefault();
+                $('#btn_confirmar').html('<i class="fas fa-spinner fa-spin"></i> Processando...').prop(
+                    'disabled', true);
 
-            $.ajax({
-                url: "promover-aluno.php",
-                method: "POST",
-                data: $(this).serialize(),
-                success: function(mensagem) {
-                    if (mensagem.trim() === "Sucesso") {
-                        alert("Graduação atualizada com sucesso! OSS.");
-                        window.location.reload();
-                    } else {
-                        alert(mensagem);
-                        $('#btn_confirmar').html('CONFIRMAR PROMOÇÃO').prop('disabled', false);
+                $.ajax({
+                    url: "promover-aluno.php", // Certifique-se que este arquivo está na mesma pasta
+                    method: "POST",
+                    data: $(this).serialize(),
+                    success: function(mensagem) {
+                        if (mensagem.trim() === "Sucesso") {
+                            alert("Graduação atualizada com sucesso! OSS.");
+                            window.location.href = "index.php?pag=usuarios";
+                        } else {
+                            alert(mensagem);
+                            $('#btn_confirmar').html('CONFIRMAR PROMOÇÃO').prop('disabled',
+                                false);
+                        }
                     }
-                }
+                });
             });
         });
     </script>
