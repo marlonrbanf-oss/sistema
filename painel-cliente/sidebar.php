@@ -2,7 +2,7 @@
 @session_start();
 // Pega o nome do arquivo atual para marcar o menu como ativo
 $pagina_atual = basename($_SERVER['PHP_SELF']);
-$pag_url = @$_GET['pag'];
+$pag_url = isset($_GET['pag']) ? $_GET['pag'] : '';
 
 // --- PROTEÇÃO DE VARIÁVEIS E COMPATIBILIDADE ---
 $nome_display = 'Usuário';
@@ -12,7 +12,8 @@ if (isset($nome_usuario)) {
     $nome_display = $_SESSION['nome_usuario'];
 }
 
-$id_logado = $_SESSION['id_usuario'] ?? 0;
+// O ID é fundamental para o link do perfil funcionar
+$id_logado = isset($_SESSION['id_usuario']) ? $_SESSION['id_usuario'] : 0;
 
 // Lógica de foto com verificação de existência física
 $foto_display = 'usuario-icone-claro.png';
@@ -25,7 +26,7 @@ if (isset($foto_usuario) && !empty($foto_usuario)) {
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <a href="index.php" class="brand-link text-center border-secondary">
-        <span class="brand-text font-weight-bold">NOVA ARTE BJJ</span>
+        <span class="brand-text font-weight-bold text-uppercase">Nova Arte BJJ</span>
     </a>
 
     <div class="sidebar">
@@ -67,24 +68,24 @@ if (isset($foto_usuario) && !empty($foto_usuario)) {
                 </li>
 
                 <li class="nav-item">
-                    <a href="minhas-tecnicas.php"
-                        class="nav-link <?php echo ($pagina_atual == 'minhas-tecnicas.php') ? 'active' : ''; ?>">
+                    <a href="index.php?pag=minhas-tecnicas"
+                        class="nav-link <?php echo ($pag_url == 'minhas-tecnicas') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-book-open text-primary"></i>
                         <p>Minhas Técnicas</p>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="horarios.php"
-                        class="nav-link <?php echo ($pagina_atual == 'horarios.php') ? 'active' : ''; ?>">
+                    <a href="index.php?pag=horarios"
+                        class="nav-link <?php echo ($pag_url == 'horarios') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-calendar-alt"></i>
                         <p>Horários</p>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="particulares.php"
-                        class="nav-link <?php echo ($pagina_atual == 'particulares.php') ? 'active' : ''; ?>">
+                    <a href="index.php?pag=particulares"
+                        class="nav-link <?php echo ($pag_url == 'particulares') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-user-graduate"></i>
                         <p>Aulas Particulares</p>
                     </a>
@@ -93,34 +94,34 @@ if (isset($foto_usuario) && !empty($foto_usuario)) {
                 <li class="nav-item border-bottom border-secondary mb-2"></li>
 
                 <li class="nav-item">
-                    <a href="mensalidades.php"
-                        class="nav-link <?php echo ($pagina_atual == 'mensalidades.php') ? 'active' : ''; ?>">
+                    <a href="index.php?pag=mensalidades"
+                        class="nav-link <?php echo ($pag_url == 'mensalidades') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-receipt text-success"></i>
                         <p>Financeiro</p>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="evolucao.php"
-                        class="nav-link <?php echo ($pagina_atual == 'evolucao.php') ? 'active' : ''; ?>">
+                    <a href="index.php?pag=evolucao"
+                        class="nav-link <?php echo ($pag_url == 'evolucao') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-chart-line"></i>
                         <p>Evolução Técnica</p>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="graficos_evolucao.php"
-                        class="nav-link <?php echo ($pagina_atual == 'graficos_evolucao.php') ? 'active' : ''; ?>">
+                    <a href="index.php?pag=graficos_evolucao"
+                        class="nav-link <?php echo ($pag_url == 'graficos_evolucao') ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-chart-pie text-warning"></i>
                         <p>Meus Gráficos <span class="badge badge-info right">Novo</span></p>
                     </a>
                 </li>
 
-                <li class="nav-header mt-3">SISTEMA</li>
+                <li class="nav-header mt-3 text-uppercase" style="font-size: 0.7rem;">Configurações</li>
                 <li class="nav-item">
                     <a href="../logout.php" class="nav-link text-danger">
                         <i class="nav-icon fas fa-sign-out-alt"></i>
-                        <p>Sair</p>
+                        <p>Sair do Sistema</p>
                     </a>
                 </li>
 

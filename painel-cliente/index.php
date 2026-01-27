@@ -201,13 +201,17 @@ $porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_atuais / $meta_aulas) * 100
                 <div class="container-fluid">
 
                     <?php
-                    // --- LÓGICA DE CARREGAMENTO DE PÁGINAS ---
-                    if ($pag == 'ver-perfil-aluno') {
-                        include_once("ver-perfil-aluno.php");
+                    // --- LÓGICA DE CARREGAMENTO DINÂMICO ---
+                    if (!empty($pag)) {
+                        $arquivo = $pag . ".php";
+                        if (file_exists($arquivo)) {
+                            include_once($arquivo);
+                        } else {
+                            echo "<div class='alert alert-danger'>A página <b>$arquivo</b> não foi encontrada na pasta painel-cliente.</div>";
+                        }
                     } else {
                         // CONTEÚDO PADRÃO (HOME)
                     ?>
-
                         <?php if ($status['pode'] ?? false): ?>
                             <div class="alert alert-success shadow border-0 mt-3 pulse">
                                 <div class="d-flex align-items-center">
@@ -232,7 +236,6 @@ $porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_atuais / $meta_aulas) * 100
                                         <h5 class="text-muted text-uppercase">Faixa:
                                             <b><?php echo ($status['faixa'] ?? 'BRANCA'); ?></b>
                                         </h5>
-
                                         <div class="bjj-belt">
                                             <div class="belt-bar">
                                                 <?php for ($i = 0; $i < ($status['grau'] ?? 0); $i++): ?>
@@ -325,10 +328,7 @@ $porcentagem_progresso = ($meta_aulas > 0) ? ($aulas_atuais / $meta_aulas) * 100
                                 </div>
                             </div>
                         </div>
-
-                    <?php } // FIM DO ELSE DO CONTEÚDO PADRÃO 
-                    ?>
-
+                    <?php } ?>
                 </div>
             </section>
         </div>
