@@ -5,11 +5,11 @@ require_once("../conexao.php");
 // --- 1. BLOCO PARA DOWNLOAD DO MODELO CSV ---
 if (isset($_GET['download_modelo'])) {
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=modelo_alunos.csv');
+    header('Content-Disposition: attachment; filename=modelo_importacao.csv');
     $output = fopen('php://output', 'w');
-    fputs($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM para Excel
+    fputs($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM para acentuação correta
     fputcsv($output, ['Nome', 'Email/Usuario', 'CPF', 'Senha', 'Nivel', 'Telefone', 'Vencimento', 'Faixa', 'Graus', 'Aulas'], ';');
-    fputcsv($output, ['Joao Silva', 'joao.silva', '123.456.789-00', '123456', 'Cliente', '48999999999', date('Y-m-d'), 'Branca', '0', '0'], ';');
+    fputcsv($output, ['Exemplo Aluno', 'aluno.teste', '000.000.000-00', '123456', 'Cliente', '48999999999', date('Y-m-d'), 'Branca', '0', '0'], ';');
     fclose($output);
     exit();
 }
@@ -71,7 +71,6 @@ if (isset($_POST['confirmar_importacao'])) {
             $erros[] = ['nome' => $aluno['nome'], 'msg' => "Erro no banco de dados"];
         }
     }
-    // Exibe o relatório final após salvar
 ?>
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -79,20 +78,21 @@ if (isset($_POST['confirmar_importacao'])) {
     <head>
         <meta charset="UTF-8">
         <link rel="stylesheet" href="../css/bootstrap.css">
-        <title>Resultado Final</title>
+        <title>Resultado da Importação</title>
     </head>
 
     <body class="bg-light p-4">
         <div class="container">
-            <div class="card shadow">
+            <div class="card shadow border-0">
                 <div class="card-header bg-success text-white">
-                    <h5>Importação Concluída!</h5>
+                    <h5>Importação Finalizada!</h5>
                 </div>
-                <div class="card-body">
-                    <p class="text-success"><b><?php echo count($sucessos); ?></b> alunos cadastrados com sucesso.</p>
+                <div class="card-body text-center">
+                    <h4 class="text-success"><b><?php echo count($sucessos); ?></b> alunos cadastrados com sucesso!</h4>
                     <?php if (count($erros) > 0): ?>
-                        <p class="text-danger"><b><?php echo count($erros); ?></b> falhas ao cadastrar.</p>
-                        <table class="table table-sm text-danger">
+                        <hr>
+                        <h5 class="text-danger">Falhas ao cadastrar (<?php echo count($erros); ?>):</h5>
+                        <table class="table table-sm text-left">
                             <?php foreach ($erros as $e): ?>
                                 <tr>
                                     <td><?php echo $e['nome']; ?></td>
@@ -101,7 +101,7 @@ if (isset($_POST['confirmar_importacao'])) {
                             <?php endforeach; ?>
                         </table>
                     <?php endif; ?>
-                    <a href="index.php?pag=usuarios" class="btn btn-primary btn-block">Voltar para Usuários</a>
+                    <a href="index.php?pag=usuarios" class="btn btn-primary mt-3">Voltar para Lista de Usuários</a>
                 </div>
             </div>
         </div>
@@ -112,7 +112,7 @@ if (isset($_POST['confirmar_importacao'])) {
     exit();
 }
 
-// --- 3. INTERFACE INICIAL COM PASSO A PASSO ---
+// --- 3. INTERFACE INICIAL COM GUIA PASSO A PASSO ---
 if (!isset($_FILES['arquivo_excel']) || $_FILES['arquivo_excel']['name'] == "") {
 ?>
     <!DOCTYPE html>
@@ -122,33 +122,44 @@ if (!isset($_FILES['arquivo_excel']) || $_FILES['arquivo_excel']['name'] == "") 
         <meta charset="UTF-8">
         <link rel="stylesheet" href="../css/bootstrap.css">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-        <title>Importar Alunos</title>
+        <title>Importar Planilha CSV</title>
     </head>
 
     <body class="bg-light">
         <div class="container mt-5">
             <div class="card shadow border-0">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="m-0"><i class="fas fa-file-csv mr-2 text-warning"></i> Importar Alunos</h5>
-                    <a href="?download_modelo=1" class="btn btn-sm btn-outline-light"><i class="fas fa-download mr-1"></i>
-                        Baixar Modelo CSV</a>
+                    <h5 class="m-0"><i class="fas fa-file-csv mr-2 text-warning"></i> Importar Planilha .CSV</h5>
+                    <a href="?download_modelo=1" class="btn btn-sm btn-info shadow-sm">
+                        <i class="fas fa-download mr-1"></i> Baixar Planilha Modelo
+                    </a>
                 </div>
                 <div class="card-body">
-                    <h6 class="text-primary"><i class="fas fa-info-circle"></i> Passo a Passo para Importação:</h6>
-                    <div class="alert alert-secondary small">
-                        1. <b>Preencha a Planilha:</b> Utilize o modelo baixado no botão acima.<br>
-                        2. <b>Salve como CSV:</b> No Excel, vá em <i>Arquivo > Salvar Como</i> e escolha o formato <b>CSV
-                            (Separado por vírgulas)</b>.<br>
-                        3. <b>Selecione o Arquivo:</b> Clique no botão abaixo e escolha o arquivo .csv gerado.<br>
-                        4. <b>Confira a Prévia:</b> O sistema mostrará o que será feito antes de salvar no banco.<br>
-                        5. <b>Confirme:</b> Só após sua autorização os alunos serão cadastrados.
+
+                    <h5 class="text-primary mb-3"><i class="fas fa-tasks mr-2"></i> Passo a Passo para Importar:</h5>
+                    <div class="list-group mb-4 shadow-sm">
+                        <div class="list-group-item"><i class="fas fa-1 mr-2 text-primary"></i> <b>Baixe o modelo:</b>
+                            Clique no botão azul acima para obter a planilha padrão.</div>
+                        <div class="list-group-item"><i class="fas fa-2 mr-2 text-primary"></i> <b>Preencha os dados:</b>
+                            Coloque as informações dos seus alunos na planilha.</div>
+                        <div class="list-group-item"><i class="fas fa-3 mr-2 text-primary"></i> <b>Salve como .CSV:</b> No
+                            seu editor de planilhas, escolha "Salvar como" e selecione o tipo <b>CSV (Separado por
+                                vírgulas)</b>.</div>
+                        <div class="list-group-item"><i class="fas fa-4 mr-2 text-primary"></i> <b>Suba o arquivo:</b>
+                            Selecione o arquivo salvo no campo abaixo.</div>
+                        <div class="list-group-item"><i class="fas fa-5 mr-2 text-primary"></i> <b>Verifique e Confirme:</b>
+                            Analise o relatório de prévia e clique em confirmar para gravar no sistema.</div>
                     </div>
-                    <form method="post" enctype="multipart/form-data">
+
+                    <form method="post" enctype="multipart/form-data" class="bg-white p-4 border rounded shadow-sm">
                         <div class="form-group">
-                            <label><b>Selecione o arquivo CSV:</b></label>
-                            <input type="file" name="arquivo_excel" accept=".csv" required class="form-control-file">
+                            <label class="font-weight-bold">Selecione o arquivo .CSV do seu computador:</label>
+                            <input type="file" name="arquivo_excel" accept=".csv" required
+                                class="form-control-file border p-2 w-100">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block">Verificar Dados antes de Cadastrar</button>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block shadow">
+                            <i class="fas fa-search mr-2"></i>Verificar Dados antes de Cadastrar
+                        </button>
                     </form>
                 </div>
             </div>
@@ -163,7 +174,7 @@ if (!isset($_FILES['arquivo_excel']) || $_FILES['arquivo_excel']['name'] == "") 
 // --- 4. GERAÇÃO DA PRÉVIA VISUAL ---
 $extensao = pathinfo($_FILES['arquivo_excel']['name'], PATHINFO_EXTENSION);
 if (strtolower($extensao) != 'csv') {
-    echo "<script>alert('ERRO: O arquivo deve ser .CSV! Siga o passo a passo na tela.'); window.location='index.php?pag=usuarios';</script>";
+    echo "<script>alert('ERRO: O sistema aceita apenas arquivos .CSV! Siga o Guia Passo a Passo.'); window.location='index.php?pag=usuarios';</script>";
     exit();
 }
 
@@ -213,51 +224,52 @@ fclose($handle);
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../css/bootstrap.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-    <title>Conferir Importação</title>
+    <title>Conferir Planilha</title>
 </head>
 
 <body class="bg-light">
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <div class="card shadow border-0">
             <div class="card-header bg-primary text-white d-flex justify-content-between">
-                <h5 class="m-0">Relatório de Prévia: <?php echo count($alunos_para_cadastrar); ?> Alunos</h5>
-                <button onclick="window.print();" class="btn btn-sm btn-light"><i class="fas fa-print"></i></button>
+                <h5 class="m-0">Prévia da Importação: <?php echo count($alunos_para_cadastrar); ?> Alunos</h5>
+                <button onclick="window.print();" class="btn btn-sm btn-light shadow-sm"><i class="fas fa-print"></i>
+                    Imprimir</button>
             </div>
             <div class="card-body">
-                <p>Abaixo estão as alterações automáticas sugeridas pelo sistema para evitar erros:</p>
+                <p class="text-muted small">Verifique abaixo se houve algum ajuste automático para evitar CPFs ou
+                    Usuários repetidos:</p>
                 <table class="table table-sm table-hover border">
                     <thead class="thead-light">
                         <tr>
                             <th>Aluno</th>
-                            <th>Ocorrência</th>
-                            <th>Ajuste Aplicado</th>
+                            <th>Ação Necessária</th>
+                            <th>Resultado do Ajuste</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($relatorio_previa as $item): ?>
                             <tr>
-                                <td><?php echo $item['aluno']; ?></td>
+                                <td><b><?php echo $item['aluno']; ?></b></td>
                                 <td><span class="badge badge-warning"><?php echo $item['tipo']; ?></span></td>
-                                <td><?php echo $item['detalhe']; ?></td>
+                                <td class="small"><?php echo $item['detalhe']; ?></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($relatorio_previa)): ?>
                             <tr>
-                                <td colspan="3" class="text-center text-muted py-3">Nenhuma duplicidade ou falta de senha
-                                    encontrada. Tudo pronto para o cadastro!</td>
+                                <td colspan="3" class="text-center text-muted py-4">Nenhum conflito encontrado. Todos os
+                                    dados estão prontos!</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
 
-                <div class="alert alert-info mt-4 text-center shadow-sm">
-                    <h5 class="mb-3 font-weight-bold">Deseja cadastrar esses
-                        <?php echo count($alunos_para_cadastrar); ?> alunos agora?</h5>
+                <div class="alert alert-warning mt-4 text-center border-warning shadow">
+                    <h5 class="mb-3 font-weight-bold">Você confirma o cadastro de todos os alunos acima?</h5>
                     <form method="post" class="d-inline">
                         <input type="hidden" name="dados_alunos"
                             value='<?php echo htmlspecialchars(json_encode($alunos_para_cadastrar), ENT_QUOTES, 'UTF-8'); ?>'>
-                        <button type="submit" name="confirmar_importacao" class="btn btn-success btn-lg px-5">
-                            <i class="fas fa-check-circle mr-1"></i> Sim, Cadastrar Todos
+                        <button type="submit" name="confirmar_importacao" class="btn btn-success btn-lg px-5 mr-2">
+                            <i class="fas fa-check-circle mr-1"></i> Sim, Confirmar Cadastro
                         </button>
                     </form>
                     <a href="index.php?pag=usuarios" class="btn btn-danger btn-lg px-5">

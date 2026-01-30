@@ -238,7 +238,7 @@ $res = $query->fetchAll(PDO::FETCH_ASSOC);
                     <i class="fas fa-user-plus mr-1"></i> NOVO USUÁRIO
                 </button>
                 <button class="btn btn-sm btn-importar shadow-sm mr-2" data-toggle="modal" data-target="#modalImportar">
-                    <i class="fas fa-file-excel mr-1"></i> IMPORTAR EXCEL
+                    <i class="fas fa-file-excel mr-1"></i> IMPORTAR .CSV
                 </button>
                 <a href="relatorio-atrasados.php" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm mr-2">
                     <i class="fas fa-file-pdf mr-1"></i> Lista de Atrasados
